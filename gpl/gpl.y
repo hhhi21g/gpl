@@ -1931,6 +1931,7 @@ void concat()
 	token[len+1]='\0';	
 }
 
+// 字母
 int letter()
 {
 	if(((character>='a') && (character<='z')) || ((character>='A') && (character<='Z')))
@@ -1965,7 +1966,7 @@ int keyword()
 	return 0;
 }
 
-int yylex()
+int yylex(
 {
 	int num;
 	char *lexeme;
