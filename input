@@ -1,0 +1,13 @@
+int main()
+{
+    int a, b, c;
+    a = 1;
+    a++;
+    b = a + 2;
+    b += 2;
+    c = max(a, b); /* 取二者最大 */
+    int _abc = c;
+    if (_abc == c)
+        printf("equal"); // 注释
+    return c;
+}

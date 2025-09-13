@@ -4,5 +4,6 @@ int main ( )
 	a = 1 ;
 	b = a + 2 ;
 	c = max ( a , b ) ;
+	printf(a!=b);
 	return c ;
 }

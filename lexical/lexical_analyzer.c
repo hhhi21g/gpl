@@ -2,152 +2,167 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct KEYWORDS {
+struct KEYWORDS
+{
 	int num;
 	char name[10];
 };
 
-char character='\0';
-char token[1000]="";
+char character = '\0';
+char token[1000] = "";
 struct KEYWORDS keywords[100] = {
-	{ 3, "int" },
-	{ 4, "if" },
-	{ 5, "else" },
-	{ 6, "while" },
-	{ 7, "for" },
-	{ 8, "read" },
-	{ 9, "write" },
-	{ 0, "" }
-};
+	{3, "int"},
+	{4, "if"},
+	{5, "else"},
+	{6, "while"},
+	{7, "break"},
+	{8, "continue"},
+	{9, "for"},
+	{10, "read"},
+	{11, "write"},
+	{12, "return"},
+	{0, ""}};
 
-void getch() {  // 从输入流读一个字符到character
-	character=getchar();
+void getch()
+{ // 从输入流读一个字符到character
+	character = getchar();
 }
 
-void getnbc() {  // 跳过空格等
-	while((character==' ') || (character=='\t') || (character=='\r') || (character=='\n')) 
-		character=getchar();	
+void getnbc()
+{ // 跳过空格等
+	while ((character == ' ') || (character == '\t') || (character == '\r') || (character == '\n'))
+		character = getchar();
 }
 
-void concat() {  // 将当前字符拼接到token末尾
-	int len=strlen(token);
-	token[len]=character;
-	token[len+1]='\0';	
+void concat()
+{ // 将当前字符拼接到token末尾
+	int len = strlen(token);
+	token[len] = character;
+	token[len + 1] = '\0';
 }
 
-int letter() {  // 是否为字母
-	if(((character>='a') && (character<='z')) || ((character>='A') && (character<='Z')))
+int letter()
+{ // 是否为字母
+	if (((character >= 'a') && (character <= 'z')) || ((character >= 'A') && (character <= 'Z')))
 		return 1;
-	else 
+	else
 		return 0;
 }
 
-int digit() {  // 是否为数字
-	if((character>='0') && (character<='9'))
+int digit()
+{ // 是否为数字
+	if ((character >= '0') && (character <= '9'))
 		return 1;
-	else 
+	else
 		return 0;
 }
 
-void retract() {  // 回退一个字符，将刚刚读的字符返回输入流
-	ungetc(character,stdin);
-	character='\0';
+void retract()
+{ // 回退一个字符，将刚刚读的字符返回输入流
+	ungetc(character, stdin);
+	character = '\0';
 }
 
-int keyword() {  // 判断当前token是否为关键字，如果是则返回编号
-	int i=0;
-	while(strcmp(keywords[i].name,"")) {
-		if(!strcmp(keywords[i].name,token)) 
+int keyword()
+{ // 判断当前token是否为关键字，如果是则返回编号
+	int i = 0;
+	while (strcmp(keywords[i].name, ""))
+	{
+		if (!strcmp(keywords[i].name, token))
 			return keywords[i].num;
 		i++;
 	}
 	return 0;
 }
 
-int lex_analyze() {
+int lex_analyze()
+{
 	int num;
 	char *lexeme;
-		
-	strcpy(token,"");
+
+	strcpy(token, "");
 	getch();
 	getnbc();
 
-	switch(character) {
-		case 'a':
-		case 'b':
-		case 'c':
-		case 'd':
-		case 'e':
-		case 'f':
-		case 'g':
-		case 'h':
-		case 'i':
-		case 'j':
-		case 'k':
-		case 'l':
-		case 'm':
-		case 'n':
-		case 'o':
-		case 'p':
-		case 'q':
-		case 'r':
-		case 's':
-		case 't':
-		case 'u':
-		case 'v':
-		case 'w':
-		case 'x':
-		case 'y':
-		case 'z':
-		case 'A':
-		case 'B':
-		case 'C':
-		case 'D':
-		case 'E':
-		case 'F':
-		case 'G':
-		case 'H':
-		case 'I':
-		case 'J':
-		case 'K':
-		case 'L':
-		case 'M':
-		case 'N':
-		case 'O':
-		case 'P':
-		case 'Q':
-		case 'R':
-		case 'S':
-		case 'T':
-		case 'U':
-		case 'V':
-		case 'W':
-		case 'X':
-		case 'Y':
-		case 'Z':
-		while(letter() || digit()) {  // 如果以字母开头，继续读字母或数字
+	switch (character)
+	{
+	case 'a':
+	case 'b':
+	case 'c':
+	case 'd':
+	case 'e':
+	case 'f':
+	case 'g':
+	case 'h':
+	case 'i':
+	case 'j':
+	case 'k':
+	case 'l':
+	case 'm':
+	case 'n':
+	case 'o':
+	case 'p':
+	case 'q':
+	case 'r':
+	case 's':
+	case 't':
+	case 'u':
+	case 'v':
+	case 'w':
+	case 'x':
+	case 'y':
+	case 'z':
+	case 'A':
+	case 'B':
+	case 'C':
+	case 'D':
+	case 'E':
+	case 'F':
+	case 'G':
+	case 'H':
+	case 'I':
+	case 'J':
+	case 'K':
+	case 'L':
+	case 'M':
+	case 'N':
+	case 'O':
+	case 'P':
+	case 'Q':
+	case 'R':
+	case 'S':
+	case 'T':
+	case 'U':
+	case 'V':
+	case 'W':
+	case 'X':
+	case 'Y':
+	case 'Z':
+		while (letter() || digit())
+		{ // 如果以字母开头，继续读字母或数字
 			concat();
 			getch();
 		}
 		retract();
-		num=keyword(); // keyword
-		if(num!=0) 
+		num = keyword(); // keyword
+		if (num != 0)
 			printf("( %d , - )\n", num); // keyword
 		else
 			printf("( 1 , %s )\n", token); // identifier
 		break;
 
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-		while(digit()) {  // 如果以数字开头，继续读数字
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		while (digit())
+		{ // 如果以数字开头，继续读数字
 			concat();
 			getch();
 		}
@@ -155,112 +170,133 @@ int lex_analyze() {
 		printf("( 2 , %s )\n", token); // constant
 		break;
 
-		// 加减乘除直接输出对应编号
-		case '+':
-		printf("( 10 , - )\n"); // +
+	// 加减乘除直接输出对应编号
+	case '+':
+		printf("( 20 , - )\n"); // +
 		break;
 
-		case '-':
-		printf("( 11 , - )\n"); // -
+	case '-':
+		printf("( 21 , - )\n"); // -
 		break;
 
-		case '*':
-		printf("( 12 , - )\n"); // *
+	case '*':
+		printf("( 22 , - )\n"); // *
 		break;
 
-		case '/':
-		printf("( 13 , - )\n"); // /
+	case '/':
+		printf("( 23 , - )\n"); // /
 		break;
 
-		// 其余需向后看一位
-		case '<':
+	// 其余需向后看一位
+	case '<':
 		concat();
 		getch();
-		if(character=='=') {
-			printf("( 15 , - )\n"); // <=
+		if (character == '=')
+		{
+			printf("( 25 , - )\n"); // <=
 		}
-		else {
+		else
+		{
 			retract();
-			printf("( 14 , - )\n"); // <
+			printf("( 24 , - )\n"); // <
 		}
 		break;
 
-		case '>':
+	case '>':
 		concat();
 		getch();
-		if(character=='=') {
-			printf("( 17 , - )\n"); // >=
+		if (character == '=')
+		{
+			printf("( 27 , - )\n"); // >=
 		}
-		else {
+		else
+		{
 			retract();
-			printf("( 16 , - )\n"); // >
-		}		
+			printf("( 26 , - )\n"); // >
+		}
 		break;
 
-		case '!':
+	case '!':
 		concat();
 		getch();
-		if(character=='=') {
-			printf("( 18 , - )\n"); // !=
+		if (character == '=')
+		{
+			printf("( 28 , - )\n"); // !=
 		}
-		else {
+		else
+		{
 			retract();
 			printf("error: !\n"); // only !
-		}		
+		}
 		break;
-		
-		case '=':
+
+	case '=':
 		concat();
 		getch();
-		if(character=='=') {
-			printf("( 19 , - )\n"); // ==
+		if (character == '=')
+		{
+			printf("( 29 , - )\n"); // ==
 		}
-		else {
+		else
+		{
 			retract();
-			printf("( 20 , - )\n"); // =
-		}		
+			printf("( 30 , - )\n"); // =
+		}
 		break;
 
-		case '(':
-		printf("( 21 , - )\n"); // (
+	case '(':
+		printf("( 31 , - )\n"); // (
 		break;
 
-		case ')':
-		printf("( 22 , - )\n"); // )
+	case ')':
+		printf("( 32 , - )\n"); // )
 		break;
 
-		case ',':
-		printf("( 23 , - )\n"); // ,
+	case ',':
+		printf("( 33 , - )\n"); // ,
 		break;
 
-		case ';':
-		printf("( 24 , - )\n"); // ;
+	case ';':
+		printf("( 34 , - )\n"); // ;
 		break;
 
-		case EOF:
+	case '{':
+		printf("( 35 , - )\n");
+		break;
+
+	case '}':
+		printf("( 36 , - )\n");
+		break;
+
+	case EOF:
 		return 0;
 
-		default:
+	default:
 		printf("error: '%c'\n", character);
 	}
 
 	return 1;
 }
 
-int main(int argc, char *argv[]) {
-	if(argc!=2) {
+int main(int argc, char *argv[])
+{
+	if (argc != 2)
+	{
 		printf("usage: %s input_file\n", argv[0]);
 		exit(0);
 	}
 
-	if(freopen(argv[1], "r", stdin)==NULL) {
+	if (freopen(argv[1], "r", stdin) == NULL)
+	{
 		printf("error: can not open file \"%s\"\n", argv[1]);
 		exit(0);
 	}
 
-	while(1) {
-		if(lex_analyze()==0) break;
+	while (1)
+	{
+		if (lex_analyze() == 0)
+			break;
 	}
-	
+
 	return 0;
 }
