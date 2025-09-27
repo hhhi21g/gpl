@@ -10,4 +10,5 @@ int main()
     if (_abc == c)
         printf("equal"); // 注释
     return c;
+    char c = "I'm char;
 }
