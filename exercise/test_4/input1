@@ -1,0 +1,4 @@
+aaa = bbb = ccc = 1 
+if (aaa > 0) aaa = 2 
+else aaa = 3 
+while (aaa < 6) aaa = aaa + 1

@@ -11,6 +11,9 @@
 
 "char" { return CHAR; }
 
+"string"  { return STRING; }
+
+
 \'([^'\\]|\\.)\'  { return CHAR_CONST; }
 
 \"([^"\n]|\\.)*\"  { return STRING_CONST; }
@@ -59,9 +62,8 @@
 
 [A-Za-z]([A-Za-z]|[0-9])*  {  return IDENTIFIER;  }
 
-[0-9]*	{  return INTEGER;  }
+[0-9]+	{  return INTEGER;  }
 
-\"[^\"]*\"  {  return TEXT;  }
 
 "&&" { return AND; }
 
@@ -107,6 +109,9 @@
 
 ">>" { return SHR; }
 
+"//".*  ;  
+
+"/*"([^*]|\*+[^/])*\*+"/" ;  
 
 [ \t\r\n]|#.*
 

@@ -59,52 +59,54 @@ extern int yydebug;
     TEXT = 260,                    /* TEXT  */
     INT = 261,                     /* INT  */
     CHAR = 262,                    /* CHAR  */
-    EQ = 263,                      /* EQ  */
-    NE = 264,                      /* NE  */
-    LT = 265,                      /* LT  */
-    LE = 266,                      /* LE  */
-    GT = 267,                      /* GT  */
-    GE = 268,                      /* GE  */
-    UMINUS = 269,                  /* UMINUS  */
-    IF = 270,                      /* IF  */
-    THEN = 271,                    /* THEN  */
-    ELSE = 272,                    /* ELSE  */
-    FI = 273,                      /* FI  */
-    WHILE = 274,                   /* WHILE  */
-    FOR = 275,                     /* FOR  */
-    DO = 276,                      /* DO  */
-    DONE = 277,                    /* DONE  */
-    CONTINUE = 278,                /* CONTINUE  */
-    FUNC = 279,                    /* FUNC  */
-    INPUT = 280,                   /* INPUT  */
-    OUTPUT = 281,                  /* OUTPUT  */
-    RETURN = 282,                  /* RETURN  */
-    LBRACKET = 283,                /* LBRACKET  */
-    RBRACKET = 284,                /* RBRACKET  */
-    INC = 285,                     /* INC  */
-    DEC = 286,                     /* DEC  */
-    ADD_ASSIGN = 287,              /* ADD_ASSIGN  */
-    SUB_ASSIGN = 288,              /* SUB_ASSIGN  */
-    MUL_ASSIGN = 289,              /* MUL_ASSIGN  */
-    DIV_ASSIGN = 290,              /* DIV_ASSIGN  */
-    SHL_ASSIGN = 291,              /* SHL_ASSIGN  */
-    SHR_ASSIGN = 292,              /* SHR_ASSIGN  */
-    SHL = 293,                     /* SHL  */
-    SHR = 294,                     /* SHR  */
-    SWITCH = 295,                  /* SWITCH  */
-    CASE = 296,                    /* CASE  */
-    DEFAULT = 297,                 /* DEFAULT  */
-    BREAK = 298,                   /* BREAK  */
-    AND = 299,                     /* AND  */
-    OR = 300,                      /* OR  */
-    NOT = 301,                     /* NOT  */
-    BITAND = 302,                  /* BITAND  */
-    BITOR = 303,                   /* BITOR  */
-    BITXOR = 304,                  /* BITXOR  */
-    CHAR_CONST = 305,              /* CHAR_CONST  */
-    STRING_CONST = 306,            /* STRING_CONST  */
-    LBRACE = 307,                  /* LBRACE  */
-    RBRACE = 308                   /* RBRACE  */
+    STRING = 263,                  /* STRING  */
+    EQ = 264,                      /* EQ  */
+    NE = 265,                      /* NE  */
+    LT = 266,                      /* LT  */
+    LE = 267,                      /* LE  */
+    GT = 268,                      /* GT  */
+    GE = 269,                      /* GE  */
+    UMINUS = 270,                  /* UMINUS  */
+    IF = 271,                      /* IF  */
+    THEN = 272,                    /* THEN  */
+    ELSE = 273,                    /* ELSE  */
+    FI = 274,                      /* FI  */
+    WHILE = 275,                   /* WHILE  */
+    FOR = 276,                     /* FOR  */
+    DO = 277,                      /* DO  */
+    DONE = 278,                    /* DONE  */
+    CONTINUE = 279,                /* CONTINUE  */
+    FUNC = 280,                    /* FUNC  */
+    INPUT = 281,                   /* INPUT  */
+    OUTPUT = 282,                  /* OUTPUT  */
+    RETURN = 283,                  /* RETURN  */
+    LBRACKET = 284,                /* LBRACKET  */
+    RBRACKET = 285,                /* RBRACKET  */
+    INC = 286,                     /* INC  */
+    DEC = 287,                     /* DEC  */
+    ADD_ASSIGN = 288,              /* ADD_ASSIGN  */
+    SUB_ASSIGN = 289,              /* SUB_ASSIGN  */
+    MUL_ASSIGN = 290,              /* MUL_ASSIGN  */
+    DIV_ASSIGN = 291,              /* DIV_ASSIGN  */
+    SHL_ASSIGN = 292,              /* SHL_ASSIGN  */
+    SHR_ASSIGN = 293,              /* SHR_ASSIGN  */
+    SHL = 294,                     /* SHL  */
+    SHR = 295,                     /* SHR  */
+    SWITCH = 296,                  /* SWITCH  */
+    CASE = 297,                    /* CASE  */
+    DEFAULT = 298,                 /* DEFAULT  */
+    BREAK = 299,                   /* BREAK  */
+    AND = 300,                     /* AND  */
+    OR = 301,                      /* OR  */
+    NOT = 302,                     /* NOT  */
+    BITAND = 303,                  /* BITAND  */
+    BITOR = 304,                   /* BITOR  */
+    BITXOR = 305,                  /* BITXOR  */
+    CHAR_CONST = 306,              /* CHAR_CONST  */
+    STRING_CONST = 307,            /* STRING_CONST  */
+    LBRACE = 308,                  /* LBRACE  */
+    RBRACE = 309,                  /* RBRACE  */
+    LOWER_THAN_ELSE = 310          /* LOWER_THAN_ELSE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -118,52 +120,54 @@ extern int yydebug;
 #define TEXT 260
 #define INT 261
 #define CHAR 262
-#define EQ 263
-#define NE 264
-#define LT 265
-#define LE 266
-#define GT 267
-#define GE 268
-#define UMINUS 269
-#define IF 270
-#define THEN 271
-#define ELSE 272
-#define FI 273
-#define WHILE 274
-#define FOR 275
-#define DO 276
-#define DONE 277
-#define CONTINUE 278
-#define FUNC 279
-#define INPUT 280
-#define OUTPUT 281
-#define RETURN 282
-#define LBRACKET 283
-#define RBRACKET 284
-#define INC 285
-#define DEC 286
-#define ADD_ASSIGN 287
-#define SUB_ASSIGN 288
-#define MUL_ASSIGN 289
-#define DIV_ASSIGN 290
-#define SHL_ASSIGN 291
-#define SHR_ASSIGN 292
-#define SHL 293
-#define SHR 294
-#define SWITCH 295
-#define CASE 296
-#define DEFAULT 297
-#define BREAK 298
-#define AND 299
-#define OR 300
-#define NOT 301
-#define BITAND 302
-#define BITOR 303
-#define BITXOR 304
-#define CHAR_CONST 305
-#define STRING_CONST 306
-#define LBRACE 307
-#define RBRACE 308
+#define STRING 263
+#define EQ 264
+#define NE 265
+#define LT 266
+#define LE 267
+#define GT 268
+#define GE 269
+#define UMINUS 270
+#define IF 271
+#define THEN 272
+#define ELSE 273
+#define FI 274
+#define WHILE 275
+#define FOR 276
+#define DO 277
+#define DONE 278
+#define CONTINUE 279
+#define FUNC 280
+#define INPUT 281
+#define OUTPUT 282
+#define RETURN 283
+#define LBRACKET 284
+#define RBRACKET 285
+#define INC 286
+#define DEC 287
+#define ADD_ASSIGN 288
+#define SUB_ASSIGN 289
+#define MUL_ASSIGN 290
+#define DIV_ASSIGN 291
+#define SHL_ASSIGN 292
+#define SHR_ASSIGN 293
+#define SHL 294
+#define SHR 295
+#define SWITCH 296
+#define CASE 297
+#define DEFAULT 298
+#define BREAK 299
+#define AND 300
+#define OR 301
+#define NOT 302
+#define BITAND 303
+#define BITOR 304
+#define BITXOR 305
+#define CHAR_CONST 306
+#define STRING_CONST 307
+#define LBRACE 308
+#define RBRACE 309
+#define LOWER_THAN_ELSE 310
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED

@@ -1,0 +1,7 @@
+bbb = aaa = 1+2*3
+ccc = aaa
+ddd = ccc + 100
+ddd = ddd + 50
+eee = 999
+aaa = eee + 1
+bbb = aaa + ddd + 2 * 5

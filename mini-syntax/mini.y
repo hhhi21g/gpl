@@ -10,7 +10,7 @@ int yylex();
 void yyerror(char* msg);
 %}
 
-%token IDENTIFIER INTEGER TEXT INT CHAR
+%token IDENTIFIER INTEGER TEXT INT CHAR STRING
 %token EQ NE LT LE GT GE UMINUS
 %token IF THEN ELSE FI WHILE FOR DO DONE CONTINUE FUNC INPUT OUTPUT RETURN
 %token LBRACKET RBRACKET
@@ -22,24 +22,25 @@ void yyerror(char* msg);
 %token LBRACE RBRACE
 
 
-%right UMINUS
-%left INC DEC
-%left '*' '/'
-%left '+' '-'
-%left SHL SHR
-%left BITAND
-%left BITXOR
-%left BITOR
-%left LT LE GT GE
-%left EQ NE
-%left AND
-%left OR
-%right '?' ':'
-%right ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN SHL_ASSIGN SHR_ASSIGN
-%right NOT
-       
+%right  '=' ADD_ASSIGN SUB_ASSIGN MUL_ASSIGN DIV_ASSIGN SHL_ASSIGN SHR_ASSIGN
+%right  '?' ':'             
+%left   OR
+%left   AND
+%left   BITOR
+%left   BITXOR
+%left   BITAND
+%left   EQ NE
+%left   LT LE GT GE
+%left   SHL SHR
+%left   '+' '-'
+%left   '*' '/'
+%right  UMINUS
+%right  INC DEC
+%right  NOT
 
-
+%nonassoc LOWER_THAN_ELSE
+%nonassoc ELSE
+  
 
 %%
 program : function_declaration_list
@@ -58,6 +59,7 @@ function_declaration : function
 
 declaration : INT variable_list ';'
 | CHAR variable_list ';'
+| STRING variable_list ';'
 ;
 
 declarator: IDENTIFIER
@@ -161,12 +163,14 @@ expression : expression '+' expression
 | expression GE expression
 | expression AND expression
 | expression OR expression
-| NOT expression
+| NOT expression  %prec NOT
 | expression BITAND expression
 | expression BITOR expression
 | expression BITXOR expression
 | '(' expression ')'
 | INTEGER
+| CHAR_CONST
+| STRING_CONST
 | IDENTIFIER
 | IDENTIFIER LBRACKET expression RBRACKET
 | call_expression
@@ -192,6 +196,7 @@ input_statement : INPUT IDENTIFIER
 
 output_statement : OUTPUT IDENTIFIER
 | OUTPUT TEXT
+| OUTPUT STRING_CONST
 | OUTPUT IDENTIFIER LBRACKET expression RBRACKET
 ;
 
@@ -201,7 +206,7 @@ return_statement : RETURN expression
 null_statement : CONTINUE
 ;
 
-if_statement : IF '(' expression ')' block
+if_statement : IF '(' expression ')' block %prec LOWER_THAN_ELSE
 | IF '(' expression ')' block ELSE block
 ;
 
@@ -214,7 +219,7 @@ do_statement: DO block WHILE '(' expression ')' ';'
 for_statement : FOR '(' assignment_statement ';' expression ';' assignment_statement ')' block
 ;
 
-switch_statement: SWITCH '(' expression ')' '{' case_list default_clause'}'
+switch_statement: SWITCH '(' expression ')' LBRACE case_list default_clause RBRACE
 ;
 
 case_list: case_list case_clause
