@@ -2,17 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ast.h"
 
 extern FILE * yyin;
 extern int yylineno;
 int yylex();
 void yyerror(char* msg);
+AST*root;
 
 #define MAXVARS 1000
 typedef struct {char name[100]; int value;}Var;
 Var sym[MAXVARS];
 int sym_count = 0;
-
 
 int find_var_idx(const char*name){
 	for(int i = 0;i<sym_count;i++){
@@ -40,10 +41,13 @@ void set_value(const char*name,int value){
 
 %}
 
+%locations
+
 %union
 {
 	int num;
 	char *str;
+	AST* node;
 }
 
 %left  EQ NE
@@ -57,61 +61,67 @@ void set_value(const char*name,int value){
 %token IF ELSE WHILE
 %token EQ NE LE GE
 
-%type <num> expression
-%type <num> assignments
+%type <node> start statements statement opt_nl
+%type <node> assignments if_statement while_statement
+%type <node> expression
 
 %%
 
 start:
-	statements
+	statements {root = $1;}
 	;
 
 statements:
-	statements statement
-	|statement
+	statements statement { $$=$1; ast_seq_push($1,$2); }
+	|statement           { $$=ast_seq_new(@$.first_line);ast_seq_push($$,$1); }
 	;
 
 statement:
-	assignments '\n'
-	|assignments
-	|if_statement
-	|while_statement
-	|'{' statements '}' '\n'
-	|'{' statements '}'
-	|'\n'
+	assignments opt_nl              {$$ = $1;}
+	|assignments                    {$$ = $1;}
+	|if_statement                   {$$ = $1;}
+	|while_statement                {$$ = $1;}
+	|'{' statements '}' opt_nl      {$$ = $2;}
+	|'{' statements '}'             {$$ = $2;}
+	|opt_nl                         {$$ = ast_seq_new(@$.first_line);}
 	;
 
+opt_nl:'\n'   {$$=NULL;}
+|             {$$=NULL;}
+;
 assignments: IDENTIFIER '=' assignments
 {  
-	set_value($1,$3);
-	printf("%s: %d\n", $1, $3); 
-	$$ = $3;
+	int v = eval_expr($3);      
+    set_value($1, v);
+	$$ = ast_assign(@1.first_line,$1,$3);
+	
 }
-|expression
+|expression  { $$ = $1; }
 ;
 
-expression: INTEGER  			{  $$ = $1;  }
-| IDENTIFIER                    {  $$ = get_value($1);}
-| expression '+' expression		{  $$ = $1 + $3;  }
-| expression '-' expression  	{  $$ = $1 - $3;  }
-| expression '*' expression  	{  $$ = $1 * $3;  }
-| expression '/' expression  	{  $$ = $1 / $3;  }
-| expression '>' expression     { $$ = ($1 > $3); }
-| expression '<' expression     { $$ = ($1 < $3); }
-| expression GE expression      { $$ = ($1 >= $3); }
-| expression LE expression      { $$ = ($1 <= $3); }
-| expression EQ expression      { $$ = ($1 == $3); }
-| expression NE expression      { $$ = ($1 != $3); }
+expression: INTEGER  			{  $$ = ast_num(@$.first_line,$1);  }
+| IDENTIFIER                    {  $$ = ast_var(@$.first_line,$1);}
+| expression '+' expression		{  $$ = ast_binop(@$.first_line,OP_ADD,$1,$3);  }
+| expression '-' expression  	{  $$ = ast_binop(@$.first_line,OP_SUB,$1,$3);  }
+| expression '*' expression  	{  $$ = ast_binop(@$.first_line,OP_MUL,$1,$3);  }
+| expression '/' expression  	{  $$ = ast_binop(@$.first_line,OP_DIV,$1,$3);  }
+| expression '>' expression     { $$ = ast_binop(@$.first_line,OP_GT,$1,$3); }
+| expression '<' expression     { $$ = ast_binop(@$.first_line,OP_LT,$1,$3); }
+| expression GE expression      { $$ = ast_binop(@$.first_line,OP_GE,$1,$3); }
+| expression LE expression      { $$ = ast_binop(@$.first_line,OP_LE,$1,$3); }
+| expression EQ expression      { $$ = ast_binop(@$.first_line,OP_EQ,$1,$3); }
+| expression NE expression      { $$ = ast_binop(@$.first_line,OP_NE,$1,$3); }
+| '-' expression %prec UMINUS   { $$ = ast_unop(@$.first_line, OP_NEG, $2); }
 | '(' expression ')'  			{  $$ = $2;  }
 ;
 
 if_statement:
-	IF '(' expression ')' statement {printf("%d\n",$3);}
-	|IF '(' expression ')' statement ELSE statement {printf("%d\n",$3);}
+	IF '(' expression ')' statement {$$ = ast_if(@1.first_line,$3,$5,NULL);}
+	|IF '(' expression ')' statement ELSE statement {$$ = ast_if(@1.first_line,$3,$5,$7);}
 
 while_statement:
-    WHILE '(' expression ')' '\n' statement   { printf("%d\n", $3); }
-  | WHILE '(' expression ')' statement        { printf("%d\n", $3); }
+    WHILE '(' expression ')' opt_nl statement   { $$ = ast_while(@1.first_line,$3,$6);}
+  | WHILE '(' expression ')' statement        { $$ = ast_while(@1.first_line,$3,$5); }
 ;
 
 %%
@@ -136,7 +146,14 @@ int main(int argc, char *argv[])
 		exit(0);
 	}
 
-	yyparse();
+	// yyparse();
+	if (yyparse() != 0 || !root) {
+		fprintf(stderr, "Parse failed: root is null\n");
+		return 1;
+	}	
+
+	ast_print(root,0);
+	exec_program(root);
 
 	fclose(yyin);
 	return 0;
