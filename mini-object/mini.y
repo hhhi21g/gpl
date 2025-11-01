@@ -19,14 +19,15 @@ void yyerror(char* msg);
 }
 
 %token INT EQ NE LT LE GT GE UMINUS IF ELSE WHILE FUNC INPUT OUTPUT RETURN
-%token <string> INTEGER IDENTIFIER TEXT
+%token <string> INTEGER IDENTIFIER TEXT CHAR CHAR_CONST
 
 %left EQ NE LT LE GT GE
 %left '+' '-'
 %left '*' '/'
 %right UMINUS
 
-%type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement while_statement call_statement block declaration_list declaration statement_list input_statement output_statement
+%type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement while_statement call_statement block declaration_list declaration statement_list input_statement output_statement 
+%type <tac> variable_list_char
 %type <exp> argument_list expression_list expression call_expression
 %type <sym> function_head
 
@@ -54,15 +55,29 @@ declaration : INT variable_list ';'
 {
 	$$=$2;
 }
+| CHAR variable_list_char ';'
+{
+	$$=$2;
+}
 ;
 
 variable_list : IDENTIFIER
 {
-	$$=declare_var($1);
+	$$=declare_var_typed($1,SYM_INT);
 }               
 | variable_list ',' IDENTIFIER
 {
-	$$=join_tac($1, declare_var($3));
+	$$=join_tac($1, declare_var_typed($3,SYM_INT));
+}               
+;
+
+variable_list_char : IDENTIFIER
+{
+	$$=declare_var_typed($1,SYM_CHAR);
+}               
+| variable_list_char ',' IDENTIFIER
+{
+	$$=join_tac($1, declare_var_typed($3,SYM_CHAR));
 }               
 ;
 
@@ -200,6 +215,10 @@ expression : expression '+' expression
 | IDENTIFIER
 {
 	$$=mk_exp(NULL, get_var($1), NULL);
+}
+| CHAR_CONST
+{
+	$$=mk_exp(NULL,mk_char($1[1]),NULL);
 }
 | call_expression
 {

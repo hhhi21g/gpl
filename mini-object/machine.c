@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "opcode.h"
+#include "inst.h"
 
 #define REGMAX 16
 #define MEMMAX (256 * 256)
@@ -14,17 +14,15 @@
 int reg[REGMAX]; /* registers */
 unsigned char mem[MEMMAX]; /* memory */
 int op, rx, ry, constant; /* opcode, register1, register2, immediate constant */
+int cycle, mem_r, mem_w, mul_div;
 
-void instruction(int ip)
+// get instruction from addr
+void instruction(int addr)
 {
-	op=mem[ip];
-	op=(op << 8) | mem[ip+1];
-	rx=mem[ip+2];
-	ry=mem[ip+3];
-	constant=mem[ip+4];
-	constant=(constant << 8) | mem[ip+5];
-	constant=(constant << 8) | mem[ip+6];
-	constant=(constant << 8) | mem[ip+7];	
+	op = (*(int*)&(mem[addr])) & 0xffff; // 16 bit
+	rx = mem[addr+2]; // 8 bit
+	ry = mem[addr+3]; // 8 bit
+	constant = *(int*)&(mem[addr+4]); // 32 bit
 }
 
 int main(int argc, char *argv[])
@@ -54,32 +52,59 @@ int main(int argc, char *argv[])
 		mem[i]=0;
 
 	/* run machine */
+	cycle = mem_r = mem_w = 0;
 	for(;;)
 	{
+		cycle++;
 		instruction(reg[R_IP]);
 		
 		switch(op)
 		{
 			case I_END:
+			printf("\n");
+			printf("------------------------------\n");
+			printf("CLOCK CYCLES : %d\n", cycle);
+			printf("MUL DIV : %d\n", mul_div);
+			printf("MEM READ : %d\n", mem_r);
+			printf("MEM WRITE : %d\n", mem_w);
+			printf("------------------------------\n");
 			exit(0);
 
 			case I_NOP:
 			break;
 
-			case I_OUT_C:
+			case I_OTC:
 			printf( "%c", reg[15] ); /* Print out reg[15] in ASCII */
 			break;
 
-			case I_OUT_N:
+			case I_OTI:
 			printf( "%d", reg[15] ); /* Print int in reg[15] */
 			break;
 
-			case I_OUT_S:
+			case I_OTS:
 			printf( "%s", &mem[reg[15]] ); /* Print string pointed by reg[15] */
 			break;
 
-			case I_IN:
-			scanf( "%d", &reg[15] ); /* Input int to reg[15] */
+			case I_ITC:
+			/* Input char to reg[15] */
+			reg[15] = ' ';
+			while(reg[15]==' ' || reg[15]=='\t' || reg[15]=='\r' || reg[15]=='\n')
+			{
+				if(scanf("%c", (char*)&reg[15]) != 1)
+				{
+					if(getchar() == EOF) break;
+				}
+
+			}
+			break;
+
+			case I_ITI:
+			/* Input int to reg[15] */
+			reg[15] = 0;
+			while(scanf("%d", &reg[15]) != 1)
+			{
+				if(getchar() == EOF) break;
+			}
 			break;
 
 			case I_ADD_0:
@@ -99,14 +124,20 @@ int main(int argc, char *argv[])
 			break;
 
 			case I_MUL_0:
+			cycle += 4;
+			mul_div++;
 			reg[rx]=reg[rx] * constant;
 			break;
 
 			case I_MUL_1:
+			cycle += 4;
+			mul_div++;
 			reg[rx]=reg[rx] * reg[ry];
 			break;
 
 			case I_DIV_0:
+			cycle += 4;
+			mul_div++;
 			if( constant == 0 ) 
 			{
 				fprintf(stderr, "error: divide by zero\n");
@@ -119,6 +150,8 @@ int main(int argc, char *argv[])
 			break;
 
 			case I_DIV_1:
+			cycle += 4;
+			mul_div++;
 			if( reg[ry] == 0 ) 
 			{
 				fprintf(stderr, "error: divide by zero\n");
@@ -143,59 +176,87 @@ int main(int argc, char *argv[])
 			break;
 
 			case I_LOD_3:
-			t1=constant;
-			t2=mem[t1     ];
-			t2=(t2 << 8) + mem[t1  + 1];
-			t2=(t2 << 8) + mem[t1  + 2];
-			t2=(t2 << 8) + mem[t1  + 3];
-			reg[rx]=t2;
+			cycle += 9;
+			mem_r++;
+			reg[rx] = *(int*)&(mem[constant]);
+			break;
+
+			case I_LDC_3:
+			cycle += 9;
+			mem_r++;
+			reg[rx] = mem[constant];
 			break;
 
 			case I_LOD_4:
-			t=mem[reg[ry]    ];
-			t=(t << 8) + mem[reg[ry] + 1];
-			t=(t << 8) + mem[reg[ry] + 2];
-			t=(t << 8) + mem[reg[ry] + 3];
-			reg[rx]=t;
+			cycle += 9;
+			mem_r++;
+			reg[rx] = *(int*)&(mem[reg[ry]]);
+			break;
+
+			case I_LDC_4:
+			cycle += 9;
+			mem_r++;
+			reg[rx] = mem[reg[ry]];
 			break;
 
 			case I_LOD_5:
-			t1=reg[ry] + constant;
-			t2=mem[t1     ];
-			t2=(t2 << 8) + mem[t1  + 1];
-			t2=(t2 << 8) + mem[t1  + 2];
-			t2=(t2 << 8) + mem[t1  + 3];
-			reg[rx]=t2;
+			cycle += 9;
+			mem_r++;
+			reg[rx] = *(int*)&(mem[reg[ry] + constant]);
+			break;
+
+			case I_LDC_5:
+			cycle += 9;
+			mem_r++;
+			reg[rx] = mem[reg[ry] + constant];
 			break;
 
 			case I_STO_0:
-			mem[reg[rx]]=constant >> 24;
-			mem[reg[rx] + 1]=constant >> 16 & 0xff;
-			mem[reg[rx] + 2]=constant >>  8 & 0xff;
-			mem[reg[rx] + 3]=constant       & 0xff;
+			cycle += 9;
+			mem_w++;
+			*(int*)&(mem[reg[rx]]) = constant;
+			break;
+
+			case I_STC_0:
+			cycle += 9;
+			mem_w++;
+			mem[reg[rx]] = constant;
 			break;
 
 			case I_STO_1:
-			mem[reg[rx]]=reg[ry] >> 24;
-			mem[reg[rx] + 1]=reg[ry] >> 16 & 0xff;
-			mem[reg[rx] + 2]=reg[ry] >>  8 & 0xff;
-			mem[reg[rx] + 3]=reg[ry]       & 0xff;
+			cycle += 9;
+			mem_w++;
+			*(int*)&(mem[reg[rx]]) = reg[ry];
+			break;
+
+			case I_STC_1:
+			cycle += 9;
+			mem_w++;
+			mem[reg[rx]] = reg[ry];
 			break;
 
 			case I_STO_2:
-			t=reg[ry]+constant;
-			mem[reg[rx]]=t >> 24;
-			mem[reg[rx] + 1]=t >> 16 & 0xff;
-			mem[reg[rx] + 2]=t >>  8 & 0xff;
-			mem[reg[rx] + 3]=t       & 0xff;
+			cycle += 9;
+			mem_w++;
+			*(int*)&(mem[reg[rx]]) = reg[ry]+constant;
+			break;
+
+			case I_STC_2:
+			cycle += 9;
+			mem_w++;
+			mem[reg[rx]] = reg[ry]+constant;
 			break;
 
 			case I_STO_3:
-			t=reg[rx] + constant;
-			mem[t]=reg[ry] >> 24;
-			mem[t + 1]=reg[ry] >> 16 & 0xff;
-			mem[t + 2]=reg[ry] >>  8 & 0xff;
-			mem[t + 3]=reg[ry]       & 0xff;
+			cycle += 9;
+			mem_w++;
+			*(int*)&(mem[reg[rx] + constant]) = reg[ry];
+			break;
+
+			case I_STC_3:
+			cycle += 9;
+			mem_w++;
+			mem[reg[rx] + constant] = reg[ry];
 			break;
 
 			case I_TST_0:

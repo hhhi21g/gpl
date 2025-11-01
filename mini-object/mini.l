@@ -21,6 +21,8 @@
 
 "while"  {  return WHILE;  }
 
+"char"  { return CHAR;  }
+
 [A-Za-z]([A-Za-z]|[0-9])*  {  
 	yylval.string = strdup(yytext); 
 	return IDENTIFIER;
@@ -31,10 +33,16 @@
 	return INTEGER;
 }
 
+\'([^'\\]|\\.)\' {
+    yylval.string = strdup(yytext);
+    return CHAR_CONST;
+}
+
 \"[^\"]*\"  {
 	yylval.string = strdup(yytext); 
 	return TEXT;
 }
+
 
 "=="  {  return EQ;  }
 

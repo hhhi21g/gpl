@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "opcode.h"
+#include "inst.h"
 
 #define LABNUM 100
 
@@ -54,8 +54,8 @@ void byte2(int  n)
 {
 	if(pass==2)
 	{
-		putchar(n>>8);
 		putchar(n);
+		putchar(n>>8);
 	}
 	ip+=2;
 }	
@@ -64,10 +64,10 @@ void byte4(int n)
 {
 	if(pass==2)
 	{
-		putchar(n>>24);
-		putchar(n>>16);
-		putchar(n>>8);
 		putchar(n);
+		putchar(n>>8);
+		putchar(n>>16);
+		putchar(n>>24);
 	}
 	ip+=4;
 }
@@ -80,7 +80,7 @@ void byte4(int n)
 	char *string;
 }
 
-%token ADD SUB MUL DIV TST STO LOD JMP JEZ JLZ JGZ DBN DBS IN OUTN OUTS NOP END
+%token ADD SUB MUL DIV TST STO STC LOD LDC JMP JEZ JLZ JGZ DBN DBS ITC ITI OTC OTI OTS NOP END
 %token <number> INTEGER REG
 %token <string> LABEL
 
@@ -106,8 +106,8 @@ statement : nop_stmt
 | jgz_stmt
 | lod_stmt
 | sto_stmt
-| out_stmt
-| in_stmt
+| output_stmt
+| input_stmt
 | end_stmt
 | dbn_stmt
 | dbs_stmt
@@ -340,6 +340,13 @@ lod_stmt : LOD REG ',' INTEGER
 	byte1(0);
 	byte4($5);
 }
+| LDC REG ',' '(' INTEGER ')'
+{
+	byte2(I_LDC_3);
+	byte1($2);
+	byte1(0);
+	byte4($5);
+}
 | LOD REG ',' '(' LABEL ')'
 {
 	byte2(I_LOD_3);
@@ -354,9 +361,23 @@ lod_stmt : LOD REG ',' INTEGER
 	byte1($5);
 	byte4(0);
 }
+| LDC REG ',' '(' REG ')'
+{
+	byte2(I_LDC_4);
+	byte1($2);
+	byte1($5);
+	byte4(0);
+}
 | LOD REG ',' '(' REG '+' INTEGER ')'
 {
 	byte2(I_LOD_5);
+	byte1($2);
+	byte1($5);
+	byte4($7);
+}
+| LDC REG ',' '(' REG '+' INTEGER ')'
+{
+	byte2(I_LDC_5);
 	byte1($2);
 	byte1($5);
 	byte4($7);
@@ -368,11 +389,25 @@ lod_stmt : LOD REG ',' INTEGER
 	byte1($5);
 	byte4(-($7));
 }
+| LDC REG ',' '(' REG '-' INTEGER ')'
+{
+	byte2(I_LDC_5);
+	byte1($2);
+	byte1($5);
+	byte4(-($7));
+}
 ;
 
 sto_stmt : STO '(' REG ')' ',' INTEGER
 {
 	byte2(I_STO_0);
+	byte1($3);
+	byte1(0);
+	byte4($6);
+}
+| STC '(' REG ')' ',' INTEGER
+{
+	byte2(I_STC_0);
 	byte1($3);
 	byte1(0);
 	byte4($6);
@@ -391,9 +426,23 @@ sto_stmt : STO '(' REG ')' ',' INTEGER
 	byte1($6);
 	byte4(0);
 }
+| STC '(' REG ')' ',' REG
+{
+	byte2( I_STC_1 ) ;
+	byte1($3);
+	byte1($6);
+	byte4(0);
+}
 | STO '(' REG ')' ',' REG '+' INTEGER
 {
 	byte2( I_STO_2 ) ;
+	byte1($3);
+	byte1($6);
+	byte4($8);
+}
+| STC '(' REG ')' ',' REG '+' INTEGER
+{
+	byte2( I_STC_2 ) ;
 	byte1($3);
 	byte1($6);
 	byte4($8);
@@ -405,9 +454,23 @@ sto_stmt : STO '(' REG ')' ',' INTEGER
 	byte1($6);
 	byte4(-($8));
 }
+| STC '(' REG ')' ',' REG '-' INTEGER
+{
+	byte2( I_STC_2 ) ;
+	byte1($3);
+	byte1($6);
+	byte4(-($8));
+}
 | STO '(' REG '+' INTEGER ')' ',' REG
 {
 	byte2( I_STO_3 ) ;
+	byte1($3);
+	byte1($8);
+	byte4($5);
+}
+| STC '(' REG '+' INTEGER ')' ',' REG
+{
+	byte2( I_STC_3 ) ;
 	byte1($3);
 	byte1($8);
 	byte4($5);
@@ -419,13 +482,22 @@ sto_stmt : STO '(' REG ')' ',' INTEGER
 	byte1($8);
 	byte4(-($5));
 }
+| STC '(' REG '-' INTEGER ')' ',' REG
+{
+	byte2( I_STC_3 ) ;
+	byte1($3);
+	byte1($8);
+	byte4(-($5));
+}
 ;
 
-in_stmt : IN { byte2(I_IN); byte1(0); byte1(0); byte4(0);}
+input_stmt : ITC { byte2(I_ITC); byte1(0); byte1(0); byte4(0);}
+| ITI { byte2(I_ITI); byte1(0); byte1(0); byte4(0);}
 ;
 
-out_stmt : OUTN { byte2(I_OUT_N); byte1(0); byte1(0); byte4(0);}
-| OUTS { byte2(I_OUT_S); byte1(0); byte1(0); byte4(0);}
+output_stmt : OTC { byte2(I_OTC); byte1(0); byte1(0); byte4(0);}
+| OTI { byte2(I_OTI); byte1(0); byte1(0); byte4(0);}
+| OTS { byte2(I_OTS); byte1(0); byte1(0); byte4(0);}
 ;
 
 end_stmt : END { byte2(I_END); byte1(0); byte1(0); byte4(0);}

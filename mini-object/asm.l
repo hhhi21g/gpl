@@ -18,7 +18,11 @@
 
 "STO"  {  return STO;  }
 
+"STC"  {  return STC;  }
+
 "LOD"  {  return LOD;  }
+
+"LDC"  {  return LDC;  }
 
 "JMP"  {  return JMP;  }
 
@@ -32,11 +36,15 @@
 
 "DBS"  {  return DBS;  }
 
-"IN"  {  return IN;  }
+"ITC"  {  return ITC;  }
 
-"OUTN"  {  return OUTN;  }
+"ITI"  {  return ITI;  }
 
-"OUTS"  {  return OUTS;  }
+"OTC"  {  return OTC;  }
+
+"OTI"  {  return OTI;  }
+
+"OTS"  {  return OTS;  }
 
 "NOP"  {  return NOP;  }
 
