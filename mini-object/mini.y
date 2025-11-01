@@ -37,6 +37,7 @@ program : function_declaration_list
 {
 	tac_last=$1;
 	tac_complete();
+	while(tac_constant_folding() || tac_copy_propagation());
 }
 ;
 

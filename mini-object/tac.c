@@ -19,6 +19,222 @@ void tac_init()
 	next_label = 1;
 }
 
+// 赋值传播
+int tac_copy_propagation()
+{
+	int changed = 0;
+
+	for (TAC *t = tac_first; t != NULL;)
+	{
+		if (t->op != TAC_COPY)
+		{
+			t = t->next;
+			continue; // 只有赋值才需要判断
+		}
+		SYM *x = t->a; // 左值
+		SYM *y = t->b; // 右值
+
+		int is_propagation = 0;
+
+		for (TAC *i = t->next; i != NULL; i = i->next)
+		{
+			if ((i->a == x) || (i->a == y))
+				break; // 左值或右值被重新赋值，停止
+			if (i->b == x)
+			{
+				i->b = y;
+				is_propagation = 1;
+			}
+			if (i->c == x)
+			{
+				i->c = y;
+				is_propagation = 1;
+			}
+
+			if ((i->op == TAC_OUTPUT || i->op == TAC_RETURN) && i->a == x)
+			{
+				i->a = y;
+				is_propagation = 1;
+			}
+		}
+		// 原赋值tac删除
+		if (is_propagation)
+		{
+			TAC *del = t;
+			t = t->next; // 保存位置
+			if (del->prev)
+				del->prev->next = del->next;
+			else
+				tac_first = del->next;
+
+			if (del->next)
+				del->next->prev = del->prev;
+			else
+				tac_last = del->prev;
+
+			free(del);
+			changed = 1;
+			continue;
+		}
+		else
+		{
+			t = t->next;
+		}
+	}
+	return changed;
+}
+
+int tac_constant_folding()
+{
+	int changed = 0;
+
+	for (TAC *t = tac_first; t != NULL; t = t->next)
+	{
+		if (t->b && t->c &&
+			(t->op == TAC_ADD || t->op == TAC_SUB ||
+			 t->op == TAC_MUL || t->op == TAC_DIV ||
+			 t->op == TAC_EQ || t->op == TAC_NE ||
+			 t->op == TAC_LT || t->op == TAC_LE ||
+			 t->op == TAC_GT || t->op == TAC_GE))
+		{
+			SYM *b = t->b;
+			SYM *c = t->c;
+
+			if ((b->type == SYM_INT || b->type == SYM_CHAR) && (c->type == SYM_INT || c->type == SYM_CHAR))
+			{
+				int x = b->value;
+				int y = c->value;
+				int v = 0;
+				switch (t->op)
+				{
+				case TAC_ADD:
+					v = x + y;
+					break;
+				case TAC_SUB:
+					v = x - y;
+					break;
+				case TAC_MUL:
+					v = x * y;
+					break;
+				case TAC_DIV:
+					if (y == 0)
+						continue;
+					v = x / y;
+					break;
+				case TAC_EQ:
+					v = (x == y);
+					break;
+				case TAC_NE:
+					v = (x != y);
+					break;
+				case TAC_LT:
+					v = (x < y);
+					break;
+				case TAC_LE:
+					v = (x <= y);
+					break;
+				case TAC_GT:
+					v = (x > y);
+					break;
+				case TAC_GE:
+					v = (x >= y);
+					break;
+				}
+
+				t->op = TAC_COPY; // 二元运算修改为赋值语句
+				t->b = mk_const(v);
+				t->c = NULL;
+				changed = 1;
+			}
+			else if (t->op == TAC_ADD && b->type == SYM_INT && b->value == 0) // 0 + c = c
+			{
+				t->op = TAC_COPY;
+				t->b = c;
+				t->c = NULL;
+				changed = 1;
+			}
+			else if (t->op == TAC_ADD && c->type == SYM_INT && c->value == 0) // b + 0 = b
+			{
+				t->op = TAC_COPY;
+				t->b = b;
+				t->c = NULL;
+				changed = 1;
+			}
+			else if (t->op == TAC_SUB && b->type == SYM_INT && b->value == 0) // 0 - c = -c
+			{
+				if (c->type == SYM_INT)
+				{
+					// 0 - 常量
+					t->op = TAC_COPY;
+					t->b = mk_const(-(c->value));
+					t->c = NULL;
+				}
+				else if (c->type != SYM_CHAR)
+				{
+					// 0 - 变量
+					t->op = TAC_NEG;
+					t->b = c;
+					t->c = NULL;
+				}
+				changed = 1;
+			}
+			else if (t->op == TAC_SUB && c->type == SYM_INT && c->value == 0) // b - 0 = b
+			{
+				t->op = TAC_COPY;
+				t->b = b;
+				t->c = NULL;
+				changed = 1;
+			}
+			else if (t->op == TAC_MUL && b->type == SYM_INT && b->value == 1) // 1 * c = c
+			{
+				t->op = TAC_COPY;
+				t->b = c;
+				t->c = NULL;
+				changed = 1;
+			}
+			else if (t->op == TAC_MUL && c->type == SYM_INT && c->value == 1) // b * 1 = b
+			{
+				t->op = TAC_COPY;
+				t->b = b;
+				t->c = NULL;
+				changed = 1;
+			}
+			else if (t->op == TAC_MUL && ((b->type == SYM_INT && b->value == 0) || (c->type == SYM_INT && c->value == 0)))
+			{ // 0 * x = 0
+				t->op = TAC_COPY;
+				t->b = mk_const(0);
+				t->c = NULL;
+				changed = 1;
+			}
+			else if (t->op == TAC_DIV && b->type == SYM_INT && b->value == 0) // 0 / c = 0
+			{
+				t->op = TAC_COPY;
+				t->b = mk_const(0);
+				t->c = NULL;
+				changed = 1;
+			}
+			else if (t->op == TAC_DIV && c->type == SYM_INT && c->value == 1) // b / 1 = b
+			{
+				t->op = TAC_COPY;
+				t->b = b;
+				t->c = NULL;
+				changed = 1;
+			}
+		}
+		else if (t->b && !t->c && t->op == TAC_NEG)
+		{
+			SYM *b = t->b;
+			if (b->type == SYM_INT)
+			{
+				t->op = TAC_COPY;
+				t->b = mk_const(-b->value);
+				t->c = NULL;
+				changed = 1;
+			}
+		}
+	}
+	return changed;
+}
 void tac_complete()
 {
 	TAC *cur = NULL;	  /* Current TAC */
@@ -262,33 +478,33 @@ EXP *do_bin(int binop, EXP *exp1, EXP *exp2)
 	TAC *ret;  /* TAC code for result */
 
 	// 常量折叠
-	if ((exp1->ret->type == SYM_INT || exp1->ret->type == SYM_CHAR) && (exp2->ret->type == SYM_INT || exp1->ret->type == SYM_CHAR))
-	{
-		int newval;
+	// if ((exp1->ret->type == SYM_INT || exp1->ret->type == SYM_CHAR) && (exp2->ret->type == SYM_INT || exp1->ret->type == SYM_CHAR))
+	// {
+	// 	int newval;
 
-		switch (binop)
-		{
-		case TAC_ADD:
-			newval = exp1->ret->value + exp2->ret->value;
-			break;
+	// 	switch (binop)
+	// 	{
+	// 	case TAC_ADD:
+	// 		newval = exp1->ret->value + exp2->ret->value;
+	// 		break;
 
-		case TAC_SUB:
-			newval = exp1->ret->value - exp2->ret->value;
-			break;
+	// 	case TAC_SUB:
+	// 		newval = exp1->ret->value - exp2->ret->value;
+	// 		break;
 
-		case TAC_MUL:
-			newval = exp1->ret->value * exp2->ret->value;
-			break;
+	// 	case TAC_MUL:
+	// 		newval = exp1->ret->value * exp2->ret->value;
+	// 		break;
 
-		case TAC_DIV:
-			newval = exp1->ret->value / exp2->ret->value;
-			break;
-		}
+	// 	case TAC_DIV:
+	// 		newval = exp1->ret->value / exp2->ret->value;
+	// 		break;
+	// 	}
 
-		exp1->ret = mk_const(newval);
+	// 	exp1->ret = mk_const(newval);
 
-		return exp1;
-	}
+	// 	return exp1;
+	// }
 
 	temp = mk_tac(TAC_VAR, mk_tmp(), NULL, NULL);
 	temp->prev = join_tac(exp1->tac, exp2->tac);
@@ -306,34 +522,34 @@ EXP *do_cmp(int binop, EXP *exp1, EXP *exp2)
 	TAC *temp; /* TAC code for temp symbol */
 	TAC *ret;  /* TAC code for result */
 
-	if ((exp1->ret->type == SYM_CHAR || exp1->ret->type == SYM_INT) && (exp2->ret->type == SYM_CHAR || exp2->ret->type == SYM_INT))
-	{
-		int newval;
-		switch (binop)
-		{
-		case TAC_EQ:
-			newval = (exp1->ret->value == exp2->ret->value);
-			break;
-		case TAC_NE:
-			newval = (exp1->ret->value != exp2->ret->value);
-			break;
-		case TAC_LT:
-			newval = (exp1->ret->value < exp2->ret->value);
-			break;
-		case TAC_LE:
-			newval = (exp1->ret->value <= exp2->ret->value);
-			break;
-		case TAC_GT:
-			newval = (exp1->ret->value > exp2->ret->value);
-			break;
-		case TAC_GE:
-			newval = (exp1->ret->value >= exp2->ret->value);
-			break;
-		}
-		exp1->ret = mk_const(newval);
+	// if ((exp1->ret->type == SYM_CHAR || exp1->ret->type == SYM_INT) && (exp2->ret->type == SYM_CHAR || exp2->ret->type == SYM_INT))
+	// {
+	// 	int newval;
+	// 	switch (binop)
+	// 	{
+	// 	case TAC_EQ:
+	// 		newval = (exp1->ret->value == exp2->ret->value);
+	// 		break;
+	// 	case TAC_NE:
+	// 		newval = (exp1->ret->value != exp2->ret->value);
+	// 		break;
+	// 	case TAC_LT:
+	// 		newval = (exp1->ret->value < exp2->ret->value);
+	// 		break;
+	// 	case TAC_LE:
+	// 		newval = (exp1->ret->value <= exp2->ret->value);
+	// 		break;
+	// 	case TAC_GT:
+	// 		newval = (exp1->ret->value > exp2->ret->value);
+	// 		break;
+	// 	case TAC_GE:
+	// 		newval = (exp1->ret->value >= exp2->ret->value);
+	// 		break;
+	// 	}
+	// 	exp1->ret = mk_const(newval);
 
-		return exp1;
-	}
+	// 	return exp1;
+	// }
 	temp = mk_tac(TAC_VAR, mk_tmp(), NULL, NULL);
 	temp->prev = join_tac(exp1->tac, exp2->tac);
 	ret = mk_tac(binop, temp->a, exp1->ret, exp2->ret);
@@ -349,19 +565,19 @@ EXP *do_un(int unop, EXP *exp)
 {
 	TAC *temp; /* TAC code for temp symbol */
 	TAC *ret;  /* TAC code for result */
-	if (exp->ret->type == SYM_INT)
-	{
-		int newval;
-		switch (unop)
-		{
-		case TAC_NEG:
-			newval = (-exp->ret->value);
-			break;
-		}
-		exp->ret = mk_const(newval);
+	// if (exp->ret->type == SYM_INT)
+	// {
+	// 	int newval;
+	// 	switch (unop)
+	// 	{
+	// 	case TAC_NEG:
+	// 		newval = (-exp->ret->value);
+	// 		break;
+	// 	}
+	// 	exp->ret = mk_const(newval);
 
-		return exp;
-	}
+	// 	return exp;
+	// }
 
 	temp = mk_tac(TAC_VAR, mk_tmp(), NULL, NULL);
 	temp->prev = exp->tac;

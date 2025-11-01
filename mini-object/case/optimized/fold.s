@@ -15,33 +15,35 @@ main:
 
 	# var c
 
-	# a = 5
-	LOD R5,5
-
 	# var t0
 
-	# t0 = a * 3
-	STO (R2+8),R5
-	LOD R6,3
-	MUL R5,R6
+	# var t1
 
-	# b = t0
-	STO (R2+20),R5
+	# var t2
+
+	# b = 15
+	LOD R5,15
+
+	# var t3
 
 	# c = 98
-	LOD R7,98
+	LOD R6,98
+
+	# var t4
+
+	# var t5
 
 	# a = 0
-	LOD R8,0
+	LOD R7,0
 
 	# output a
-	STO (R2+8),R8
-	LOD R15,R8
+	STO (R2+8),R7
+	LOD R15,R7
 	OTI
 
 	# output L1
-	LOD R9,L1
-	LOD R15,R9
+	LOD R8,L1
+	LOD R15,R8
 	OTS
 
 	# output b
@@ -50,12 +52,12 @@ main:
 	OTI
 
 	# output L1
-	LOD R15,R9
+	LOD R15,R8
 	OTS
 
 	# output c
-	STO (R2+16),R7
-	LOD R15,R7
+	STO (R2+16),R6
+	LOD R15,R6
 	OTC
 
 	# end
