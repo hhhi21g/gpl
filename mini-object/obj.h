@@ -9,10 +9,10 @@
 #define R_NUM 16
 
 /* frame */
-#define FORMAL_OFF -4 	/* first formal parameter */
-#define OBP_OFF 0 		/* dynamic chain */
-#define RET_OFF 4 		/* ret address */
-#define LOCAL_OFF 8 		/* local var */
+#define FORMAL_OFF -4 /* first formal parameter */
+#define OBP_OFF 0	  /* dynamic chain */
+#define RET_OFF 4	  /* ret address */
+#define LOCAL_OFF 8	  /* local var */
 
 #define MODIFIED 1
 #define UNMODIFIED 0
@@ -29,4 +29,3 @@ extern int oof; /* offset of formal */
 extern int oon; /* offset of next frame */
 
 void tac_obj();
-

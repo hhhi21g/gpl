@@ -441,8 +441,38 @@ void asm_code(TAC *c)
 			out_str(file_s, "	LOD R15,R%u\n", r);
 			out_str(file_s, "	OTS\n");
 		}
-
 		return;
+
+	case TAC_ADDR:
+	{
+		// a = &b
+		int r = reg_alloc(c->a);
+		if (c->b->scope == 1)
+			out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, c->b->offset);
+		else
+			out_str(file_s, "    LOD R%u,STATIC+%d\n", r, c->b->offset);
+		rdesc_fill(r, c->a, MODIFIED);
+		return;
+	}
+
+	case TAC_LOAD:
+	{
+		// a = *b
+		int rb = reg_alloc(c->b);
+		int ra = reg_alloc(c->a);
+		out_str(file_s, "    LOD R%u,(R%u)\n", ra, rb);
+		rdesc_fill(ra, c->a, MODIFIED);
+		return;
+	}
+
+	case TAC_STORE:
+	{
+		// *a = b
+		int ra = reg_alloc(c->a);
+		int rb = reg_alloc(c->b);
+		out_str(file_s, "    STO (R%u),R%u\n", ra, rb);
+		return;
+	}
 
 	case TAC_GOTO:
 		asm_cond("JMP", NULL, c->a->name);

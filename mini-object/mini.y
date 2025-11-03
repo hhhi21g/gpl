@@ -27,7 +27,7 @@ void yyerror(char* msg);
 %right UMINUS
 
 %type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement while_statement call_statement block declaration_list declaration statement_list input_statement output_statement 
-%type <tac> variable_list_char
+%type <tac> variable_list_char decl_item_char decl_item_int
 %type <exp> argument_list expression_list expression call_expression
 %type <sym> function_head
 
@@ -37,7 +37,6 @@ program : function_declaration_list
 {
 	tac_last=$1;
 	tac_complete();
-	while(tac_constant_folding() || tac_copy_propagation());
 }
 ;
 
@@ -62,25 +61,34 @@ declaration : INT variable_list ';'
 }
 ;
 
-variable_list : IDENTIFIER
-{
-	$$=declare_var_typed($1,SYM_INT);
-}               
-| variable_list ',' IDENTIFIER
-{
-	$$=join_tac($1, declare_var_typed($3,SYM_INT));
-}               
-;
+variable_list
+    : decl_item_int
+    | variable_list ',' decl_item_int
+      { $$ = join_tac($1, $3); }
+    ;
 
-variable_list_char : IDENTIFIER
-{
-	$$=declare_var_typed($1,SYM_CHAR);
-}               
-| variable_list_char ',' IDENTIFIER
-{
-	$$=join_tac($1, declare_var_typed($3,SYM_CHAR));
-}               
-;
+decl_item_int
+    : IDENTIFIER
+      { $$ = declare_var_typed($1, SYM_INT); }
+    | '*' IDENTIFIER
+      { $$ = declare_var_typed($2, SYM_PTR); }
+    ;
+
+
+variable_list_char
+    : decl_item_char
+    | variable_list_char ',' decl_item_char
+      { $$ = join_tac($1, $3); }
+    ;
+
+decl_item_char
+    : IDENTIFIER
+      { $$ = declare_var_typed($1, SYM_CHAR); }
+    | '*' IDENTIFIER
+      { $$ = declare_var_typed($2, SYM_PTR); }
+    ;
+
+
 
 function : function_head '(' parameter_list ')' block
 {
@@ -159,6 +167,27 @@ assignment_statement : IDENTIFIER '=' expression
 {
 	$$=do_assign(get_var($1), $3);
 }
+| '*' IDENTIFIER '=' expression    
+      {
+          SYM *ptr = get_var($2);
+          TAC *store = mk_tac(TAC_STORE, ptr, $4->ret, NULL);
+          store->prev = $4->tac;
+          $$ = store;
+      }
+| IDENTIFIER '=' '&' IDENTIFIER        
+{
+    SYM *dst = get_var($1);
+    SYM *src = get_var($4);
+    TAC *addr = mk_tac(TAC_ADDR, dst, src, NULL);
+    $$ = addr;
+}
+| IDENTIFIER '=' '*' IDENTIFIER      
+{
+    SYM *dst = get_var($1);
+    SYM *src = get_var($4);
+    TAC *load = mk_tac(TAC_LOAD, dst, src, NULL);
+    $$ = load;
+}
 ;
 
 expression : expression '+' expression
@@ -224,7 +253,23 @@ expression : expression '+' expression
 | call_expression
 {
 	$$=$1;
-}               
+}
+| '&' IDENTIFIER
+{
+    SYM *t = mk_tmp();
+    TAC *def = mk_tac(TAC_VAR, t, NULL, NULL);
+    TAC *addr = mk_tac(TAC_ADDR, t, get_var($2), NULL);
+    addr->prev = def;
+    $$ = mk_exp(NULL, t, addr);
+}
+| '*' IDENTIFIER
+{
+    SYM *t = mk_tmp();
+    TAC *def = mk_tac(TAC_VAR, t, NULL, NULL);
+    TAC *load = mk_tac(TAC_LOAD, t, get_var($2), NULL);
+    load->prev = def;
+    $$ = mk_exp(NULL, t, load);
+}
 | error
 {
 	error("Bad expression syntax");

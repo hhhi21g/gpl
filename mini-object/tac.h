@@ -6,6 +6,7 @@
 #define SYM_INT 4
 #define SYM_LABEL 5
 #define SYM_CHAR 6
+#define SYM_PTR 7
 
 /* type of tac */
 #define TAC_UNDEF 0		 /* undefine */
@@ -33,6 +34,9 @@
 #define TAC_RETURN 22	 /* return a */
 #define TAC_INPUT 23	 /* input a */
 #define TAC_OUTPUT 24	 /* output a */
+#define TAC_ADDR 25		 /* t = &a */
+#define TAC_LOAD 26		 /* t = *a */
+#define TAC_STORE 27	 /* *t = a */
 
 typedef struct sym
 {
