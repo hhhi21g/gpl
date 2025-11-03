@@ -256,24 +256,6 @@ TAC *do_output(SYM *s)
 	return code;
 }
 
-// pa = &a
-EXP *do_addr(SYM *var)
-{
-	SYM *tmp = mk_tmp();
-	tmp->type = SYM_ADDR;
-	TAC *t = mk_tac(TAC_COPY, tmp, var, NULL);
-	return mk_exp(NULL, tmp, t);
-}
-
-// *pa = 1
-EXP *do_deref(SYM *ptr)
-{
-	SYM *tmp = mk_tmp();
-	tmp->type = SYM_VAR;
-	TAC *t = mk_tac(TAC_COPY, tmp, ptr, NULL);
-	return mk_exp(NULL, tmp, t);
-}
-
 EXP *do_bin(int binop, EXP *exp1, EXP *exp2)
 {
 	TAC *temp; /* TAC code for temp symbol */

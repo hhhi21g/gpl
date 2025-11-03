@@ -34,91 +34,82 @@ main:
 	ADD R5,R6
 
 	# b = t0
-    LOD R5,(R2+32)
-    STO (R2+16),R5
+	STO (R2+32),R5
 
 	# var t1
 
 	# t1 = b - 20
-	LOD R7,(R2+16)
-	LOD R8,20
-	SUB R7,R8
+	STO (R2+16),R5
+	LOD R7,20
+	SUB R5,R7
 
 	# c = t1
-    LOD R5,(R2+36)
-    STO (R2+20),R5
+	STO (R2+36),R5
 
 	# var t2
 
 	# t2 = c * 30
-	LOD R9,(R2+20)
-	LOD R10,30
-	MUL R9,R10
+	STO (R2+20),R5
+	LOD R8,30
+	MUL R5,R8
 
 	# d = t2
-    LOD R5,(R2+40)
-    STO (R2+24),R5
+	STO (R2+40),R5
 
 	# output a
-	LOD R11,(R2+8)
-	LOD R15,R11
+	LOD R9,(R2+8)
+	LOD R15,R9
 	OTI
 
 	# output b
-	LOD R12,(R2+16)
-	LOD R15,R12
+	LOD R10,(R2+16)
+	LOD R15,R10
 	OTI
 
 	# output c
-	LOD R13,(R2+20)
-	LOD R15,R13
+	LOD R11,(R2+20)
+	LOD R15,R11
 	OTI
 
 	# output d
-	LOD R14,(R2+24)
-	LOD R15,R14
+	STO (R2+24),R5
+	LOD R15,R5
 	OTI
 
 	# output L1
-	LOD R15,L1
-	LOD R15,R15
+	LOD R12,L1
+	LOD R15,R12
 	OTS
 
 	# pa = &a
-	LOD R6,(R2+12)
-    LOD R6,R2+8
+	LOD R13,(R2+12)
+    LOD R13,R2+8
 
 	# *pa = 111
-    LOD R5,(R2+12)
-	LOD R8,111
-    STO (R5),R8
+	STO (R2+12),R13
+	LOD R14,111
+    STO (R13),R14
 
 	# output a
-	LOD R15,R11
+	LOD R15,R9
 	OTI
 
 	# ptr = pa
-    LOD R5,(R2+12)
-    STO (R2+28),R5
 
 	# *ptr = 222
-    LOD R5,(R2+28)
-	LOD R8,222
-    STO (R5),R8
+	STO (R2+28),R13
+	LOD R15,222
+    STO (R13),R15
 
 	# output a
-	LOD R15,R11
+	LOD R15,R9
 	OTI
 
 	# output L1
-	LOD R15,R15
+	LOD R15,R12
 	OTS
 
 	# end
-	STO (R2+32),R5
-	STO (R2+12),R6
-	STO (R2+36),R7
-	STO (R2+40),R9
 	LOD R3,(R2+4)
 	LOD R2,(R2)
 	JMP R3
