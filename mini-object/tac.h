@@ -7,6 +7,7 @@
 #define SYM_LABEL 5
 #define SYM_CHAR 6
 #define SYM_PTR 7
+#define SYM_ADDR 8
 
 /* type of tac */
 #define TAC_UNDEF 0		 /* undefine */

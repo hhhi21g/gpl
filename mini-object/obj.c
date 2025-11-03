@@ -93,6 +93,22 @@ void asm_load(int r, SYM *s)
 	case SYM_TEXT:
 		out_str(file_s, "	LOD R%u,L%u\n", r, s->label);
 		break;
+
+		// case SYM_ADDR:
+		// 	// &a => load its effective address
+		// 	if (s->scope == 1)
+		// 		out_str(file_s, "   LOD R%u,R%u+%d\n", r, R_BP, s->offset);
+		// 	else
+		// 		out_str(file_s, "   LOD R%u,STATIC\n   ADD R%u,%d\n", r, s->offset);
+		// 	break;
+
+	case SYM_PTR:
+		// load the pointer variable's stored address
+		if (s->scope == 1)
+			out_str(file_s, "   LOD R%u,(R%u+%d)\n", r, R_BP, s->offset);
+		else
+			out_str(file_s, "   LOD R%u,STATIC\n   LOD R%u,(R%u+%d)\n", r, R_TP, r, s->offset);
+		break;
 	}
 
 	// rdesc_fill(r, s, UNMODIFIED);
@@ -406,8 +422,41 @@ void asm_code(TAC *c)
 		return;
 
 	case TAC_COPY:
-		r = reg_alloc(c->b);
-		rdesc_fill(r, c->a, MODIFIED);
+		if (c->a->type == SYM_PTR)
+		{
+			// *ptr = b
+			int ra = reg_alloc(c->a);
+			int rb = reg_alloc(c->b);
+			out_str(file_s, "   STO (R%u),R%u\n", ra, rb);
+		}
+		else if (c->b->type == SYM_ADDR)
+		{
+			// ptr = &a
+			int ra = reg_alloc(c->a);
+			int rb = reg_alloc(c->b);
+			out_str(file_s, "   LOD R%u,R%u\n", ra, rb);
+		}
+		else
+		{
+			// ptr = pa（或普通变量拷贝）
+			int rb = R_GEN; // 临时寄存器，避免污染 rdesc
+			if (c->b->scope == 1)
+				out_str(file_s, "    LOD R%u,(R%u+%d)\n", rb, R_BP, c->b->offset);
+			else
+			{
+				out_str(file_s, "    LOD R%u,STATIC\n", rb);
+				out_str(file_s, "    LOD R%u,(R%u+%d)\n", rb, R_TP, c->b->offset);
+			}
+
+			if (c->a->scope == 1)
+				out_str(file_s, "    STO (R%u+%d),R%u\n", R_BP, c->a->offset, rb);
+			else
+			{
+				out_str(file_s, "    LOD R%u,STATIC\n", R_TP);
+				out_str(file_s, "    STO (R%u+%d),R%u\n", R_TP, c->a->offset, rb);
+			}
+		}
+
 		return;
 
 	case TAC_INPUT:
@@ -450,7 +499,10 @@ void asm_code(TAC *c)
 		if (c->b->scope == 1)
 			out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, c->b->offset);
 		else
-			out_str(file_s, "    LOD R%u,STATIC+%d\n", r, c->b->offset);
+		{
+			out_str(file_s, "    LOD R%u,STATIC\n", r);
+			out_str(file_s, "    ADD R%u,%d\n", r, c->b->offset);
+		}
 		rdesc_fill(r, c->a, MODIFIED);
 		return;
 	}
@@ -468,9 +520,16 @@ void asm_code(TAC *c)
 	case TAC_STORE:
 	{
 		// *a = b
-		int ra = reg_alloc(c->a);
-		int rb = reg_alloc(c->b);
-		out_str(file_s, "    STO (R%u),R%u\n", ra, rb);
+		int rp = R_GEN; // 临时寄存器，用于加载指针内容
+		if (c->a->scope == 1)
+			out_str(file_s, "    LOD R%u,(R%u+%d)\n", rp, R_BP, c->a->offset);
+		else
+		{
+			out_str(file_s, "    LOD R%u,STATIC\n", rp);
+			out_str(file_s, "    LOD R%u,(R%u+%d)\n", rp, R_TP, c->a->offset);
+		}
+		int rv = reg_alloc(c->b);
+		out_str(file_s, "    STO (R%u),R%u\n", rp, rv);
 		return;
 	}
 
