@@ -58,22 +58,22 @@ main:
 
 	# output a
 	LOD R9,(R2+8)
-	LOD R15,R9
+	LOD R15,(R2+8)
 	OTI
 
 	# output b
 	LOD R10,(R2+16)
-	LOD R15,R10
+	LOD R15,(R2+16)
 	OTI
 
 	# output c
 	LOD R11,(R2+20)
-	LOD R15,R11
+	LOD R15,(R2+20)
 	OTI
 
 	# output d
 	STO (R2+24),R5
-	LOD R15,R5
+	LOD R15,(R2+24)
 	OTI
 
 	# output L1
@@ -88,10 +88,11 @@ main:
 	# *pa = 111
 	STO (R2+12),R13
 	LOD R14,111
+    LOD R13,(R2+12)
     STO (R13),R14
 
 	# output a
-	LOD R15,R9
+	LOD R15,(R2+8)
 	OTI
 
 	# ptr = pa
@@ -99,10 +100,11 @@ main:
 	# *ptr = 222
 	STO (R2+28),R13
 	LOD R15,222
+    LOD R13,(R2+28)
     STO (R13),R15
 
 	# output a
-	LOD R15,R9
+	LOD R15,(R2+8)
 	OTI
 
 	# output L1

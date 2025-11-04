@@ -425,10 +425,16 @@ void asm_code(TAC *c)
 		if (c->a->type == SYM_VAR)
 		{
 			r = reg_alloc(c->a);
-			out_str(file_s, "	LOD R15,R%u\n", r);
 			int real_type = SYM_INT;
-			if (c->a->etc != NULL)
+			if (c->a && c->a->etc)
+			{
 				real_type = *((int *)c->a->etc);
+				// printf("%d", real_type);
+			}
+			// if (real_type != SYM_PTR)
+			// 	out_str(file_s, "	LOD R15,R%u\n", r);
+			// else
+			out_str(file_s, "	LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
 
 			if (real_type == SYM_CHAR)
 				out_str(file_s, "	OTC\n");
@@ -470,6 +476,8 @@ void asm_code(TAC *c)
 		// *a = b
 		int ra = reg_alloc(c->a);
 		int rb = reg_alloc(c->b);
+		out_str(file_s, "    LOD R%u,(R%u+%d)\n", ra, R_BP, c->a->offset);
+		// out_str(file_s, "    LOD1111 R%u,%d\n", rb, c->b->value);
 		out_str(file_s, "    STO (R%u),R%u\n", ra, rb);
 		return;
 	}
@@ -562,6 +570,8 @@ void tac_obj()
 		out_str(file_s, "\n	# ");
 		out_tac(file_s, cur);
 		out_str(file_s, "\n");
+		// if (cur->a && cur->a->etc)
+		// 	printf("asm_code %d", *((int *)cur->a->etc));
 		asm_code(cur);
 	}
 	asm_tail();

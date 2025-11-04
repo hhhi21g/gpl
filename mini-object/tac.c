@@ -126,6 +126,7 @@ TAC *declare_var_typed(const char *name, int sym_type)
 	SYM *sym = mk_var(name);
 
 	sym->etc = malloc(sizeof(int));
+	// printf("declare %d", sym_type);
 	*((int *)sym->etc) = sym_type;
 
 	return mk_tac(TAC_VAR, sym, NULL, NULL);
