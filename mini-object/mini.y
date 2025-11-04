@@ -254,22 +254,6 @@ expression : expression '+' expression
 {
 	$$=$1;
 }
-| '&' IDENTIFIER
-{
-    SYM *t = mk_tmp();
-    TAC *def = mk_tac(TAC_VAR, t, NULL, NULL);
-    TAC *addr = mk_tac(TAC_ADDR, t, get_var($2), NULL);
-    addr->prev = def;
-    $$ = mk_exp(NULL, t, addr);
-}
-| '*' IDENTIFIER
-{
-    SYM *t = mk_tmp();
-    TAC *def = mk_tac(TAC_VAR, t, NULL, NULL);
-    TAC *load = mk_tac(TAC_LOAD, t, get_var($2), NULL);
-    load->prev = def;
-    $$ = mk_exp(NULL, t, load);
-}
 | error
 {
 	error("Bad expression syntax");
