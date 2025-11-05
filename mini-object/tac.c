@@ -9,6 +9,130 @@
 int scope, next_tmp, next_label;
 SYM *sym_tab_global, *sym_tab_local;
 TAC *tac_first, *tac_last;
+BASIC_BLOCK *bb_list = NULL;
+BASIC_BLOCK *bb_tail = NULL;
+
+// 新建bb
+BASIC_BLOCK *newblock(TAC *first)
+{
+	BASIC_BLOCK *bb = malloc(sizeof(BASIC_BLOCK));
+	bb->id = 0;
+	bb->first = first;
+	bb->last = NULL;
+	bb->succ = bb->pred = NULL;
+	bb->succ_count = bb->pred_count = 0;
+	bb->next = NULL;
+	return bb;
+}
+
+// 根据name查找所在bb
+BASIC_BLOCK *find_block_by_label(char *label_name)
+{
+	for (BASIC_BLOCK *bb = bb_list; bb != NULL; bb = bb->next)
+	{
+		if (bb->first && bb->first->op == TAC_LABEL)
+		{
+			SYM *sym = bb->first->a;
+			if (sym && sym->name && strcmp(sym->name, label_name) == 0)
+				return bb;
+		}
+	}
+	return NULL;
+}
+
+void add_edge(BASIC_BLOCK *from, BASIC_BLOCK *to)
+{
+	if (from == NULL || to == NULL)
+		return;
+
+	from->succ = realloc(from->succ, sizeof(BASIC_BLOCK *) * (from->succ_count + 1));
+	from->succ[from->succ_count++] = to;
+
+	to->pred = realloc(to->pred, sizeof(BASIC_BLOCK *) * (to->pred_count + 1));
+	to->pred[to->pred_count++] = from;
+}
+
+void build_cfg()
+{
+	TAC *t;
+	BASIC_BLOCK *cur_bb = NULL;
+	for (t = tac_first; t != NULL; t = t->next)
+	{
+		if (t->op == TAC_LABEL && cur_bb != NULL)
+			cur_bb = NULL;
+		if (t->op == TAC_LABEL || t->op == TAC_BEGINFUNC || !cur_bb)
+		{ // 新块
+			cur_bb = newblock(t);
+			if (bb_list == NULL)
+			{
+				bb_list = bb_tail = cur_bb;
+				cur_bb->id = 0;
+			}
+			else
+			{
+				cur_bb->id = bb_tail->id + 1;
+				bb_tail->next = cur_bb;
+				bb_tail = cur_bb;
+			}
+		}
+		cur_bb->last = t; // 逐TAC后移
+
+		if (t->op == TAC_GOTO || t->op == TAC_IFZ || t->op == TAC_RETURN || t->op == TAC_ENDFUNC)
+		{
+			cur_bb = NULL; // 下一条新建块
+		}
+	}
+
+	int edge_cnt = 0;
+	for (BASIC_BLOCK *bb = bb_list; bb != NULL; bb = bb->next)
+	{
+		// printf("add_edge");
+		TAC *last = bb->last;
+		if (last->op == TAC_GOTO)
+		{
+			// printf("GOTO:%s\n", last->a->name);
+			BASIC_BLOCK *target = find_block_by_label(last->a->name);
+			add_edge(bb, target);
+			// edge_cnt++;
+			// printf("%d:%d->%d\n", edge_cnt, bb->id, target->id);
+		}
+		else if (last->op == TAC_IFZ)
+		{
+			// printf("IFZ:%s\n", last->a->name);
+			BASIC_BLOCK *if_target = find_block_by_label(last->a->name);
+			add_edge(bb, if_target);
+			// edge_cnt++;
+			// printf("%d:%d->%d\n", edge_cnt, bb->id, if_target->id);
+			if (bb->next)
+			{
+				add_edge(bb, bb->next);
+				// edge_cnt++;
+				// printf("%d:%d->%d\n", edge_cnt, bb->id, bb->next->id);
+			}
+		}
+		else if (last->op != TAC_RETURN && last->op != TAC_ENDFUNC && bb->next)
+		{
+			add_edge(bb, bb->next);
+			// edge_cnt++;
+			// printf("%d:%d->%d\n", edge_cnt, bb->id, bb->next->id);
+		}
+	}
+}
+
+void cfg_dump(FILE *out)
+{
+	for (BASIC_BLOCK *bb = bb_list; bb != NULL; bb = bb->next)
+	{
+		fprintf(out, "\n[B%d]\n", bb->id);
+		for (TAC *t = bb->first; t != bb->last->next; t = t->next)
+			out_tac(out, t), fprintf(out, "\n");
+
+		fprintf(out, "  succ: ");
+		for (int i = 0; i < bb->succ_count; i++)
+			fprintf(out, "B%d ", bb->succ[i]->id);
+		fprintf(out, "\n");
+	}
+}
 
 void tac_init()
 {

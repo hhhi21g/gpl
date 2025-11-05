@@ -78,11 +78,24 @@ typedef struct exp
 	void *etc;
 } EXP;
 
+typedef struct basic_block
+{
+	int id;
+	TAC *first;				   // 第1条tac
+	TAC *last;				   // 最后1条tac
+	struct basic_block **succ; // 后继块数组
+	struct basic_block **pred; // 前驱块数组
+	int succ_count;
+	int pred_count;
+	struct basic_block *next;
+} BASIC_BLOCK;
+
 /* global var */
 extern FILE *file_x, *file_s;
 extern int yylineno, scope, next_tmp, next_label;
 extern SYM *sym_tab_global, *sym_tab_local;
 extern TAC *tac_first, *tac_last;
+extern BASIC_BLOCK *bb_list; // 所有基本块链表
 
 /* function */
 void tac_init();

@@ -560,9 +560,9 @@ static const yytype_int16 yyrline[] =
      114,   118,   123,   128,   129,   130,   131,   132,   133,   134,
      135,   136,   143,   150,   153,   159,   160,   166,   170,   177,
      184,   193,   197,   201,   205,   209,   213,   217,   221,   225,
-     229,   233,   237,   241,   245,   249,   253,   273,   281,   284,
-     287,   288,   295,   301,   305,   311,   319,   323,   329,   335,
-     341
+     229,   233,   237,   241,   245,   249,   253,   257,   265,   268,
+     271,   272,   279,   285,   289,   295,   303,   307,   313,   319,
+     325
 };
 #endif
 
@@ -1551,7 +1551,7 @@ yyreduce:
     break;
 
   case 57: /* expression: error  */
-#line 274 "mini.y"
+#line 258 "mini.y"
 {
 	error("Bad expression syntax");
 	(yyval.exp)=mk_exp(NULL, NULL, NULL);
@@ -1560,7 +1560,7 @@ yyreduce:
     break;
 
   case 58: /* argument_list: %empty  */
-#line 281 "mini.y"
+#line 265 "mini.y"
 {
 	(yyval.exp)=NULL;
 }
@@ -1568,7 +1568,7 @@ yyreduce:
     break;
 
   case 61: /* expression_list: expression_list ',' expression  */
-#line 289 "mini.y"
+#line 273 "mini.y"
 {
 	(yyvsp[0].exp)->next=(yyvsp[-2].exp);
 	(yyval.exp)=(yyvsp[0].exp);
@@ -1577,7 +1577,7 @@ yyreduce:
     break;
 
   case 62: /* input_statement: INPUT IDENTIFIER  */
-#line 296 "mini.y"
+#line 280 "mini.y"
 {
 	(yyval.tac)=do_input(get_var((yyvsp[0].string)));
 }
@@ -1585,7 +1585,7 @@ yyreduce:
     break;
 
   case 63: /* output_statement: OUTPUT IDENTIFIER  */
-#line 302 "mini.y"
+#line 286 "mini.y"
 {
 	(yyval.tac)=do_output(get_var((yyvsp[0].string)));
 }
@@ -1593,7 +1593,7 @@ yyreduce:
     break;
 
   case 64: /* output_statement: OUTPUT TEXT  */
-#line 306 "mini.y"
+#line 290 "mini.y"
 {
 	(yyval.tac)=do_output(mk_text((yyvsp[0].string)));
 }
@@ -1601,7 +1601,7 @@ yyreduce:
     break;
 
   case 65: /* return_statement: RETURN expression  */
-#line 312 "mini.y"
+#line 296 "mini.y"
 {
 	TAC *t=mk_tac(TAC_RETURN, (yyvsp[0].exp)->ret, NULL, NULL);
 	t->prev=(yyvsp[0].exp)->tac;
@@ -1611,7 +1611,7 @@ yyreduce:
     break;
 
   case 66: /* if_statement: IF '(' expression ')' block  */
-#line 320 "mini.y"
+#line 304 "mini.y"
 {
 	(yyval.tac)=do_if((yyvsp[-2].exp), (yyvsp[0].tac));
 }
@@ -1619,7 +1619,7 @@ yyreduce:
     break;
 
   case 67: /* if_statement: IF '(' expression ')' block ELSE block  */
-#line 324 "mini.y"
+#line 308 "mini.y"
 {
 	(yyval.tac)=do_test((yyvsp[-4].exp), (yyvsp[-2].tac), (yyvsp[0].tac));
 }
@@ -1627,7 +1627,7 @@ yyreduce:
     break;
 
   case 68: /* while_statement: WHILE '(' expression ')' block  */
-#line 330 "mini.y"
+#line 314 "mini.y"
 {
 	(yyval.tac)=do_while((yyvsp[-2].exp), (yyvsp[0].tac));
 }
@@ -1635,7 +1635,7 @@ yyreduce:
     break;
 
   case 69: /* call_statement: IDENTIFIER '(' argument_list ')'  */
-#line 336 "mini.y"
+#line 320 "mini.y"
 {
 	(yyval.tac)=do_call((yyvsp[-3].string), (yyvsp[-1].exp));
 }
@@ -1643,7 +1643,7 @@ yyreduce:
     break;
 
   case 70: /* call_expression: IDENTIFIER '(' argument_list ')'  */
-#line 342 "mini.y"
+#line 326 "mini.y"
 {
 	(yyval.exp)=do_call_ret((yyvsp[-3].string), (yyvsp[-1].exp));
 }
@@ -1844,7 +1844,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 347 "mini.y"
+#line 331 "mini.y"
 
 
 void yyerror(char* msg) 
