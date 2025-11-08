@@ -317,9 +317,18 @@ if_statement : IF '(' expression ')' block
 }
 ;
 
-while_statement : WHILE '(' expression ')' block
+while_statement : WHILE '(' expression ')' 
 {
-	$$=do_while($3, $5);
+	g_for_start = mk_label(mk_lstr(next_label++));
+    g_for_cont  = mk_label(mk_lstr(next_label++));
+    g_for_end   = mk_label(mk_lstr(next_label++));
+    push_loop_labels(g_for_cont, g_for_end);
+}
+block
+{
+	$$=do_while($3, $6,g_for_start,g_for_cont,g_for_end);
+	pop_loop_labels();
+	g_for_start = g_for_cont = g_for_end = NULL;
 }               
 ;
 

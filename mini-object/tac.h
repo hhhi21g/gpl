@@ -124,7 +124,7 @@ TAC *do_input(SYM *var);
 TAC *do_call(char *name, EXP *arglist);
 TAC *do_if(EXP *exp, TAC *stmt);
 TAC *do_test(EXP *exp, TAC *stmt1, TAC *stmt2);
-TAC *do_while(EXP *exp, TAC *stmt);
+TAC *do_while(EXP *cond, TAC *body, SYM *start_sym, SYM *cont_sym, SYM *end_sym);
 TAC *do_break();
 TAC *do_continue();
 

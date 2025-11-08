@@ -13,17 +13,17 @@ main:
 
 	# var j
 
-	# input j
-	LOD R5,(R2+12)
-	ITI
-	LOD R5,R15
-
 	# i = 0
-	LOD R6,0
+	LOD R5,0
+
+	# input j
+	LOD R6,(R2+12)
+	ITI
+	LOD R6,R15
 
 	# label L1
-	STO (R2+12),R5
-	STO (R2+8),R6
+	STO (R2+8),R5
+	STO (R2+12),R6
 L1:
 
 	# var t0
@@ -45,12 +45,26 @@ L1:
 	TST R5
 	JEZ L3
 
+	# output i
+	LOD R7,(R2+8)
+	LOD R15,(R2+8)
+	OTI
+
+	# var t1
+
+	# t1 = i + 1
+	LOD R8,1
+	ADD R7,R8
+
+	# i = t1
+	STO (R2+20),R7
+
 	# var t2
 
 	# t2 = (i > 10)
-	LOD R7,(R2+8)
-	LOD R8,10
-	SUB R7,R8
+	STO (R2+8),R7
+	LOD R9,10
+	SUB R7,R9
 	TST R7
 	LOD R3,R1+40
 	JGZ R3
@@ -60,13 +74,13 @@ L1:
 	LOD R7,1
 
 	# ifz t2 goto L5
-	STO (R2+20),R7
+	STO (R2+24),R7
 	TST R7
 	JEZ L5
 
 	# output L4
-	LOD R9,L4
-	LOD R15,R9
+	LOD R10,L4
+	LOD R15,R10
 	OTS
 
 	# goto L3
@@ -75,26 +89,10 @@ L1:
 	# label L5
 L5:
 
-	# output i
-	LOD R5,(R2+8)
-	LOD R15,(R2+8)
-	OTI
-
 	# label L2
 L2:
 
-	# var t1
-
-	# t1 = i + 1
-	LOD R5,(R2+8)
-	LOD R6,1
-	ADD R5,R6
-
-	# i = t1
-	STO (R2+24),R5
-
 	# goto L1
-	STO (R2+8),R5
 	JMP L1
 
 	# label L3
@@ -105,11 +103,7 @@ L3:
 	LOD R15,R5
 	OTS
 
-	# i = 0
-	LOD R6,0
-
 	# label L7
-	STO (R2+8),R6
 L7:
 
 	# var t3
@@ -131,12 +125,26 @@ L7:
 	TST R5
 	JEZ L9
 
+	# output i
+	LOD R7,(R2+8)
+	LOD R15,(R2+8)
+	OTI
+
+	# var t4
+
+	# t4 = i + 1
+	LOD R8,1
+	ADD R7,R8
+
+	# i = t4
+	STO (R2+32),R7
+
 	# var t5
 
 	# t5 = (i == 10)
-	LOD R7,(R2+8)
-	LOD R8,10
-	SUB R7,R8
+	STO (R2+8),R7
+	LOD R9,10
+	SUB R7,R9
 	TST R7
 	LOD R3,R1+40
 	JEZ R3
@@ -146,13 +154,13 @@ L7:
 	LOD R7,1
 
 	# ifz t5 goto L11
-	STO (R2+32),R7
+	STO (R2+36),R7
 	TST R7
 	JEZ L11
 
 	# output L10
-	LOD R9,L10
-	LOD R15,R9
+	LOD R10,L10
+	LOD R15,R10
 	OTS
 
 	# goto L8
@@ -161,26 +169,10 @@ L7:
 	# label L11
 L11:
 
-	# output i
-	LOD R5,(R2+8)
-	LOD R15,(R2+8)
-	OTI
-
 	# label L8
 L8:
 
-	# var t4
-
-	# t4 = i + 1
-	LOD R5,(R2+8)
-	LOD R6,1
-	ADD R5,R6
-
-	# i = t4
-	STO (R2+36),R5
-
 	# goto L7
-	STO (R2+8),R5
 	JMP L7
 
 	# label L9

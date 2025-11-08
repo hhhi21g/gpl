@@ -610,14 +610,28 @@ TAC *do_test(EXP *exp, TAC *stmt1, TAC *stmt2)
 	return label2;
 }
 
-TAC *do_while(EXP *exp, TAC *stmt)
+TAC *do_while(EXP *cond, TAC *body, SYM *start_sym, SYM *cont_sym, SYM *end_sym)
 {
-	TAC *label = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);
-	TAC *code = mk_tac(TAC_GOTO, label->a, NULL, NULL);
+	TAC *t_start = mk_tac(TAC_LABEL, start_sym, NULL, NULL);
+	TAC *t_cont = mk_tac(TAC_LABEL, cont_sym, NULL, NULL);
+	TAC *t_end = mk_tac(TAC_LABEL, end_sym, NULL, NULL);
 
-	code->prev = stmt; /* Bolt on the goto */
+	TAC *code = NULL;
 
-	return join_tac(label, do_if(exp, code));
+	code = join_tac(code, t_start);
+
+	if (cond && cond->tac)
+		code = join_tac(code, cond->tac);
+
+	code = join_tac(code, mk_tac(TAC_IFZ, end_sym, cond ? cond->ret : NULL, NULL));
+
+	if (body)
+		code = join_tac(code, body);
+
+	code = join_tac(code, t_cont);
+	code = join_tac(code, mk_tac(TAC_GOTO, start_sym, NULL, NULL));
+	code = join_tac(code, t_end); // 循环结束
+	return code;
 }
 
 TAC *do_for(TAC *init, EXP *cond, TAC *step, TAC *body,
