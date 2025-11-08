@@ -94,12 +94,37 @@ void build_cfg()
 {
 	TAC *t;
 	BASIC_BLOCK *cur_bb = NULL;
+	bb_list = bb_tail = NULL;
+
 	for (t = tac_first; t != NULL; t = t->next)
 	{
-		if (t->op == TAC_LABEL && cur_bb != NULL)
-			cur_bb = NULL;
+		// 跳过未被引用的
+		if (t->op == TAC_LABEL)
+		{
+			int referenced = 0;
+			for (TAC *p = tac_first; p != NULL; p = p->next)
+			{
+				if ((p->op == TAC_GOTO || p->op == TAC_IFZ) && p->a && p->a == t->a)
+				{
+					referenced = 1;
+					break;
+				}
+			}
+
+			// 如果该 label 没有被任何 GOTO/IFZ 引用，且当前 block 未结束，则认为是块内标签
+			if (!referenced && cur_bb != NULL)
+			{
+				cur_bb->last = t; // 继续累积
+				continue;
+			}
+			else
+			{
+				cur_bb = NULL; // 强制结束当前块，新建一个
+			}
+		}
+
 		if (t->op == TAC_LABEL || t->op == TAC_BEGINFUNC || !cur_bb)
-		{ // 新块
+		{
 			cur_bb = newblock(t);
 			if (bb_list == NULL)
 			{
@@ -113,46 +138,36 @@ void build_cfg()
 				bb_tail = cur_bb;
 			}
 		}
-		cur_bb->last = t; // 逐TAC后移
 
-		if (t->op == TAC_GOTO || t->op == TAC_IFZ || t->op == TAC_RETURN || t->op == TAC_ENDFUNC)
+		cur_bb->last = t;
+
+		if (t->op == TAC_GOTO || t->op == TAC_IFZ ||
+			t->op == TAC_RETURN || t->op == TAC_ENDFUNC)
 		{
-			cur_bb = NULL; // 下一条新建块
+			cur_bb = NULL;
 		}
 	}
 
-	int edge_cnt = 0;
 	for (BASIC_BLOCK *bb = bb_list; bb != NULL; bb = bb->next)
 	{
-		// printf("add_edge");
 		TAC *last = bb->last;
+
 		if (last->op == TAC_GOTO)
 		{
-			// printf("GOTO:%s\n", last->a->name);
 			BASIC_BLOCK *target = find_block_by_label(last->a->name);
 			add_edge(bb, target);
-			// edge_cnt++;
-			// printf("%d:%d->%d\n", edge_cnt, bb->id, target->id);
 		}
 		else if (last->op == TAC_IFZ)
 		{
-			// printf("IFZ:%s\n", last->a->name);
 			BASIC_BLOCK *if_target = find_block_by_label(last->a->name);
-			add_edge(bb, if_target);
-			// edge_cnt++;
-			// printf("%d:%d->%d\n", edge_cnt, bb->id, if_target->id);
+			add_edge(bb, if_target); // 条件不满足跳转
+
 			if (bb->next)
-			{
-				add_edge(bb, bb->next);
-				// edge_cnt++;
-				// printf("%d:%d->%d\n", edge_cnt, bb->id, bb->next->id);
-			}
+				add_edge(bb, bb->next); // 条件满足顺序流
 		}
 		else if (last->op != TAC_RETURN && last->op != TAC_ENDFUNC && bb->next)
 		{
 			add_edge(bb, bb->next);
-			// edge_cnt++;
-			// printf("%d:%d->%d\n", edge_cnt, bb->id, bb->next->id);
 		}
 	}
 }
@@ -613,86 +628,71 @@ TAC *build_tac_chain(TAC *head, TAC *new_tac)
 	tail->prev = new_tac;
 	return head;
 }
-// for(init;cond;step) body
+// for(init; cond; step) body
 TAC *do_for(TAC *init, EXP *cond, TAC *step, TAC *body)
 {
-	/* create label TAC nodes like existing code's style */
-	TAC *t_start = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);
-	TAC *t_cont = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);
-	TAC *t_end = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);
+	/* Step 1: 创建标签，与 do_if/do_while 风格保持一致 */
+	TAC *t_start = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL); // Lstart
+	TAC *t_cont = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);  // Lcontinue
+	TAC *t_end = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);   // Lend
 
-	SYM *start_sym = t_start->a; /* label symbol for start */
-	SYM *cont_sym = t_cont->a;	 /* label symbol for continue */
-	SYM *end_sym = t_end->a;	 /* label symbol for end */
+	SYM *start_sym = t_start->a; // for循环开始的label
+	SYM *cont_sym = t_cont->a;	 // continue跳转的label
+	SYM *end_sym = t_end->a;	 // break跳转的label
 
-	/* push labels for break/continue support */
+	/* Step 2: 支持break/continue嵌套 */
 	push_loop_labels(cont_sym, end_sym);
 
-	/* Build sequence:
-		 init
-	Lstart:
-		 cond.tac
-		 ifz cond.ret goto Lend
-		 body
-	Lcont:
-		 step
-		 goto Lstart
-	Lend:
-	*/
+	/* -------------------------
+		生成的TAC逻辑结构为：
+			init
+		Lstart:
+			cond.tac
+			ifz cond.ret goto Lend
+			body
+		Lcont:
+			step
+			goto Lstart
+		Lend:
+	-------------------------- */
 
 	TAC *code = NULL;
 
-	/* 1. init (may be NULL) */
-	code = init;
+	/* 1. 初始化部分 */
+	code = init; // 可以为NULL
 
-	/* 2. start label */
-	t_start->prev = code;
-	code = t_start;
+	/* 2. 加上循环开始标签 */
+	code = join_tac(code, t_start);
 
-	/* 3. cond code (if any) */
+	/* 3. 条件部分（可能为空，例如 for(;;)） */
 	if (cond && cond->tac)
-	{
-		cond->tac->prev = code;
-		code = cond->tac;
-	}
+		code = join_tac(code, cond->tac);
 
-	/* 4. ifz cond.goto end  -- IMPORTANT: label is first arg, expr second */
+	/* 4. ifz cond.ret goto Lend */
 	TAC *t_ifz = mk_tac(TAC_IFZ, end_sym, cond ? cond->ret : NULL, NULL);
-	t_ifz->prev = code;
-	code = t_ifz;
+	code = join_tac(code, t_ifz);
 
-	/* 5. body */
+	/* 5. 循环体 */
 	if (body)
-	{
-		body->prev = code;
-		code = body;
-	}
+		code = join_tac(code, body);
 
-	/* 6. continue label */
-	t_cont->prev = code;
-	code = t_cont;
+	/* 6. continue标签 */
+	code = join_tac(code, t_cont);
 
-	/* 7. step */
+	/* 7. step部分 */
 	if (step)
-	{
-		step->prev = code;
-		code = step;
-	}
+		code = join_tac(code, step);
 
-	/* 8. goto start */
+	/* 8. 跳转回Lstart */
 	TAC *t_goto = mk_tac(TAC_GOTO, start_sym, NULL, NULL);
-	t_goto->prev = code;
-	code = t_goto;
+	code = join_tac(code, t_goto);
 
-	/* 9. end label */
-	t_end->prev = code;
-	code = t_end;
+	/* 9. 循环结束标签 */
+	code = join_tac(code, t_end);
 
-	/* pop loop labels */
+	/* 弹出循环标签栈 */
 	pop_loop_labels();
 
-	/* return the tail of this constructed sequence (the convention in this codebase:
-	   sequences are linked by ->prev, and tac_last points to the tail when finishing) */
 	return code;
 }
 
