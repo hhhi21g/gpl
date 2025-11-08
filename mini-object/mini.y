@@ -22,7 +22,7 @@ static SYM *g_for_end   = NULL;
 	EXP	*exp;
 }
 
-%token INT EQ NE LT LE GT GE UMINUS IF ELSE WHILE FOR BREAK CONTINUE FUNC INPUT OUTPUT RETURN
+%token INT EQ NE LT LE GT GE UMINUS IF ELSE SWITCH CASE DEFAULT WHILE FOR BREAK CONTINUE FUNC INPUT OUTPUT RETURN
 %token <string> INTEGER IDENTIFIER TEXT CHAR CHAR_CONST
 
 %left EQ NE LT LE GT GE
@@ -30,7 +30,7 @@ static SYM *g_for_end   = NULL;
 %left '*' '/'
 %right UMINUS
 
-%type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement while_statement for_statement break_statement continue_statement opt_statement call_statement block declaration_list declaration statement_list input_statement output_statement 
+%type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement switch_statement case_list case_item default_list while_statement for_statement break_statement continue_statement opt_statement call_statement block declaration_list declaration statement_list input_statement output_statement 
 %type <tac> variable_list_char decl_item_char decl_item_int
 %type <exp> argument_list expression_list expression call_expression  opt_expression
 %type <sym> function_head
@@ -135,6 +135,7 @@ statement : assignment_statement ';'
 | call_statement ';'
 | return_statement ';'
 | if_statement
+| switch_statement
 | while_statement
 | for_statement
 | break_statement ';'
@@ -316,6 +317,31 @@ if_statement : IF '(' expression ')' block
 	$$=do_test($3, $5, $7);
 }
 ;
+
+switch_statement: SWITCH '(' expression ')'
+'{' case_list default_list '}'
+{
+	$$ = do_switch($3,$6,$7);
+}
+;
+
+case_list:
+case_item
+| case_list case_item
+{
+	$$ = join_tac($1,$2);
+}
+;
+
+case_item: CASE INTEGER ':' statement_list
+{
+	$$ = do_case(atoi($2),$4);
+}
+;
+
+default_list:
+{ $$ = NULL; }
+| DEFAULT ':' statement_list { $$ = $3; }
 
 while_statement : WHILE '(' expression ')' 
 {

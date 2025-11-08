@@ -593,6 +593,51 @@ TAC *do_if(EXP *exp, TAC *stmt)
 	return label;
 }
 
+TAC *do_case(int value, TAC *body)
+{
+	SYM *val = mk_const(value);
+	SYM *label = mk_label(mk_lstr(next_label++));
+
+	TAC *t_label = mk_tac(TAC_LABEL, label, NULL, NULL);
+	TAC *code = join_tac(t_label, body);
+
+	// case val: label
+	TAC *t_case = mk_tac(TAC_CASE, val, label, NULL);
+	return join_tac(t_case, code);
+}
+
+TAC *do_switch(EXP *expr, TAC *cases, TAC *def)
+{
+	TAC *code = expr ? expr->tac : NULL;
+	SYM *end_label = mk_label(mk_lstr(next_label++));
+
+	push_loop_labels(NULL, end_label);
+
+	for (TAC *c = cases; c; c = c->next) // 遍历cases
+	{
+		if (c->op != TAC_CASE)
+			continue;
+		SYM *case_val = c->a;
+		SYM *case_label = c->b;
+
+		SYM *tcmp = mk_tmp();
+		TAC *cmp = mk_tac(TAC_EQ, tcmp, expr->ret, case_val);
+		TAC *ifz = mk_tac(TAC_IFZ, case_label, tcmp, NULL);
+		code = join_tac(code, cmp);
+		code = join_tac(code, ifz);
+	}
+
+	// 拼接case
+	code = join_tac(code, cases);
+
+	if (def)
+		code = join_tac(code, def);
+
+	code = join_tac(code, mk_tac(TAC_LABEL, end_label, NULL, NULL));
+	pop_loop_labels();
+	return code;
+}
+
 TAC *do_test(EXP *exp, TAC *stmt1, TAC *stmt2)
 {
 	TAC *label1 = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);

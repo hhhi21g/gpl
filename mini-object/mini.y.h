@@ -64,19 +64,22 @@ extern int yydebug;
     UMINUS = 265,                  /* UMINUS  */
     IF = 266,                      /* IF  */
     ELSE = 267,                    /* ELSE  */
-    WHILE = 268,                   /* WHILE  */
-    FOR = 269,                     /* FOR  */
-    BREAK = 270,                   /* BREAK  */
-    CONTINUE = 271,                /* CONTINUE  */
-    FUNC = 272,                    /* FUNC  */
-    INPUT = 273,                   /* INPUT  */
-    OUTPUT = 274,                  /* OUTPUT  */
-    RETURN = 275,                  /* RETURN  */
-    INTEGER = 276,                 /* INTEGER  */
-    IDENTIFIER = 277,              /* IDENTIFIER  */
-    TEXT = 278,                    /* TEXT  */
-    CHAR = 279,                    /* CHAR  */
-    CHAR_CONST = 280               /* CHAR_CONST  */
+    SWITCH = 268,                  /* SWITCH  */
+    CASE = 269,                    /* CASE  */
+    DEFAULT = 270,                 /* DEFAULT  */
+    WHILE = 271,                   /* WHILE  */
+    FOR = 272,                     /* FOR  */
+    BREAK = 273,                   /* BREAK  */
+    CONTINUE = 274,                /* CONTINUE  */
+    FUNC = 275,                    /* FUNC  */
+    INPUT = 276,                   /* INPUT  */
+    OUTPUT = 277,                  /* OUTPUT  */
+    RETURN = 278,                  /* RETURN  */
+    INTEGER = 279,                 /* INTEGER  */
+    IDENTIFIER = 280,              /* IDENTIFIER  */
+    TEXT = 281,                    /* TEXT  */
+    CHAR = 282,                    /* CHAR  */
+    CHAR_CONST = 283               /* CHAR_CONST  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -95,19 +98,22 @@ extern int yydebug;
 #define UMINUS 265
 #define IF 266
 #define ELSE 267
-#define WHILE 268
-#define FOR 269
-#define BREAK 270
-#define CONTINUE 271
-#define FUNC 272
-#define INPUT 273
-#define OUTPUT 274
-#define RETURN 275
-#define INTEGER 276
-#define IDENTIFIER 277
-#define TEXT 278
-#define CHAR 279
-#define CHAR_CONST 280
+#define SWITCH 268
+#define CASE 269
+#define DEFAULT 270
+#define WHILE 271
+#define FOR 272
+#define BREAK 273
+#define CONTINUE 274
+#define FUNC 275
+#define INPUT 276
+#define OUTPUT 277
+#define RETURN 278
+#define INTEGER 279
+#define IDENTIFIER 280
+#define TEXT 281
+#define CHAR 282
+#define CHAR_CONST 283
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -121,7 +127,7 @@ union YYSTYPE
 	TAC *tac;
 	EXP	*exp;
 
-#line 125 "mini.y.h"
+#line 131 "mini.y.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

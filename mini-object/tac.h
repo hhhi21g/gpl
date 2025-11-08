@@ -37,6 +37,7 @@
 #define TAC_ADDR 25		 /* t = &a */
 #define TAC_LOAD 26		 /* t = *a */
 #define TAC_STORE 27	 /* *t = a */
+#define TAC_CASE 28
 
 typedef struct sym
 {

@@ -32,6 +32,10 @@
 "*"  { return '*'; }
 "&"  { return '&'; }
 
+"switch" { return SWITCH; }
+"case" { return CASE; }
+"DEFAULT"  { return DEFAULT; }
+
 [A-Za-z]([A-Za-z]|[0-9])*  {  
 	yylval.string = strdup(yytext); 
 	return IDENTIFIER;
