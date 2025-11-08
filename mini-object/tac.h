@@ -125,6 +125,9 @@ TAC *do_call(char *name, EXP *arglist);
 TAC *do_if(EXP *exp, TAC *stmt);
 TAC *do_test(EXP *exp, TAC *stmt1, TAC *stmt2);
 TAC *do_while(EXP *exp, TAC *stmt);
+TAC *do_for(TAC *init, EXP *exp, TAC *step, TAC *stmt);
+TAC *do_break();
+TAC *do_continue();
 
 EXP *do_bin(int binop, EXP *exp1, EXP *exp2);
 EXP *do_cmp(int binop, EXP *exp1, EXP *exp2);

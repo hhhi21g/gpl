@@ -12,6 +12,44 @@ TAC *tac_first, *tac_last;
 BASIC_BLOCK *bb_list = NULL;
 BASIC_BLOCK *bb_tail = NULL;
 
+#define LOOP_MAX_DEPTH 100
+static SYM *loop_start_stack[LOOP_MAX_DEPTH];
+static SYM *loop_continue_stack[LOOP_MAX_DEPTH];
+static SYM *loop_end_stack[LOOP_MAX_DEPTH];
+static int loop_depth = 0;
+
+// 入栈
+static void push_loop_labels(SYM *cont, SYM *end)
+{
+	if (loop_depth >= LOOP_MAX_DEPTH)
+		error("too many nested loops");
+	loop_continue_stack[loop_depth] = cont;
+	loop_end_stack[loop_depth] = end;
+	loop_depth++;
+}
+
+void pop_loop_labels(void)
+{
+	if (loop_depth > 0)
+		loop_depth--;
+}
+
+// 取break目标
+SYM *get_break_label()
+{
+	if (loop_depth == 0)
+		return NULL;
+	return loop_end_stack[loop_depth - 1];
+}
+
+// 取continue目标
+SYM *get_continue_label()
+{
+	if (loop_depth == 0)
+		return NULL;
+	return loop_continue_stack[loop_depth - 1];
+}
+
 // 新建bb
 BASIC_BLOCK *newblock(TAC *first)
 {
@@ -218,6 +256,7 @@ SYM *mk_var(char *name)
 	else
 		insert_sym(&sym_tab_global, sym);
 
+	sym->scope = scope;
 	return sym;
 }
 
@@ -273,10 +312,8 @@ TAC *mk_tac(int op, SYM *a, SYM *b, SYM *c)
 SYM *mk_label(char *name)
 {
 	SYM *t = mk_sym();
-
 	t->type = SYM_LABEL;
 	t->name = strdup(name);
-
 	return t;
 }
 
@@ -560,6 +597,117 @@ TAC *do_while(EXP *exp, TAC *stmt)
 	code->prev = stmt; /* Bolt on the goto */
 
 	return join_tac(label, do_if(exp, code));
+}
+
+// 替代方案：手动链接但更安全的方式
+TAC *build_tac_chain(TAC *head, TAC *new_tac)
+{
+	if (!head)
+		return new_tac;
+	if (!new_tac)
+		return head;
+
+	TAC *tail = head;
+	while (tail->prev)
+		tail = tail->prev;
+	tail->prev = new_tac;
+	return head;
+}
+// for(init;cond;step) body
+TAC *do_for(TAC *init, EXP *cond, TAC *step, TAC *body)
+{
+	/* create label TAC nodes like existing code's style */
+	TAC *t_start = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);
+	TAC *t_cont = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);
+	TAC *t_end = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);
+
+	SYM *start_sym = t_start->a; /* label symbol for start */
+	SYM *cont_sym = t_cont->a;	 /* label symbol for continue */
+	SYM *end_sym = t_end->a;	 /* label symbol for end */
+
+	/* push labels for break/continue support */
+	push_loop_labels(cont_sym, end_sym);
+
+	/* Build sequence:
+		 init
+	Lstart:
+		 cond.tac
+		 ifz cond.ret goto Lend
+		 body
+	Lcont:
+		 step
+		 goto Lstart
+	Lend:
+	*/
+
+	TAC *code = NULL;
+
+	/* 1. init (may be NULL) */
+	code = init;
+
+	/* 2. start label */
+	t_start->prev = code;
+	code = t_start;
+
+	/* 3. cond code (if any) */
+	if (cond && cond->tac)
+	{
+		cond->tac->prev = code;
+		code = cond->tac;
+	}
+
+	/* 4. ifz cond.goto end  -- IMPORTANT: label is first arg, expr second */
+	TAC *t_ifz = mk_tac(TAC_IFZ, end_sym, cond ? cond->ret : NULL, NULL);
+	t_ifz->prev = code;
+	code = t_ifz;
+
+	/* 5. body */
+	if (body)
+	{
+		body->prev = code;
+		code = body;
+	}
+
+	/* 6. continue label */
+	t_cont->prev = code;
+	code = t_cont;
+
+	/* 7. step */
+	if (step)
+	{
+		step->prev = code;
+		code = step;
+	}
+
+	/* 8. goto start */
+	TAC *t_goto = mk_tac(TAC_GOTO, start_sym, NULL, NULL);
+	t_goto->prev = code;
+	code = t_goto;
+
+	/* 9. end label */
+	t_end->prev = code;
+	code = t_end;
+
+	/* pop loop labels */
+	pop_loop_labels();
+
+	/* return the tail of this constructed sequence (the convention in this codebase:
+	   sequences are linked by ->prev, and tac_last points to the tail when finishing) */
+	return code;
+}
+
+// GOTO:Lend
+TAC *do_break()
+{
+	SYM *end_label = get_break_label();
+	return mk_tac(TAC_GOTO, end_label, NULL, NULL);
+}
+
+// GOTO:Lcontinue
+TAC *do_continue()
+{
+	SYM *continue_label = get_continue_label();
+	return mk_tac(TAC_GOTO, continue_label, NULL, NULL);
 }
 
 SYM *get_var(char *name)

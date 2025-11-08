@@ -60,22 +60,22 @@ L2:
 
 	# output a
 	LOD R5,(R2+24)
-	LOD R15,R5
+	LOD R15,(R2+24)
 	OTC
 
 	# output b
 	LOD R6,(R2+28)
-	LOD R15,R6
+	LOD R15,(R2+28)
 	OTC
 
 	# output c
 	LOD R7,(R2+32)
-	LOD R15,R7
+	LOD R15,(R2+32)
 	OTC
 
 	# output d
 	LOD R8,(R2+36)
-	LOD R15,R8
+	LOD R15,(R2+36)
 	OTC
 
 	# output L1
@@ -109,22 +109,22 @@ L3:
 
 	# output i
 	LOD R5,(R2+8)
-	LOD R15,R5
+	LOD R15,(R2+8)
 	OTI
 
 	# output j
 	LOD R6,(R2+12)
-	LOD R15,R6
+	LOD R15,(R2+12)
 	OTI
 
 	# output k
 	LOD R7,(R2+16)
-	LOD R15,R7
+	LOD R15,(R2+16)
 	OTI
 
 	# output l
 	LOD R8,(R2+20)
-	LOD R15,R8
+	LOD R15,(R2+20)
 	OTI
 
 	# output L1

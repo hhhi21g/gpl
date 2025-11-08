@@ -18,7 +18,7 @@ void yyerror(char* msg);
 	EXP	*exp;
 }
 
-%token INT EQ NE LT LE GT GE UMINUS IF ELSE WHILE FUNC INPUT OUTPUT RETURN
+%token INT EQ NE LT LE GT GE UMINUS IF ELSE WHILE FOR BREAK CONTINUE FUNC INPUT OUTPUT RETURN
 %token <string> INTEGER IDENTIFIER TEXT CHAR CHAR_CONST
 
 %left EQ NE LT LE GT GE
@@ -26,7 +26,7 @@ void yyerror(char* msg);
 %left '*' '/'
 %right UMINUS
 
-%type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement while_statement call_statement block declaration_list declaration statement_list input_statement output_statement 
+%type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement while_statement for_statement break_statement continue_statement opt_statement opt_expression call_statement block declaration_list declaration statement_list input_statement output_statement 
 %type <tac> variable_list_char decl_item_char decl_item_int
 %type <exp> argument_list expression_list expression call_expression
 %type <sym> function_head
@@ -132,6 +132,9 @@ statement : assignment_statement ';'
 | return_statement ';'
 | if_statement
 | while_statement
+| for_statement
+| break_statement ';'
+| continue_statement ';'
 | block
 | error
 {
@@ -314,6 +317,44 @@ while_statement : WHILE '(' expression ')' block
 {
 	$$=do_while($3, $5);
 }               
+;
+
+for_statement: FOR '(' opt_statement ';' opt_expression ';' opt_statement ')' block
+{
+	$$=do_for($3,$5,$7,$9);
+}
+;
+
+opt_statement: assignment_statement
+{
+	$$ = $1;
+}
+|
+{
+	$$ = NULL;
+}
+;
+
+opt_expression: expression
+{
+	$$ = $1;
+}
+|
+{
+	$$ = NULL;
+}
+;
+
+break_statement: BREAK
+{
+	$$=do_break();
+}
+;
+
+continue_statement:CONTINUE
+{
+	$$=do_continue();
+}
 ;
 
 call_statement : IDENTIFIER '(' argument_list ')'
