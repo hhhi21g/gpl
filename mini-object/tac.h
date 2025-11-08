@@ -128,16 +128,16 @@ TAC *do_while(EXP *exp, TAC *stmt);
 TAC *do_break();
 TAC *do_continue();
 
-EXP *do_bin(int binop, EXP *exp1, EXP *exp2);
-EXP *do_cmp(int binop, EXP *exp1, EXP *exp2);
-EXP *do_un(int unop, EXP *exp);
-EXP *do_call_ret(char *name, EXP *arglist);
-
-void error(const char *format, ...);
-
 TAC *do_for(TAC *init, EXP *cond, TAC *step, TAC *body,
 			SYM *start_sym, SYM *cont_sym, SYM *end_sym);
 void push_loop_labels(SYM *cont, SYM *end);
 void pop_loop_labels(void);
 SYM *get_break_label(void);
 SYM *get_continue_label(void);
+
+EXP *do_bin(int binop, EXP *exp1, EXP *exp2);
+EXP *do_cmp(int binop, EXP *exp1, EXP *exp2);
+EXP *do_un(int unop, EXP *exp);
+EXP *do_call_ret(char *name, EXP *arglist);
+
+void error(const char *format, ...);

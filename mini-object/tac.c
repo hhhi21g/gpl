@@ -13,7 +13,6 @@ BASIC_BLOCK *bb_list = NULL;
 BASIC_BLOCK *bb_tail = NULL;
 
 #define LOOP_MAX_DEPTH 100
-static SYM *loop_start_stack[LOOP_MAX_DEPTH];
 static SYM *loop_continue_stack[LOOP_MAX_DEPTH];
 static SYM *loop_end_stack[LOOP_MAX_DEPTH];
 static int loop_depth = 0;
@@ -630,25 +629,25 @@ TAC *do_for(TAC *init, EXP *cond, TAC *step, TAC *body,
 
 	TAC *code = NULL;
 
-	code = join_tac(code, init);
-	code = join_tac(code, t_start);
+	code = join_tac(code, init);	// 初始化
+	code = join_tac(code, t_start); // 循环开始标签
 
 	if (cond && cond->tac)
-		code = join_tac(code, cond->tac);
+		code = join_tac(code, cond->tac); // 条件
 
-	/* IFZ 的参数顺序：a=目标label, b=被测表达式 */
+	// 判断是否继续：IFZ
 	code = join_tac(code, mk_tac(TAC_IFZ, end_sym, cond ? cond->ret : NULL, NULL));
 
 	if (body)
-		code = join_tac(code, body);
+		code = join_tac(code, body); // 循环体
 
-	code = join_tac(code, t_cont);
+	code = join_tac(code, t_cont); // 继续标签
 
 	if (step)
-		code = join_tac(code, step);
+		code = join_tac(code, step); // 更新
 
-	code = join_tac(code, mk_tac(TAC_GOTO, start_sym, NULL, NULL));
-	code = join_tac(code, t_end);
+	code = join_tac(code, mk_tac(TAC_GOTO, start_sym, NULL, NULL)); // goto Lstart
+	code = join_tac(code, t_end);									// 循环结束
 	return code;
 }
 
