@@ -18,8 +18,8 @@ static SYM *loop_continue_stack[LOOP_MAX_DEPTH];
 static SYM *loop_end_stack[LOOP_MAX_DEPTH];
 static int loop_depth = 0;
 
-// 入栈
-static void push_loop_labels(SYM *cont, SYM *end)
+// 入栈:循环开始时
+void push_loop_labels(SYM *cont, SYM *end)
 {
 	if (loop_depth >= LOOP_MAX_DEPTH)
 		error("too many nested loops");
@@ -28,6 +28,7 @@ static void push_loop_labels(SYM *cont, SYM *end)
 	loop_depth++;
 }
 
+// 出栈：循环结束后
 void pop_loop_labels(void)
 {
 	if (loop_depth > 0)
@@ -38,7 +39,10 @@ void pop_loop_labels(void)
 SYM *get_break_label()
 {
 	if (loop_depth == 0)
+	{
+		printf("no Lbreak");
 		return NULL;
+	}
 	return loop_end_stack[loop_depth - 1];
 }
 
@@ -46,7 +50,10 @@ SYM *get_break_label()
 SYM *get_continue_label()
 {
 	if (loop_depth == 0)
+	{
+		printf("no Lcontinue");
 		return NULL;
+	}
 	return loop_continue_stack[loop_depth - 1];
 }
 
@@ -614,85 +621,34 @@ TAC *do_while(EXP *exp, TAC *stmt)
 	return join_tac(label, do_if(exp, code));
 }
 
-// 替代方案：手动链接但更安全的方式
-TAC *build_tac_chain(TAC *head, TAC *new_tac)
+TAC *do_for(TAC *init, EXP *cond, TAC *step, TAC *body,
+			SYM *start_sym, SYM *cont_sym, SYM *end_sym)
 {
-	if (!head)
-		return new_tac;
-	if (!new_tac)
-		return head;
-
-	TAC *tail = head;
-	while (tail->prev)
-		tail = tail->prev;
-	tail->prev = new_tac;
-	return head;
-}
-// for(init; cond; step) body
-TAC *do_for(TAC *init, EXP *cond, TAC *step, TAC *body)
-{
-	/* Step 1: 创建标签，与 do_if/do_while 风格保持一致 */
-	TAC *t_start = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL); // Lstart
-	TAC *t_cont = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);  // Lcontinue
-	TAC *t_end = mk_tac(TAC_LABEL, mk_label(mk_lstr(next_label++)), NULL, NULL);   // Lend
-
-	SYM *start_sym = t_start->a; // for循环开始的label
-	SYM *cont_sym = t_cont->a;	 // continue跳转的label
-	SYM *end_sym = t_end->a;	 // break跳转的label
-
-	/* Step 2: 支持break/continue嵌套 */
-	push_loop_labels(cont_sym, end_sym);
-
-	/* -------------------------
-		生成的TAC逻辑结构为：
-			init
-		Lstart:
-			cond.tac
-			ifz cond.ret goto Lend
-			body
-		Lcont:
-			step
-			goto Lstart
-		Lend:
-	-------------------------- */
+	TAC *t_start = mk_tac(TAC_LABEL, start_sym, NULL, NULL);
+	TAC *t_cont = mk_tac(TAC_LABEL, cont_sym, NULL, NULL);
+	TAC *t_end = mk_tac(TAC_LABEL, end_sym, NULL, NULL);
 
 	TAC *code = NULL;
 
-	/* 1. 初始化部分 */
-	code = init; // 可以为NULL
-
-	/* 2. 加上循环开始标签 */
+	code = join_tac(code, init);
 	code = join_tac(code, t_start);
 
-	/* 3. 条件部分（可能为空，例如 for(;;)） */
 	if (cond && cond->tac)
 		code = join_tac(code, cond->tac);
 
-	/* 4. ifz cond.ret goto Lend */
-	TAC *t_ifz = mk_tac(TAC_IFZ, end_sym, cond ? cond->ret : NULL, NULL);
-	code = join_tac(code, t_ifz);
+	/* IFZ 的参数顺序：a=目标label, b=被测表达式 */
+	code = join_tac(code, mk_tac(TAC_IFZ, end_sym, cond ? cond->ret : NULL, NULL));
 
-	/* 5. 循环体 */
 	if (body)
 		code = join_tac(code, body);
 
-	/* 6. continue标签 */
 	code = join_tac(code, t_cont);
 
-	/* 7. step部分 */
 	if (step)
 		code = join_tac(code, step);
 
-	/* 8. 跳转回Lstart */
-	TAC *t_goto = mk_tac(TAC_GOTO, start_sym, NULL, NULL);
-	code = join_tac(code, t_goto);
-
-	/* 9. 循环结束标签 */
+	code = join_tac(code, mk_tac(TAC_GOTO, start_sym, NULL, NULL));
 	code = join_tac(code, t_end);
-
-	/* 弹出循环标签栈 */
-	pop_loop_labels();
-
 	return code;
 }
 
@@ -700,6 +656,7 @@ TAC *do_for(TAC *init, EXP *cond, TAC *step, TAC *body)
 TAC *do_break()
 {
 	SYM *end_label = get_break_label();
+	// printf("[DEBUG] do_break: loop_depth=%d end_label=%p\n", loop_depth, end_label);
 	return mk_tac(TAC_GOTO, end_label, NULL, NULL);
 }
 

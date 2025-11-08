@@ -7,6 +7,10 @@
 int yylex();
 void yyerror(char* msg);
 
+static SYM *g_for_start = NULL;
+static SYM *g_for_cont  = NULL;
+static SYM *g_for_end   = NULL;
+
 %}
 
 %union
@@ -26,9 +30,9 @@ void yyerror(char* msg);
 %left '*' '/'
 %right UMINUS
 
-%type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement while_statement for_statement break_statement continue_statement opt_statement opt_expression call_statement block declaration_list declaration statement_list input_statement output_statement 
+%type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement while_statement for_statement break_statement continue_statement opt_statement call_statement block declaration_list declaration statement_list input_statement output_statement 
 %type <tac> variable_list_char decl_item_char decl_item_int
-%type <exp> argument_list expression_list expression call_expression
+%type <exp> argument_list expression_list expression call_expression  opt_expression
 %type <sym> function_head
 
 %%
@@ -319,11 +323,24 @@ while_statement : WHILE '(' expression ')' block
 }               
 ;
 
-for_statement: FOR '(' opt_statement ';' opt_expression ';' opt_statement ')' block
-{
-	$$=do_for($3,$5,$7,$9);
-}
-;
+
+for_statement
+  : FOR '(' opt_statement ';' opt_expression ';' opt_statement ')'
+    {
+      g_for_start = mk_label(mk_lstr(next_label++));
+      g_for_cont  = mk_label(mk_lstr(next_label++));
+      g_for_end   = mk_label(mk_lstr(next_label++));
+      push_loop_labels(g_for_cont, g_for_end);
+    }
+    block
+    {
+      $$ = do_for($3, $5, $7, $10, g_for_start, g_for_cont, g_for_end);
+      pop_loop_labels();
+      g_for_start = g_for_cont = g_for_end = NULL;
+    }
+  ;
+
+
 
 opt_statement: assignment_statement
 {
