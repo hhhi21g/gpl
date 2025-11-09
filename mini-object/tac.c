@@ -595,70 +595,67 @@ TAC *do_if(EXP *exp, TAC *stmt)
 
 TAC *do_case(int value, TAC *body)
 {
+	// TAC中：统一先根据value,goto Label；再执行相应body,goto Lend
 	SYM *val = mk_const(value);
 	SYM *label = mk_label(mk_lstr(next_label++));
 
-	// 真实可执行代码：label + body（注意：这条链独立存在，不与 prev 链相连）
 	TAC *body_chain = mk_tac(TAC_LABEL, label, NULL, NULL);
-	body_chain = join_tac(body_chain, body); // OK：body 可为 NULL
+	body_chain = join_tac(body_chain, body);
 
-	// 只做元信息节点：TAC_CASE(a=case常量, b=跳转目标label)
 	TAC *meta = mk_tac(TAC_CASE, val, label, NULL);
-	meta->etc = body_chain; // 用 etc 保存“这条 case 的代码链”入口
+	meta->etc = body_chain; // 使用etc存放body
 
-	return meta; // 返回“纯 TAC_CASE 节点”，不要把 body 链 join 进去！
+	return meta;
 }
-TAC *do_switch(EXP *expr, TAC *cases_meta, TAC *def_body, SYM *end_label)
+
+TAC *do_switch(EXP *expr, TAC *cases, TAC *def, SYM *end_label)
 {
 	TAC *code = expr ? expr->tac : NULL;
-	push_loop_labels(NULL, end_label);
 
 	SYM *default_label = NULL;
-	if (def_body && def_body->op == TAC_LABEL)
-		default_label = def_body->a;
-	else if (def_body)
+	if (def && def->op == TAC_LABEL)
+		default_label = def->a;
+	else if (def)
 	{
-		// 没 label 的 default，也造一个
 		default_label = mk_label(mk_lstr(next_label++));
-		def_body = join_tac(mk_tac(TAC_LABEL, default_label, NULL, NULL), def_body);
+		def = join_tac(mk_tac(TAC_LABEL, default_label, NULL, NULL), def);
 	}
-	else
+	else // 没有default直接到end
 		default_label = end_label;
 
-	// 1) 先生成分发逻辑：对每个 case 生成 t = (expr == val); ifz t goto L_case
-	for (TAC *c = cases_meta; c; c = c->prev)
+	for (TAC *c = cases; c; c = c->prev) // cases:由join_tac连接，倒序
 	{
 		if (c->op != TAC_CASE)
 			continue;
 
+		// case a: goto b
 		SYM *case_val = c->a;
 		SYM *case_label = c->b;
 
 		SYM *tcmp = mk_tmp();
 		TAC *decl = mk_tac(TAC_VAR, tcmp, NULL, NULL);
-		TAC *cmp = mk_tac(TAC_NE, tcmp, expr->ret, case_val);
+		TAC *cmp = mk_tac(TAC_NE, tcmp, expr->ret, case_val); // expr->ret != val, 由于ifz
 		TAC *ifz = mk_tac(TAC_IFZ, case_label, tcmp, NULL);
 
-		// 反向拼接：保证 case1 最先执行
 		TAC *part = join_tac(decl, cmp);
 		part = join_tac(part, ifz);
 		code = join_tac(part, code);
 	}
+
+	// 无default则到end
 	code = join_tac(code, mk_tac(TAC_GOTO, default_label, NULL, NULL));
 
-	// 2) 追加每个 case 的真正代码链（label+body），见你目前的实现
-	for (TAC *c = cases_meta; c; c = c->prev)
+	for (TAC *c = cases; c; c = c->prev)
 	{
 		if (c->op != TAC_CASE)
 			continue;
-		TAC *body_chain = (TAC *)c->etc; // 你在 do_case 里存的 label+body
-		code = join_tac(code, body_chain);
+		TAC *body_chain = (TAC *)c->etc;
+		code = join_tac(code, body_chain); // 拼接每个case的body
 	}
 
-	if (def_body)
-		code = join_tac(code, def_body);
+	if (def)
+		code = join_tac(code, def);
 	code = join_tac(code, mk_tac(TAC_LABEL, end_label, NULL, NULL));
-	pop_loop_labels();
 	return code;
 }
 
@@ -974,9 +971,6 @@ void out_tac(FILE *f, TAC *i)
 
 	case TAC_IFZ:
 		fprintf(f, "ifz %s goto %s", to_str(i->b, sb), i->a->name);
-		break;
-	case TAC_CASE:
-		fprintf(f, "case %s -> %s", to_str(i->a, sa), i->b->name);
 		break;
 
 	case TAC_ACTUAL:

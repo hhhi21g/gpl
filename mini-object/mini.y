@@ -323,17 +323,16 @@ switch_statement
   : SWITCH '(' expression ')'
     {
       g_switch_end = mk_label(mk_lstr(next_label++));
-      /* 注意：switch 里只有 break，没有 continue，所以继续标签传 NULL */
-      push_loop_labels(NULL, g_switch_end);
+      push_loop_labels(NULL, g_switch_end);  // 同for, 只有end
     }
     '{' case_list default_list '}'
     {
-      /* 这里用“已经建好的 end 标签”收尾 */
       $$ = do_switch($3, $7, $8, g_switch_end);
       pop_loop_labels();
       g_switch_end = NULL;
     }
   ;
+
 case_list:
 case_item  { $$ = $1; }
 | case_list case_item
@@ -349,8 +348,13 @@ case_item: CASE INTEGER ':' statement_list
 ;
 
 default_list:
-{ $$ = NULL; }
-| DEFAULT ':' statement_list { $$ = $3; }
+{
+	 $$ = NULL; 
+}
+| DEFAULT ':' statement_list 
+{ 
+	$$ = $3; 
+}
 
 while_statement : WHILE '(' expression ')' 
 {
