@@ -417,7 +417,7 @@ void asm_code(TAC *c)
 			out_str(file_s, "	ITC\n");
 		else
 			out_str(file_s, "	ITI\n");
-		out_str(file_s, "	LOD R%u,R15\n", r);
+		out_str(file_s, "	STO (R%u+%d),R15\n", R_BP, c->a->offset);
 		rdesc[r].mod = MODIFIED;
 		return;
 
