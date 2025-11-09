@@ -144,35 +144,6 @@ int reg_alloc(SYM *s)
 	return random;
 }
 
-/* 只分配寄存器给变量 s，不从内存加载旧值（避免把旧 t0 读回来） */
-static int reg_alloc_fresh(SYM *s)
-{
-	int r;
-	/* 先找空寄存器 */
-	for (r = R_GEN; r < R_NUM; r++)
-	{
-		if (rdesc[r].var == NULL)
-		{
-			rdesc_fill(r, s, 0);
-			return r;
-		}
-	}
-	/* 再找未修改的可复用 */
-	for (r = R_GEN; r < R_NUM; r++)
-	{
-		if (!rdesc[r].mod)
-		{
-			rdesc_fill(r, s, 0);
-			return r;
-		}
-	}
-	/* 实在没有，随机挑一个并回写它绑定的变量 */
-	int victim = R_GEN + (rand() % (R_NUM - R_GEN));
-	asm_write_back(victim);
-	rdesc_fill(victim, s, 0);
-	return victim;
-}
-
 void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 {
 	int reg_b = -1, reg_c = -1;
@@ -302,7 +273,7 @@ void asm_call(SYM *a, SYM *b)
 	out_str(file_s, "	JMP %s\n", (char *)b);			 /* jump to new func */
 	if (a != NULL)
 	{
-		r = reg_alloc_fresh(a);
+		r = reg_alloc(a);
 		out_str(file_s, "	LOD R%u,R%u\n", r, R_TP);
 		rdesc[r].mod = MODIFIED;
 	}
@@ -435,16 +406,9 @@ void asm_code(TAC *c)
 		return;
 
 	case TAC_COPY:
-	{
-		int r = reg_alloc(c->b); /* 先把右值载入某寄存器 r */
-		rdesc_fill(r, c->a, 1);	 /* 绑定到 a，标记已修改 */
-		if (c->a->type == SYM_VAR && c->a->scope == 0)
-		{
-			/* 若 a 是全局变量，立即写回到 STATIC 段，避免后续看起来写到了局部槽 */
-			asm_write_back(r);
-		}
+		r = reg_alloc(c->b);
+		rdesc_fill(r, c->a, MODIFIED);
 		return;
-	}
 
 	case TAC_INPUT:
 		r = reg_alloc(c->a);
@@ -458,21 +422,32 @@ void asm_code(TAC *c)
 		return;
 
 	case TAC_OUTPUT:
-	{
-		int real_type = SYM_INT;
-		if (c->a && c->a->etc)
-			real_type = *((int *)c->a->etc);
+		if (c->a->type == SYM_VAR)
+		{
+			r = reg_alloc(c->a);
+			int real_type = SYM_INT;
+			if (c->a && c->a->etc)
+			{
+				real_type = *((int *)c->a->etc);
+				// printf("%d", real_type);
+			}
+			// if (real_type != SYM_PTR)
+			// 	out_str(file_s, "	LOD R15,R%u\n", r);
+			// else
+			out_str(file_s, "	LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
 
-		int r = reg_alloc(c->a); // 统一走寄存器路径
-		out_str(file_s, "	LOD R15,R%u\n", r);
-		if (c->a->type == SYM_TEXT)
+			if (real_type == SYM_CHAR)
+				out_str(file_s, "	OTC\n");
+			else
+				out_str(file_s, "	OTI\n");
+		}
+		else if (c->a->type == SYM_TEXT)
+		{
+			r = reg_alloc(c->a);
+			out_str(file_s, "	LOD R15,R%u\n", r);
 			out_str(file_s, "	OTS\n");
-		else if (real_type == SYM_CHAR)
-			out_str(file_s, "	OTC\n");
-		else
-			out_str(file_s, "	OTI\n");
+		}
 		return;
-	}
 
 	case TAC_ADDR:
 	{
@@ -499,9 +474,11 @@ void asm_code(TAC *c)
 	case TAC_STORE:
 	{
 		// *a = b
-		int ra = reg_alloc(c->a); // ra = 地址（a 的值）
-		int rb = reg_alloc(c->b); // rb = 要写入的值
-		out_str(file_s, "	STO (R%u),R%u\n", ra, rb);
+		int ra = reg_alloc(c->a);
+		int rb = reg_alloc(c->b);
+		out_str(file_s, "    LOD R%u,(R%u+%d)\n", ra, R_BP, c->a->offset);
+		// out_str(file_s, "    LOD1111 R%u,%d\n", rb, c->b->value);
+		out_str(file_s, "    STO (R%u),R%u\n", ra, rb);
 		return;
 	}
 
@@ -537,9 +514,6 @@ void asm_code(TAC *c)
 		tof = LOCAL_OFF;
 		oof = FORMAL_OFF;
 		oon = 0;
-		out_str(file_s, "\n	# label %s\n", c->a->name);
-		out_str(file_s, "%s:\n", c->a->name);
-		out_str(file_s, "	# begin\n");
 		return;
 
 	case TAC_FORMAL:
@@ -570,7 +544,6 @@ void asm_code(TAC *c)
 	case TAC_ENDFUNC:
 		asm_return(NULL);
 		scope = 0;
-		out_str(file_s, "	# end\n");
 		return;
 
 	default:

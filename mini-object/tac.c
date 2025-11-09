@@ -17,74 +17,6 @@ static SYM *loop_continue_stack[LOOP_MAX_DEPTH];
 static SYM *loop_end_stack[LOOP_MAX_DEPTH];
 static int loop_depth = 0;
 
-<<<<<<< HEAD
-static EXP *reverse_list(EXP *h)
-{
-	EXP *p = NULL, *q = h;
-	while (q)
-	{
-		EXP *n = q->next;
-		q->next = p;
-		p = q;
-		q = n;
-	}
-	return p;
-}
-
-/* --- 替换原 do_call --- */
-TAC *do_call(char *name, EXP *arglist)
-{
-	EXP *alt; /* For counting args */
-	TAC *code = NULL, *temp;
-
-	for (alt = arglist; alt != NULL; alt = alt->next)
-		code = join_tac(code, alt->tac);
-
-	/* 关键：把 (b,a,...) 翻回 (a,b,...) 再生成 ACTUAL */
-	arglist = reverse_list(arglist);
-
-	while (arglist != NULL)
-	{
-		temp = mk_tac(TAC_ACTUAL, arglist->ret, NULL, NULL);
-		temp->prev = code;
-		code = temp;
-		arglist = arglist->next;
-	}
-
-	temp = mk_tac(TAC_CALL, NULL, (SYM *)strdup(name), NULL);
-	temp->prev = code;
-	code = temp;
-	return code;
-}
-
-/* --- 替换原 do_call_ret --- */
-EXP *do_call_ret(char *name, EXP *arglist)
-{
-	EXP *alt;
-	SYM *ret = mk_tmp(); /* 返回值落到临时 t? */
-	TAC *code = mk_tac(TAC_VAR, ret, NULL, NULL), *temp;
-
-	for (alt = arglist; alt != NULL; alt = alt->next)
-		code = join_tac(code, alt->tac);
-
-	/* 关键：把 (b,a,...) 翻回 (a,b,...) 再生成 ACTUAL */
-	arglist = reverse_list(arglist);
-
-	while (arglist != NULL)
-	{
-		temp = mk_tac(TAC_ACTUAL, arglist->ret, NULL, NULL);
-		temp->prev = code;
-		code = temp;
-		arglist = arglist->next;
-	}
-
-	temp = mk_tac(TAC_CALL, ret, (SYM *)strdup(name), NULL);
-	temp->prev = code;
-	code = temp;
-
-	return mk_exp(NULL, ret, code);
-}
-
 // 常量符号表
 typedef struct CMap
 {
@@ -388,8 +320,6 @@ void remove_unreachable_blocks()
 	tac_last = last; // （注意：你的 tac_last 是“反向链表尾”吗？按你当前结构，这样设置就够用）
 }
 
-=======
->>>>>>> parent of e5f4e01 (常量折叠函数准备好版本)
 // 入栈:循环开始时
 void push_loop_labels(SYM *cont, SYM *end)
 {
@@ -890,81 +820,64 @@ EXP *do_un(int unop, EXP *exp)
 	return exp;
 }
 
-<<<<<<< HEAD
 // 没有返回值的函数调用
-// TAC *do_call(char *name, EXP *arglist)
-// {
-// 	EXP *alt;  /* For counting args */
-// 	TAC *code; /* Resulting code */
-// 	TAC *temp; /* Temporary for building code */
-=======
 TAC *do_call(char *name, EXP *arglist)
 {
 	EXP *alt;  /* For counting args */
 	TAC *code; /* Resulting code */
 	TAC *temp; /* Temporary for building code */
->>>>>>> parent of e5f4e01 (常量折叠函数准备好版本)
 
-// 	code = NULL;
-// 	for (alt = arglist; alt != NULL; alt = alt->next)
-// 		code = join_tac(code, alt->tac); // 合并所有实参表达式的TAC
+	code = NULL;
+	for (alt = arglist; alt != NULL; alt = alt->next)
+		code = join_tac(code, alt->tac);
 
-// 	while (arglist != NULL) /* Generate ARG instructions */
-// 	{
-// 		temp = mk_tac(TAC_ACTUAL, arglist->ret, NULL, NULL);
-// 		temp->prev = code;
-// 		code = temp;
+	while (arglist != NULL) /* Generate ARG instructions */
+	{
+		temp = mk_tac(TAC_ACTUAL, arglist->ret, NULL, NULL);
+		temp->prev = code;
+		code = temp;
 
-// 		alt = arglist->next;
-// 		arglist = alt;
-// 	};
+		alt = arglist->next;
+		arglist = alt;
+	};
 
-// 	temp = mk_tac(TAC_CALL, NULL, (SYM *)strdup(name), NULL);
-// 	temp->prev = code;
-// 	code = temp;
+	temp = mk_tac(TAC_CALL, NULL, (SYM *)strdup(name), NULL);
+	temp->prev = code;
+	code = temp;
 
-// 	return code;
-// }
+	return code;
+}
 
-<<<<<<< HEAD
-// // 有返回值的函数调用
-// EXP *do_call_ret(char *name, EXP *arglist)
-// {
-// 	EXP *alt;  /* For counting args */
-// 	SYM *ret;  /* Where function result will go */
-// 	TAC *code; /* Resulting code */
-// 	TAC *temp; /* Temporary for building code */
-=======
+// 有返回值的函数调用
 EXP *do_call_ret(char *name, EXP *arglist)
 {
 	EXP *alt;  /* For counting args */
 	SYM *ret;  /* Where function result will go */
 	TAC *code; /* Resulting code */
 	TAC *temp; /* Temporary for building code */
->>>>>>> parent of e5f4e01 (常量折叠函数准备好版本)
 
-// 	ret = mk_tmp(); /* For the result */
-// 	code = mk_tac(TAC_VAR, ret, NULL, NULL);
+	ret = mk_tmp(); /* For the result */
+	code = mk_tac(TAC_VAR, ret, NULL, NULL);
 
-// 	for (alt = arglist; alt != NULL; alt = alt->next)
-// 		code = join_tac(code, alt->tac);
+	for (alt = arglist; alt != NULL; alt = alt->next)
+		code = join_tac(code, alt->tac);
 
-// 	while (arglist != NULL) /* Generate ARG instructions */
-// 	{
-// 		temp = mk_tac(TAC_ACTUAL, arglist->ret, NULL, NULL);
-// 		temp->prev = code;
-// 		code = temp;
+	while (arglist != NULL) /* Generate ARG instructions */
+	{
+		temp = mk_tac(TAC_ACTUAL, arglist->ret, NULL, NULL);
+		temp->prev = code;
+		code = temp;
 
-// 		alt = arglist->next;
-// 		arglist = alt;
-// 	};
+		alt = arglist->next;
+		arglist = alt;
+	};
 
-// 	temp = mk_tac(TAC_CALL, ret, (SYM *)strdup(name), NULL);
-// 	temp->prev = code;
-// 	code = temp;
+	temp = mk_tac(TAC_CALL, ret, (SYM *)strdup(name), NULL);
+	temp->prev = code;
+	code = temp;
 
-// 	return mk_exp(NULL, ret, code);
-// }
+	return mk_exp(NULL, ret, code);
+}
 
 char *mk_lstr(int i)
 {
