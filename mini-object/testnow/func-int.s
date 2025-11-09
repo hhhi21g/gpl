@@ -39,11 +39,10 @@ main:
 
 	# t0 = call max
 	STO (R2+32),R2
-	LOD R3,RET_0
-	STO (R2+36),R3
+	STO (R2+36),R2
 	LOD R2,R2+32
 	JMP max
-RET_0:
+L100:
 	LOD R5,(R2+20)
 	LOD R5,R4
 
