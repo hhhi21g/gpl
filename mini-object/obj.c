@@ -6,6 +6,9 @@
 #include "tac.h"
 #include "obj.h"
 
+extern TAC *tac_first;
+extern TAC *tac_last;
+
 /* global var */
 int tos; /* top of static */
 int tof; /* top of frame */
@@ -560,6 +563,8 @@ void asm_code(TAC *c)
 
 void tac_obj()
 {
+	printf("[obj] tac_first (seen here) = %p\n", tac_first);
+
 	tof = LOCAL_OFF; /* TOS allows space for link info */
 	oof = FORMAL_OFF;
 	oon = 0;
@@ -570,6 +575,7 @@ void tac_obj()
 	asm_head();
 
 	TAC *cur;
+	printf("[obj] emit start\n");
 	for (cur = tac_first; cur != NULL; cur = cur->next)
 	{
 		out_str(file_s, "\n	# ");
@@ -579,6 +585,7 @@ void tac_obj()
 		// 	printf("asm_code %d", *((int *)cur->a->etc));
 		asm_code(cur);
 	}
+	printf("[obj] emit end\n");
 	asm_tail();
 	asm_static();
 }

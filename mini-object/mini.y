@@ -40,7 +40,12 @@ static SYM *g_switch_end = NULL;
 
 program : function_declaration_list
 {
-	tac_last=$1;
+	tac_last = $1;
+	// 🔧 正确方向：沿 prev 一直走到链表的“最末端”
+	while (tac_last && tac_last->prev)
+		tac_last = tac_last->prev;
+	while (tac_last && tac_last->next)
+		tac_last = tac_last->next;
 	tac_complete();
 }
 ;
@@ -48,12 +53,19 @@ program : function_declaration_list
 function_declaration_list : function_declaration
 | function_declaration_list function_declaration
 {
+	printf("[YACC] join function_declaration_list\n");
 	$$=join_tac($1, $2);
 }
 ;
 
 function_declaration : function
+{
+	$$ = $1;
+}
 | declaration
+{
+	$$ = NULL;
+}
 ;
 
 declaration : INT variable_list ';'
