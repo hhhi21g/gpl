@@ -128,6 +128,8 @@ TAC *do_test(EXP *exp, TAC *stmt1, TAC *stmt2);
 TAC *do_while(EXP *cond, TAC *body, SYM *start_sym, SYM *cont_sym, SYM *end_sym);
 TAC *do_break();
 TAC *do_continue();
+TAC *do_switch(EXP *expr, TAC *cases, TAC *def, SYM *end_label);
+TAC *do_case(int value, TAC *body);
 
 TAC *do_for(TAC *init, EXP *cond, TAC *step, TAC *body,
 			SYM *start_sym, SYM *cont_sym, SYM *end_sym);

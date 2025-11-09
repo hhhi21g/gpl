@@ -490,6 +490,9 @@ void asm_code(TAC *c)
 		asm_cond("JEZ", c->b, c->a->name);
 		return;
 
+	case TAC_CASE:
+		return;
+
 	case TAC_LABEL:
 		for (int r = R_GEN; r < R_NUM; r++)
 			asm_write_back(r);

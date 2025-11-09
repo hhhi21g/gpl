@@ -34,7 +34,7 @@
 
 "switch" { return SWITCH; }
 "case" { return CASE; }
-"DEFAULT"  { return DEFAULT; }
+"default"  { return DEFAULT; }
 
 [A-Za-z]([A-Za-z]|[0-9])*  {  
 	yylval.string = strdup(yytext); 
