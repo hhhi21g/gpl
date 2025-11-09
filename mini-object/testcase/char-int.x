@@ -1,41 +1,41 @@
 
 # tac list
 
-0x61594f409b50	label main
-0x61594f409b90	begin
-0x61594f4087f0	var i
-0x61594f4088b0	var j
-0x61594f408970	var k
-0x61594f408a30	var l
-0x61594f408af0	var a
-0x61594f408bb0	var b
-0x61594f408c70	var c
-0x61594f408d30	var d
-0x61594f408d90	input d
-0x61594f408ea0	c = 'c'
-0x61594f408fb0	b = 'b'
-0x61594f409010	input a
-0x61594f409280	ifz 0 goto L2
-0x61594f409180	output L1
-0x61594f409240	label L2
-0x61594f4092e0	output a
-0x61594f409340	output b
-0x61594f4093a0	output c
-0x61594f409400	output d
-0x61594f409460	output L1
-0x61594f409510	i = a
-0x61594f4095c0	j = b
-0x61594f409670	k = c
-0x61594f409720	l = d
-0x61594f4098d0	ifz 0 goto L3
-0x61594f4097d0	output L1
-0x61594f409890	label L3
-0x61594f409930	output i
-0x61594f409990	output j
-0x61594f4099f0	output k
-0x61594f409a50	output l
-0x61594f409ab0	output L1
-0x61594f409bd0	end
+0x58a2ff0e9b50	label main
+0x58a2ff0e9b90	begin
+0x58a2ff0e87f0	var i
+0x58a2ff0e88b0	var j
+0x58a2ff0e8970	var k
+0x58a2ff0e8a30	var l
+0x58a2ff0e8af0	var a
+0x58a2ff0e8bb0	var b
+0x58a2ff0e8c70	var c
+0x58a2ff0e8d30	var d
+0x58a2ff0e8d90	input d
+0x58a2ff0e8ea0	c = 'c'
+0x58a2ff0e8fb0	b = 'b'
+0x58a2ff0e9010	input a
+0x58a2ff0e9280	ifz 0 goto L2
+0x58a2ff0e9180	output L1
+0x58a2ff0e9240	label L2
+0x58a2ff0e92e0	output a
+0x58a2ff0e9340	output b
+0x58a2ff0e93a0	output c
+0x58a2ff0e9400	output d
+0x58a2ff0e9460	output L1
+0x58a2ff0e9510	i = a
+0x58a2ff0e95c0	j = b
+0x58a2ff0e9670	k = c
+0x58a2ff0e9720	l = d
+0x58a2ff0e98d0	ifz 0 goto L3
+0x58a2ff0e97d0	output L1
+0x58a2ff0e9890	label L3
+0x58a2ff0e9930	output i
+0x58a2ff0e9990	output j
+0x58a2ff0e99f0	output k
+0x58a2ff0e9a50	output l
+0x58a2ff0e9ab0	output L1
+0x58a2ff0e9bd0	end
 
 [B0]
 label main

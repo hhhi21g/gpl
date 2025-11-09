@@ -89,6 +89,7 @@ typedef struct basic_block
 	int succ_count;
 	int pred_count;
 	struct basic_block *next;
+	int mark;
 } BASIC_BLOCK;
 
 /* global var */

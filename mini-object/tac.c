@@ -17,6 +17,309 @@ static SYM *loop_continue_stack[LOOP_MAX_DEPTH];
 static SYM *loop_end_stack[LOOP_MAX_DEPTH];
 static int loop_depth = 0;
 
+// 常量符号表
+typedef struct CMap
+{
+	SYM *var;		// 变量符号
+	SYM *const_sym; // 对应常数符号
+	struct CMap *next;
+} CMap;
+
+static SYM *cmap_get(CMap *m, SYM *v)
+{
+	for (; m; m = m->next)
+	{
+		if (m->var == v)
+			return m->const_sym; // 若v在常量符号表中，则返回对应常数的符号项
+	}
+	return NULL;
+}
+
+static void cmap_set(CMap **m, SYM *v, SYM *c)
+{
+	for (CMap *p = *m; p; p = p->next)
+	{
+		if (p->var == v)
+		{
+			p->const_sym = c;
+			return;
+		}
+	}
+
+	// 没找到新建
+	CMap *n = (CMap *)malloc(sizeof(CMap));
+	n->var = v;
+	n->const_sym = c;
+	n->next = *m;
+}
+
+static void cmap_kill(CMap **m, SYM *v)
+{
+	for (CMap *p = *m; p; p = p->next)
+	{
+		if (p->var == v)
+		{
+			p->const_sym = NULL;
+			return;
+		}
+	}
+}
+
+static int is_const_sym(SYM *s)
+{
+	return s && (s->type == SYM_INT || s->type == SYM_CHAR);
+}
+
+static SYM *mk_bool_const(int v)
+{
+	return mk_const(v ? 1 : 0);
+}
+
+static SYM *eval_bin(int op, SYM *b, SYM *c)
+{
+	if (!is_const_sym(b) || !is_const_sym(c))
+		return NULL;
+	int x = b->value;
+	int y = c->value;
+	int z = 0;
+	int div_zero = 0;
+
+	switch (op)
+	{
+	case TAC_ADD:
+		z = x + y;
+		break;
+	case TAC_SUB:
+		z = x - y;
+		break;
+	case TAC_MUL:
+		z = x * y;
+		break;
+	case TAC_DIV:
+		if (y == 0)
+			div_zero = 1;
+		else
+			z = x / y;
+		break;
+	case TAC_EQ:
+		return mk_bool_const(x == y);
+	case TAC_NE:
+		return mk_bool_const(x != y);
+	case TAC_LT:
+		return mk_bool_const(x < y);
+	case TAC_LE:
+		return mk_bool_const(x <= y);
+	case TAC_GT:
+		return mk_bool_const(x > y);
+	case TAC_GE:
+		return mk_bool_const(x >= y);
+	}
+	if (div_zero)
+		return NULL;
+	return mk_const(z);
+}
+
+static SYM *eval_un(int op, SYM *b)
+{
+	if (!is_const_sym(b))
+		return NULL;
+	if (op == TAC_NEG)
+		return mk_const(-b->value);
+	return NULL;
+}
+
+int tac_constant_fold(BASIC_BLOCK *bb)
+{ // 每个BB内部
+	int changed = 0;
+	CMap *env = NULL;
+	SYM *bc, *cc;
+
+	for (TAC *t = bb->first; t; t = (t == bb->last ? NULL : t->next))
+	{
+		switch (t->op)
+		{
+		case TAC_COPY:
+			SYM *c = is_const_sym(t->b) ? t->b : cmap_get(env, t->b);
+			if (c)
+			{ // b是常量，则a也是常量
+				cmap_set(&env, t->a, c);
+			}
+			else
+			{
+				cmap_kill(&env, t->a);
+			}
+			break;
+		case TAC_ADD:
+		case TAC_SUB:
+		case TAC_MUL:
+		case TAC_DIV:
+		case TAC_EQ:
+		case TAC_NE:
+		case TAC_LT:
+		case TAC_LE:
+		case TAC_GT:
+		case TAC_GE:
+			bc = is_const_sym(t->b) ? t->b : cmap_get(env, t->b);
+			cc = is_const_sym(t->c) ? t->c : cmap_get(env, t->c);
+			if (bc && cc)
+			{
+				SYM *rc = eval_bin(t->op, bc, cc);
+				if (rc)
+				{
+					t->op = TAC_COPY;
+					t->b = rc;
+					t->c = NULL;
+					changed = 1;
+					cmap_set(&env, t->a, rc);
+				}
+				else
+				{
+					cmap_kill(&env, t->a);
+				}
+			}
+			else
+			{
+				cmap_kill(&env, t->a);
+			}
+			break;
+		case TAC_NEG:
+			bc = is_const_sym(t->b) ? t->b : cmap_get(env, t->b);
+			if (bc)
+			{
+				SYM *rc = eval_un(TAC_NEG, bc);
+				if (rc)
+				{
+					t->op = TAC_COPY;
+					t->b = rc;
+					t->c = NULL;
+					changed = 1;
+					cmap_set(&env, t->a, rc);
+				}
+				else
+				{
+					cmap_kill(&env, t->a);
+				}
+			}
+			break;
+		case TAC_IFZ:
+			bc = is_const_sym(t->b) ? t->b : cmap_get(env, t->b);
+			if (bc)
+			{
+				changed = 1;
+				t->b = bc;
+			}
+			break;
+		}
+		if (t == bb->last)
+			break;
+	}
+	return changed;
+}
+
+int cfg_fold_if()
+{
+	int changed = 0;
+	for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+	{
+		TAC *t = bb->last;
+		if (!t)
+			continue;
+		if (t->op == TAC_IFZ && is_const_sym(t->b))
+		{
+			if (t->b->value == 0)
+			{ // GOTO L
+				t->op = TAC_GOTO;
+				t->b = NULL;
+				changed = 1;
+			}
+			else
+			{ // 永远不会跳转
+				t->op = TAC_VAR;
+				t->a = mk_tmp();
+				t->b = t->c = NULL;
+				changed = 1;
+			}
+		}
+	}
+}
+
+// 标记可达块
+static void mark_reachable(BASIC_BLOCK *start)
+{
+	for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+	{
+		bb->mark = 0;
+	}
+	BASIC_BLOCK *stack[4096];
+	int top = 0;
+	if (start)
+	{
+		stack[top++] = start;
+		start->mark = 1;
+	}
+	while (top)
+	{
+		BASIC_BLOCK *u = stack[--top];
+		for (int i = 0; i < u->succ_count; i++)
+		{
+			BASIC_BLOCK *v = u->succ[i];
+			if (v && !v->mark)
+			{
+				v->mark = 1;
+				stack[top++] = v;
+			}
+		}
+	}
+}
+void remove_unreachable_blocks()
+{
+	if (!bb_list)
+		return;
+	mark_reachable(bb_list);
+	// 从块链表中摘掉不可达块
+	BASIC_BLOCK *prev = NULL, *cur = bb_list;
+	while (cur)
+	{
+		if (!cur->mark)
+		{
+			BASIC_BLOCK *del = cur;
+			cur = cur->next;
+			if (prev)
+				prev->next = cur;
+			else
+				bb_list = cur;
+			if (del == bb_tail)
+				bb_tail = prev;
+			// 这里可以 free(del->succ/pred)，简单起见略
+		}
+		else
+		{
+			prev = cur;
+			cur = cur->next;
+		}
+	}
+	// 可选：重建线性 TAC 链（让 tac_first/tac_last 与当前块列表一致）
+	TAC *first = NULL, *last = NULL;
+	for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+	{
+		for (TAC *t = bb->first;; t = t->next)
+		{
+			t->prev = last;
+			if (last)
+				last->next = t;
+			else
+				first = t;
+			last = t;
+			if (t == bb->last)
+				break;
+		}
+	}
+	if (last)
+		last->next = NULL;
+	tac_first = first;
+	tac_last = last; // （注意：你的 tac_last 是“反向链表尾”吗？按你当前结构，这样设置就够用）
+}
+
 // 入栈:循环开始时
 void push_loop_labels(SYM *cont, SYM *end)
 {
@@ -517,6 +820,7 @@ EXP *do_un(int unop, EXP *exp)
 	return exp;
 }
 
+// 没有返回值的函数调用
 TAC *do_call(char *name, EXP *arglist)
 {
 	EXP *alt;  /* For counting args */
@@ -544,6 +848,7 @@ TAC *do_call(char *name, EXP *arglist)
 	return code;
 }
 
+// 有返回值的函数调用
 EXP *do_call_ret(char *name, EXP *arglist)
 {
 	EXP *alt;  /* For counting args */
