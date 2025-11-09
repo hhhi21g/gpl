@@ -563,7 +563,7 @@ void asm_code(TAC *c)
 
 void tac_obj()
 {
-	printf("[obj] tac_first (seen here) = %p\n", tac_first);
+	// printf("[obj] tac_first (seen here) = %p\n", tac_first);
 
 	tof = LOCAL_OFF; /* TOS allows space for link info */
 	oof = FORMAL_OFF;
@@ -575,10 +575,10 @@ void tac_obj()
 	asm_head();
 
 	TAC *cur;
-	printf("[obj] emit start\n");
+	// printf("[obj] emit start\n");
 	for (cur = tac_first; cur != NULL; cur = cur->next)
 	{
-		printf("[obj] op=%d\n", cur->op);
+		printf("[obj] see label %s\n", cur->a->name);
 		out_str(file_s, "\n	# ");
 		out_tac(file_s, cur);
 		out_str(file_s, "\n");
@@ -586,7 +586,7 @@ void tac_obj()
 		// 	printf("asm_code %d", *((int *)cur->a->etc));
 		asm_code(cur);
 	}
-	printf("[obj] emit end\n");
+	// printf("[obj] emit end\n");
 	asm_tail();
 	asm_static();
 }

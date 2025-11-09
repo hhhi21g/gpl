@@ -507,22 +507,25 @@ void tac_init()
 
 void tac_complete()
 {
-	printf("[tac_complete] enter, tac_last=%p\n", tac_last);
+	// printf("[tac_complete] enter, tac_last=%p\n", tac_last);
 	TAC *cur = NULL;	  /* Current TAC */
 	TAC *prev = tac_last; /* Previous TAC */
 
-	int count = 0;
+	int nlab = 0;
 	while (prev != NULL)
 	{
 		prev->next = cur;
 		cur = prev;
 		prev = prev->prev;
-		count++;
+		// if (prev->op == TAC_LABEL && prev->a && prev->a->name)
+		// {
+		// 	// printf("[tac_complete] label %s\n", prev->a->name);
+		// 	nlab++;
+		// }
 	}
 
 	tac_first = cur;
-	printf("[tac_complete] total nodes = %d\n", count);
-	printf("[tac_complete] tac_first=%p tac_last=%p\n", tac_first, tac_last);
+	// printf("[tac_complete] labels total = %d\n", nlab);
 }
 
 SYM *lookup_sym(SYM *symtab, char *name)
