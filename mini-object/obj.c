@@ -259,6 +259,10 @@ void asm_cond(char *op, SYM *a, char *l)
 
 void asm_call(SYM *a, SYM *b)
 {
+	static int call_id = 0;
+	char label_ret[32];
+	sprintf(label_ret, "RET_%d", call_id++);
+
 	int r;
 	for (int r = R_GEN; r < R_NUM; r++)
 		asm_write_back(r);
@@ -266,11 +270,12 @@ void asm_call(SYM *a, SYM *b)
 		rdesc_clear(r);
 	out_str(file_s, "	STO (R2+%d),R2\n", tof + oon); /* store old bp */
 	oon += 4;
-	out_str(file_s, "	LOD R4,R1+32\n");			   /* return addr: 4*8=32 */
-	out_str(file_s, "	STO (R2+%d),R4\n", tof + oon); /* store return addr */
+	out_str(file_s, "	LOD R3,%s\n", label_ret);	   /* return addr: 4*8=32 */
+	out_str(file_s, "	STO (R2+%d),R3\n", tof + oon); /* store return addr */
 	oon += 4;
 	out_str(file_s, "	LOD R2,R2+%d\n", tof + oon - 8); /* load new bp */
 	out_str(file_s, "	JMP %s\n", (char *)b);			 /* jump to new func */
+	out_str(file_s, "%s:\n", label_ret);				 // 返回带你
 	if (a != NULL)
 	{
 		r = reg_alloc(a);
