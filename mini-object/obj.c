@@ -578,6 +578,7 @@ void tac_obj()
 	printf("[obj] emit start\n");
 	for (cur = tac_first; cur != NULL; cur = cur->next)
 	{
+		printf("[obj] op=%d\n", cur->op);
 		out_str(file_s, "\n	# ");
 		out_tac(file_s, cur);
 		out_str(file_s, "\n");
