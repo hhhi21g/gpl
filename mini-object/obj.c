@@ -179,34 +179,6 @@ int reg_alloc_temp()
 	return random;
 }
 
-// 选一个 scratch 寄存器，不绑定变量；若都被占用，优先挑未修改的。
-static int pick_scratch_reg(void)
-{
-	// 先找空位
-	for (int r = R_GEN; r < R_NUM; ++r)
-	{
-		if (rdesc[r].var == NULL)
-		{
-			rdesc_clear(r); // 保证干净
-			return r;
-		}
-	}
-	// 再找未修改
-	for (int r = R_GEN; r < R_NUM; ++r)
-	{
-		if (!rdesc[r].mod)
-		{
-			rdesc_clear(r);
-			return r;
-		}
-	}
-	// 全部占用：随便挑一个，写回再用
-	// 这里不要用 time(NULL) 随机导致不可复现；固定策略：挑 R_GEN
-	asm_write_back(R_GEN);
-	rdesc_clear(R_GEN);
-	return R_GEN;
-}
-
 void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 {
 	int reg_b = -1, reg_c = -1;
@@ -449,39 +421,6 @@ static void asm_load_addr(int r, SYM *s) // offset+BP
 		break;
 	}
 }
-
-// 基址 + 立即数偏移，写入 r
-static void asm_load_addr_plus_imm(int r, SYM *a, int imm_off)
-{
-	switch (a->type)
-	{
-	case SYM_VAR:
-	case SYM_ARRAY:
-		if (a->scope == 1)
-		{ // local: R_BP 基址
-			// 直接把数组的起始偏移 + 常量字节偏移 拼成一个立即数
-			int tot = a->offset + imm_off;
-			if (tot >= 0)
-				out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, tot);
-			else
-				out_str(file_s, "    LOD R%u,R%u-%d\n", r, R_BP, -tot);
-		}
-		else
-		{ // global: STATIC 基址再加偏移
-			out_str(file_s, "    LOD R%u,STATIC\n", R_TP);
-			int tot = a->offset + imm_off;
-			if (tot >= 0)
-				out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_TP, tot);
-			else
-				out_str(file_s, "    LOD R%u,R%u-%d\n", r, R_TP, -tot);
-		}
-		break;
-	default:
-		// 非法基址类型不处理
-		break;
-	}
-}
-
 void asm_code(TAC *c)
 {
 	int r;
@@ -601,49 +540,30 @@ void asm_code(TAC *c)
 	}
 
 	case TAC_LOADIDX:
-	{
+		int base_load = reg_alloc_temp();
+		int offset_load = reg_alloc(c->c);
 		int ra = reg_alloc(c->a);
 
-		if (c->c->type == SYM_INT || c->c->type == SYM_CHAR)
-		{
-			int base = pick_scratch_reg();
-			int imm = c->c->value;
-			asm_load_addr_plus_imm(base, c->b, imm);
-			out_str(file_s, "    LOD R%u,(R%u)\n", ra, base);
-		}
-		else
-		{
-			int base = pick_scratch_reg();
-			int roff = reg_alloc(c->c);
-			asm_load_addr(base, c->b);
-			out_str(file_s, "    ADD R%u,R%u\n", base, roff);
-			out_str(file_s, "    LOD R%u,(R%u)\n", ra, base);
-		}
+		asm_load_addr(base_load, c->b);
+
+		out_str(file_s, "	ADD R%u,R%u\n", base_load, offset_load);
+		out_str(file_s, "	LOD R%u,(R%u)\n", ra, base_load);
+
 		rdesc_fill(ra, c->a, MODIFIED);
+		rdesc_clear(base_load);
 		return;
-	}
 
 	case TAC_STOREIDX:
-	{
+		int base_store = reg_alloc_temp();
+		int offset_store = reg_alloc(c->b);
 		int rval = reg_alloc(c->c);
 
-		if (c->b->type == SYM_INT || c->b->type == SYM_CHAR)
-		{
-			int base = pick_scratch_reg();
-			int imm = c->b->value;
-			asm_load_addr_plus_imm(base, c->a, imm);
-			out_str(file_s, "    STO (R%u),R%u\n", base, rval);
-		}
-		else
-		{
-			int base = pick_scratch_reg();
-			int roff = reg_alloc(c->b);
-			asm_load_addr(base, c->a);
-			out_str(file_s, "    ADD R%u,R%u\n", base, roff);
-			out_str(file_s, "    STO (R%u),R%u\n", base, rval);
-		}
+		asm_load_addr(base_store, c->a);
+
+		out_str(file_s, "	ADD R%u,R%u\n", base_store, offset_store);
+		out_str(file_s, "	STO (R%u),R%u\n", base_store, rval);
+		rdesc_clear(base_store);
 		return;
-	}
 
 	case TAC_ADDR:
 	{

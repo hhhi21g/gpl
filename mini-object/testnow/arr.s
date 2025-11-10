@@ -28,46 +28,49 @@ main:
 	LOD R5,R15
 
 	# arr1[24] = i
+	LOD R7,24
 	STO (R2+8),R5
-    LOD R6,R2+40
-    STO (R6),R5
+	LOD R6,R2+16	ADD R6,R7
+	STO (R6),R5
 
 	# var t0
 
 	# t0 = arr1[24]
-	LOD R6,(R2+24856)
-    LOD R7,R2+40
-    LOD R6,(R7)
+	LOD R8,(R2+24856)
+	LOD R6,R2+16	ADD R6,R7
+	LOD R8,(R6)
 
 	# var t1
 
 	# t1 = t0 + 6
-	STO (R2+24856),R6
-	LOD R7,6
-	ADD R6,R7
+	STO (R2+24856),R8
+	LOD R6,6
+	ADD R8,R6
 
 	# arr2[504] = t1
-	STO (R2+24860),R6
-    LOD R8,R2+560
-    STO (R8),R6
+	LOD R10,504
+	STO (R2+24860),R8
+	LOD R9,R2+56	ADD R9,R10
+	STO (R9),R8
 
 	# var t2
 
 	# t2 = arr2[504]
-	LOD R8,(R2+24864)
-    LOD R9,R2+560
-    LOD R8,(R9)
+	LOD R11,(R2+24864)
+	LOD R9,R2+56	ADD R9,R10
+	LOD R11,(R9)
 
 	# var t3
 
 	# t3 = t2 + 6
-	STO (R2+24864),R8
-	ADD R8,R7
+	STO (R2+24864),R11
+	ADD R11,R6
 
 	# arr3[15144] = t3
-	STO (R2+24868),R8
-    LOD R9,R2+16000
-    STO (R9),R8
+	LOD R12,15144
+	STO (R2+24868),R11
+	LOD R9,R2+856	ADD R9,R12
+	STO (R9),R11
 
 	# goto L2
 	JMP L2
@@ -83,21 +86,22 @@ L2:
 	# var t4
 
 	# t4 = arr3[15144]
-	LOD R5,(R2+24872)
-    LOD R6,R2+16000
-    LOD R5,(R6)
+	LOD R6,15144
+	LOD R7,(R2+24872)
+	LOD R5,R2+856	ADD R5,R6
+	LOD R7,(R5)
 
 	# j = t4
-	STO (R2+24872),R5
+	STO (R2+24872),R7
 
 	# output j
-	STO (R2+12),R5
+	STO (R2+12),R7
 	LOD R15,(R2+12)
 	OTI
 
 	# output L1
-	LOD R6,L1
-	LOD R15,R6
+	LOD R5,L1
+	LOD R15,R5
 	OTS
 
 	# end

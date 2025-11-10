@@ -645,7 +645,42 @@ TAC *declare_array_typed(const char *name, int type, EXP *dims)
 	return mk_tac(TAC_VARARRAY, sym, mk_const(ndim), NULL);
 }
 
-// 将下标转为偏移量
+// 将下标转换为偏移量
+// static EXP *cal_array_offset(SYM *arr, EXP *idxs)
+// {
+// 	int ndim = arr->ndim;
+// 	int *dims = arr->dims;
+
+// 	EXP *result = idxs;
+// 	int d = 1;
+// 	for (EXP *p = idxs->next; p; p = p->next)
+// 	{
+// 		SYM *t = mk_tmp();
+// 		TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
+// 		TAC *mul = mk_tac(TAC_MUL, t, result->ret, mk_const(dims[ndim - d]));
+// 		TAC *add = mk_tac(TAC_ADD, t, mul->a, p->ret);
+
+// 		add->prev = join_tac(join_tac(result->tac, p->tac), join_tac(decl, mul));
+// 		result = mk_exp(NULL, t, add);
+
+// 		d++;
+// 	}
+
+// 	// int*4, char*1
+// 	SYM *t = mk_tmp();
+// 	TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
+// 	TAC *mul;
+// 	printf("%d\n", *((int *)arr->etc));
+// 	if (*((int *)arr->etc) == SYM_INT)
+// 		mul = mk_tac(TAC_MUL, t, result->ret, mk_const(4));
+// 	else
+// 		mul = mk_tac(TAC_MUL, t, result->ret, mk_const(1));
+// 	mul->prev = join_tac(result->tac, decl);
+// 	result = mk_exp(NULL, t, mul);
+
+// 	return result;
+// }
+
 static EXP *cal_array_offset(SYM *arr, EXP *idxs)
 {
 	int ndim = arr->ndim;
