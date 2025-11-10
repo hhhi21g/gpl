@@ -558,39 +558,130 @@ TAC *declare_array_typed(const char *name, int type, EXP *dims)
 }
 
 // 将下标转换为偏移量
+// static EXP *cal_array_offset(SYM *arr, EXP *idxs)
+// {
+// 	int ndim = arr->ndim;
+// 	int *dims = arr->dims;
+
+// 	EXP *result = idxs;
+// 	int d = 1;
+// 	for (EXP *p = idxs->next; p; p = p->next)
+// 	{
+// 		SYM *t = mk_tmp();
+// 		TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
+// 		TAC *mul = mk_tac(TAC_MUL, t, result->ret, mk_const(dims[ndim - d]));
+// 		TAC *add = mk_tac(TAC_ADD, t, mul->a, p->ret);
+
+// 		add->prev = join_tac(join_tac(result->tac, p->tac), join_tac(decl, mul));
+// 		result = mk_exp(NULL, t, add);
+
+// 		d++;
+// 	}
+
+// 	// int*4, char*1
+// 	SYM *t = mk_tmp();
+// 	TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
+// 	TAC *mul;
+// 	printf("%d\n", *((int *)arr->etc));
+// 	if (*((int *)arr->etc) == SYM_INT)
+// 		mul = mk_tac(TAC_MUL, t, result->ret, mk_const(4));
+// 	else
+// 		mul = mk_tac(TAC_MUL, t, result->ret, mk_const(1));
+// 	mul->prev = join_tac(result->tac, decl);
+// 	result = mk_exp(NULL, t, mul);
+
+// 	return result;
+// }
+
 static EXP *cal_array_offset(SYM *arr, EXP *idxs)
 {
 	int ndim = arr->ndim;
 	int *dims = arr->dims;
+	int elem_type = *((int *)arr->etc);
+	int elem_size = (elem_type == SYM_CHAR) ? 1 : 4;
 
-	EXP *result = idxs;
-	int d = 1;
-	for (EXP *p = idxs->next; p; p = p->next)
+	// 收集索引
+	EXP *idx_vec[32];
+	int cnt = 0;
+	for (EXP *p = idxs; p && cnt < 32; p = p->next)
+		idx_vec[cnt++] = p;
+
+	// 反转（保证维度 0 对应最高维）
+	for (int i = 0; i < cnt / 2; ++i)
 	{
-		SYM *t = mk_tmp();
-		TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
-		TAC *mul = mk_tac(TAC_MUL, t, result->ret, mk_const(dims[ndim - d]));
-		TAC *add = mk_tac(TAC_ADD, t, mul->a, p->ret);
-
-		add->prev = join_tac(join_tac(result->tac, p->tac), join_tac(decl, mul));
-		result = mk_exp(NULL, t, add);
-
-		d++;
+		EXP *tmp = idx_vec[i];
+		idx_vec[i] = idx_vec[cnt - 1 - i];
+		idx_vec[cnt - 1 - i] = tmp;
 	}
 
-	// int*4, char*1
-	SYM *t = mk_tmp();
-	TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
-	TAC *mul;
-	printf("%d\n", *((int *)arr->etc));
-	if (*((int *)arr->etc) == SYM_INT)
-		mul = mk_tac(TAC_MUL, t, result->ret, mk_const(4));
-	else
-		mul = mk_tac(TAC_MUL, t, result->ret, mk_const(1));
-	mul->prev = join_tac(result->tac, decl);
-	result = mk_exp(NULL, t, mul);
+	// 计算 stride
+	int stride[32];
+	stride[ndim - 1] = elem_size;
+	for (int i = ndim - 2; i >= 0; --i)
+		stride[i] = stride[i + 1] * dims[i + 1];
 
-	return result;
+	// 分别累积常量项和变量项
+	int const_offset = 0;
+	TAC *code = NULL;
+	SYM *sum_sym = NULL;
+
+	for (int k = 0; k < ndim && k < cnt; ++k)
+	{
+		int S = stride[k];
+		EXP *idx = idx_vec[k];
+		SYM *term_sym = NULL;
+
+		// 若索引是常量，直接累积
+		if (idx->ret->type == SYM_INT || idx->ret->type == SYM_CHAR)
+		{
+			const_offset += idx->ret->value * S;
+			continue;
+		}
+
+		// 否则生成 term = idx * stride
+		SYM *t = mk_tmp();
+		TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
+		TAC *mul = mk_tac(TAC_MUL, t, idx->ret, mk_const(S));
+		mul->prev = decl;
+		code = join_tac(code, join_tac(idx->tac, mul));
+
+		// 累积 sum += term
+		if (!sum_sym)
+		{
+			sum_sym = t;
+		}
+		else
+		{
+			SYM *tadd = mk_tmp();
+			TAC *decl2 = mk_tac(TAC_VAR, tadd, NULL, NULL);
+			TAC *add = mk_tac(TAC_ADD, tadd, sum_sym, t);
+			add->prev = decl2;
+			code = join_tac(code, add);
+			sum_sym = tadd;
+		}
+	}
+
+	// 若有常量偏移，则加上
+	if (const_offset != 0)
+	{
+		if (!sum_sym)
+		{
+			// 全是常量下标
+			return mk_exp(NULL, mk_const(const_offset), NULL);
+		}
+		SYM *taddc = mk_tmp();
+		TAC *decl3 = mk_tac(TAC_VAR, taddc, NULL, NULL);
+		TAC *addc = mk_tac(TAC_ADD, taddc, sum_sym, mk_const(const_offset));
+		addc->prev = decl3;
+		code = join_tac(code, addc);
+		sum_sym = taddc;
+	}
+
+	// 若没有任何动态索引，偏移恒定为0
+	if (!sum_sym)
+		return mk_exp(NULL, mk_const(0), NULL);
+
+	return mk_exp(NULL, sum_sym, code);
 }
 
 // 数组取值
