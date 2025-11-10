@@ -24,7 +24,7 @@ static SYM *g_switch_end = NULL;
 }
 
 %token INT EQ NE LT LE GT GE UMINUS IF ELSE SWITCH CASE DEFAULT WHILE FOR BREAK CONTINUE FUNC INPUT OUTPUT RETURN
-%token <string> INTEGER IDENTIFIER TEXT CHAR CHAR_CONST
+%token <string> INTEGER IDENTIFIER TEXT CHAR CHAR_CONST LBRACK RBRACK
 
 %left EQ NE LT LE GT GE
 %left '+' '-'
@@ -33,7 +33,7 @@ static SYM *g_switch_end = NULL;
 
 %type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement switch_statement case_list case_item default_list while_statement for_statement break_statement continue_statement opt_statement call_statement block declaration_list declaration statement_list input_statement output_statement 
 %type <tac> variable_list_char decl_item_char decl_item_int
-%type <exp> argument_list expression_list expression call_expression  opt_expression
+%type <exp> argument_list expression_list expression call_expression  opt_expression dims_decl dims_idx
 %type <sym> function_head
 
 %%
@@ -56,6 +56,29 @@ function_declaration : function
 | declaration
 ;
 
+dims_decl:LBRACK INTEGER RBRACK
+{
+	$$=mk_exp(NULL,mk_const(atoi($2)),NULL);
+}
+| dims_decl LBRACK INTEGER RBRACK
+{
+	EXP *node = mk_exp(NULL,mk_const(atoi($2)),NULL);
+	node->next = $1;
+	$$ = node;
+}
+;
+
+dims_idx:LBRACK expression RBRACK
+{
+	$$ = mk_exp(NULL,$2->ret,$2->tac);
+}
+| dims_idx LBRACK INTEGER RBRACK
+{
+	EXP*node = mk_exp(NULL,$3->ret,$3->tac);
+	node->next = $1;
+	$$ = node;
+}
+
 declaration : INT variable_list ';'
 {
 	$$=$2;
@@ -66,32 +89,48 @@ declaration : INT variable_list ';'
 }
 ;
 
-variable_list
-    : decl_item_int
-    | variable_list ',' decl_item_int
-      { $$ = join_tac($1, $3); }
-    ;
+variable_list: decl_item_int
+| variable_list ',' decl_item_int
+{ 
+	$$ = join_tac($1, $3); 
+}
+;
 
-decl_item_int
-    : IDENTIFIER
-      { $$ = declare_var_typed($1, SYM_INT); }
-    | '*' IDENTIFIER
-      { $$ = declare_var_typed($2, SYM_PTR); }
-    ;
+decl_item_int: IDENTIFIER
+{ 
+	$$ = declare_var_typed($1, SYM_INT); 
+}
+| '*' IDENTIFIER
+{ 
+	$$ = declare_var_typed($2, SYM_PTR); 
+}
+| IDENTIFIER dims_decl
+{
+	$$ = declare_array_typed($1,SYM_INT,$2);
+}
+;
 
 
-variable_list_char
-    : decl_item_char
-    | variable_list_char ',' decl_item_char
-      { $$ = join_tac($1, $3); }
-    ;
+variable_list_char: decl_item_char
+| variable_list_char ',' decl_item_char
+{ 
+	$$ = join_tac($1, $3); 
+}
+| IDENTIFIER dims_decl
+{
+	$$ = declare_array_typed($1,SYM_CHAR,$2);
+}
+;
 
-decl_item_char
-    : IDENTIFIER
-      { $$ = declare_var_typed($1, SYM_CHAR); }
-    | '*' IDENTIFIER
-      { $$ = declare_var_typed($2, SYM_PTR); }
-    ;
+decl_item_char: IDENTIFIER
+{ 
+	$$ = declare_var_typed($1, SYM_CHAR); 
+}
+| '*' IDENTIFIER
+{ 
+	$$ = declare_var_typed($2, SYM_PTR); 
+}
+;
 
 
 
@@ -204,6 +243,10 @@ assignment_statement : IDENTIFIER '=' expression
 {
 	$$=do_assign(get_var($1), $3);
 }
+| IDENTIFIER dims_idx '=' expression  // 存入数组
+{
+	$$ = do_array_store(get_var($1),$2,$4);
+}
 | '*' IDENTIFIER '=' expression    
       {
           SYM *ptr = get_var($2);
@@ -287,6 +330,10 @@ expression : expression '+' expression
 {
 	$$=mk_exp(NULL,mk_char($1[1]),NULL);
 }
+| IDENTIFIER dims_idx
+{
+	$$ = do_array_load(get_var($1),$2);  // 加载数组值
+}
 | call_expression
 {
 	$$=$1;
@@ -326,6 +373,12 @@ output_statement : OUTPUT IDENTIFIER
 | OUTPUT TEXT
 {
 	$$=do_output(mk_text($2));
+}
+| OUTPUT expression
+{
+	TAC*t = mk_tac(TAC_OUTPUT,$2->ret,NULL,NULL);
+	t->prev = $2->tac;
+	$$ = t;
 }
 ;
 
