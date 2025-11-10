@@ -308,17 +308,10 @@ void asm_call(SYM *a, SYM *b) // a:返回值变量；b：函数名
 	out_str(file_s, "	STO (R2+%d),R4\n", tof + oon); /* store return addr */
 	oon += 4;
 	out_str(file_s, "	LOD R2,R2+%d\n", tof + oon - 8); /* load new bp */
-	out_str(file_s, "	JMP %s\n", (char *)b);			 /* jump to new func */
+	out_str(file_s, "	JMP %s\n", b->name);			 /* jump to new func */
 
 	// 返回点
 	out_str(file_s, "%s:\n", ret_label);
-
-	// if (a != NULL)
-	// {
-	// 	r = reg_alloc(a);
-	// 	out_str(file_s, "	LOD R%u,R%u\n", r, R_TP);
-	// 	rdesc[r].mod = MODIFIED;
-	// }
 
 	// 取返回值，R15保存
 	if (a != NULL)
@@ -483,7 +476,9 @@ void asm_code(TAC *c)
 
 	case TAC_INPUT:
 		r = reg_alloc(c->a);
-		int t = *((int *)c->a->etc);
+		int t = SYM_INT;
+		if (c->a && c->a->etc)
+			t = *((int *)c->a->etc);
 		if (t == SYM_CHAR)
 			out_str(file_s, "	ITC\n");
 		else

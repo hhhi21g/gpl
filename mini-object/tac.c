@@ -738,8 +738,9 @@ SYM *declare_func(char *name)
 	{
 		if (sym->type == SYM_FUNC)
 		{
-			error("func already declared");
-			return NULL;
+			// error("func already declared");
+			// return NULL;
+			return sym;
 		}
 
 		if (sym->type != SYM_UNDEF)
@@ -1002,7 +1003,11 @@ TAC *do_call(char *name, EXP *arglist)
 		arglist = alt;
 	};
 
-	temp = mk_tac(TAC_CALL, NULL, (SYM *)strdup(name), NULL);
+	SYM *func_sym = lookup_sym(sym_tab_global, name);
+	if (!func_sym)
+		func_sym = declare_func(name);
+
+	temp = mk_tac(TAC_CALL, NULL, func_sym, NULL);
 	temp->prev = code;
 	code = temp;
 
@@ -1035,7 +1040,12 @@ EXP *do_call_ret(char *name, EXP *arglist)
 		arglist = alt;
 	};
 
-	temp = mk_tac(TAC_CALL, ret, (SYM *)strdup(name), NULL);
+	SYM *func_sym = lookup_sym(sym_tab_global, name);
+	if (!func_sym)
+		func_sym = declare_func(name);
+
+	temp = mk_tac(TAC_CALL, ret, func_sym, NULL);
+
 	temp->prev = code;
 	code = temp;
 

@@ -37,7 +37,7 @@ main:
 	STO (R2+12),R6
 	STO (R2+28),R6
 
-	# t0 = call max
+	# t0 = call 
 	STO (R2+32),R2
 	LOD R4,L1000
 	STO (R2+36),R4
