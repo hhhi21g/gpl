@@ -289,6 +289,8 @@ void asm_cond(char *op, SYM *a, char *l)
 	out_str(file_s, "	%s %s\n", op, l);
 }
 
+static int ret_label_id = 1000; // 函数label
+
 void asm_call(SYM *a, SYM *b) // a:返回值变量；b：函数名
 {
 	int r;
@@ -296,16 +298,20 @@ void asm_call(SYM *a, SYM *b) // a:返回值变量；b：函数名
 		asm_write_back(r);
 	for (int r = R_GEN; r < R_NUM; r++)
 		rdesc_clear(r);
+
+	char ret_label[32];
+	sprintf(ret_label, "L%d", ret_label_id++);
+
 	out_str(file_s, "	STO (R2+%d),R2\n", tof + oon); /* store old bp */
 	oon += 4;
-	out_str(file_s, "	LOD R4,L%s\n", b->name);	   /* return addr: 4*8=32 */
+	out_str(file_s, "	LOD R4,%s\n", ret_label);	   /* return addr: 4*8=32 */
 	out_str(file_s, "	STO (R2+%d),R4\n", tof + oon); /* store return addr */
 	oon += 4;
 	out_str(file_s, "	LOD R2,R2+%d\n", tof + oon - 8); /* load new bp */
 	out_str(file_s, "	JMP %s\n", (char *)b);			 /* jump to new func */
 
 	// 返回点
-	out_str(file_s, "L%s:\n", b->name);
+	out_str(file_s, "%s:\n", ret_label);
 
 	// if (a != NULL)
 	// {
@@ -333,7 +339,8 @@ void asm_return(SYM *a)
 
 	if (a != NULL) /* return value */
 	{
-		asm_load(R_TP, a);
+		int ra = reg_alloc(a);
+		out_str(file_s, "    LOD R15,R%u\n", ra);
 	}
 
 	out_str(file_s, "	LOD R3,(R2+4)\n"); /* return address */
