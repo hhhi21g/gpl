@@ -670,7 +670,8 @@ static EXP *cal_array_offset(SYM *arr, EXP *idxs)
 	SYM *t = mk_tmp();
 	TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
 	TAC *mul;
-	if (arr->etc == SYM_INT)
+	printf("%d\n", *((int *)arr->etc));
+	if (*((int *)arr->etc) == SYM_INT)
 		mul = mk_tac(TAC_MUL, t, result->ret, mk_const(4));
 	else
 		mul = mk_tac(TAC_MUL, t, result->ret, mk_const(1));

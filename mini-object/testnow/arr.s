@@ -29,8 +29,8 @@ main:
 
 	# var t0
 
-	# t0 = 6
-	LOD R6,6
+	# t0 = 24
+	LOD R6,24
 
 	# arr1[t0] = i
 	STO (R2+24856),R6
@@ -50,35 +50,35 @@ main:
 
 	# var t5
 
-	# t5 = t4 * 1
+	# t5 = t4 * 4
 	STO (R2+24860),R8
-	LOD R10,1
+	LOD R10,4
 	MUL R8,R10
 
 	# var t1
 
-	# t1 = 6
+	# t1 = 24
+	LOD R11,24
 
 	# var t2
 
 	# t2 = arr1[t1]
-	STO (R2+24868),R9
-	LOD R11,(R2+24872)
-	ADD R7,R9
-	LOD R11,(R7)
+	STO (R2+24868),R11
+	LOD R12,(R2+24872)
+	ADD R7,R11
+	LOD R12,(R7)
 
 	# var t3
 
 	# t3 = t2 + 6
-	STO (R2+24872),R11
-	LOD R12,6
-	ADD R11,R12
+	STO (R2+24872),R12
+	ADD R12,R9
 
 	# arr2[t5] = t3
 	STO (R2+24864),R8
-	STO (R2+24876),R11
+	STO (R2+24876),R12
 	ADD R13,R8
-	STO (R13),R11
+	STO (R13),R12
 
 	# var t10
 
@@ -87,7 +87,7 @@ main:
 
 	# t10 = t10 + 6
 	STO (R2+24880),R14
-	ADD R14,R12
+	ADD R14,R9
 
 	# var t11
 
@@ -98,11 +98,11 @@ main:
 
 	# t11 = t11 + 6
 	STO (R2+24884),R14
-	ADD R14,R12
+	ADD R14,R9
 
 	# var t12
 
-	# t12 = t11 * 1
+	# t12 = t11 * 4
 	STO (R2+24884),R14
 	MUL R14,R10
 
@@ -113,11 +113,11 @@ main:
 
 	# t6 = t6 + 6
 	STO (R2+24892),R5
-	ADD R5,R12
+	ADD R5,R9
 
 	# var t7
 
-	# t7 = t6 * 1
+	# t7 = t6 * 4
 	STO (R2+24892),R5
 	MUL R5,R10
 
@@ -133,7 +133,7 @@ main:
 
 	# t9 = t8 + 6
 	STO (R2+24900),R5
-	ADD R5,R12
+	ADD R5,R9
 
 	# arr3[t12] = t9
 	STO (R2+24888),R14
@@ -175,9 +175,9 @@ L2:
 
 	# var t15
 
-	# t15 = t14 * 1
+	# t15 = t14 * 4
 	STO (R2+24912),R5
-	LOD R8,1
+	LOD R8,4
 	MUL R5,R8
 
 	# var t16
