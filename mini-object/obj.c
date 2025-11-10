@@ -449,6 +449,61 @@ void asm_code(TAC *c)
 		}
 		return;
 
+	case TAC_VARARRAY:
+	{
+		int elem_type = SYM_INT;
+		if (c->a->etc)
+			elem_type = *((int *)c->a->etc);
+
+		int elem_size = (elem_type == SYM_CHAR) ? 1 : 4;
+
+		int total_elems = 1;
+		for (int i = 0; i < c->a->ndim; i++)
+			total_elems *= c->a->dims[i];
+
+		int total_size = total_elems * elem_size;
+
+		if (scope)
+		{
+			c->a->scope = 1;
+			c->a->offset = tof;
+			tof += total_size;
+		}
+		else
+		{
+			c->a->scope = 0;
+			c->a->offset = tos;
+			tos += total_size;
+		}
+
+		out_str(file_s, "	# declare array %s [%d", c->a->name, c->a->dims[0]);
+		for (int i = 1; i < c->a->ndim; i++)
+			out_str(file_s, "][%d", c->a->dims[i]);
+		out_str(file_s, "] elem=%s size=%d bytes\n",
+				(elem_type == SYM_CHAR ? "char(1B)" : "int(4B)"), total_size);
+		return;
+	}
+
+	case TAC_LOADIDX:
+		int base_load = reg_alloc(c->b);
+		int offset_load = reg_alloc(c->c);
+		int ra = reg_alloc(c->a);
+
+		out_str(file_s, "	ADD R%u,R%u\n", base_load, offset_load);
+		out_str(file_s, "	LOD R%u,(R%u)\n", ra, base_load);
+
+		rdesc_fill(ra, c->a, MODIFIED);
+		return;
+
+	case TAC_STOREIDX:
+		int base_store = reg_alloc(c->a);
+		int offset_store = reg_alloc(c->b);
+		int rval = reg_alloc(c->c);
+
+		out_str(file_s, "	ADD R%u,R%u\n", base_store, offset_store);
+		out_str(file_s, "	STO (R%u),R%u\n", base_store, rval);
+		return;
+
 	case TAC_ADDR:
 	{
 		// a = &b
