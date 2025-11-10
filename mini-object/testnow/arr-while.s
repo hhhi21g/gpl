@@ -56,31 +56,31 @@ L1:
 	MUL R7,R8
 
 	# arr1[t1] = i
+	LOD R9,(R2+8)
 	STO (R2+60),R7
-	LOD R10,(R2+8)
-	LOD R9,R2+16	ADD R9,R7
-	STO (R9),R10
+	LOD R10,R2+16    ADD R10,R7
+    STO (R10),R9
 
 	# var t2
 
 	# t2 = i + 1
-	LOD R9,1
-	ADD R10,R9
+	LOD R10,1
+	ADD R9,R10
 
 	# i = t2
-	STO (R2+64),R10
+	STO (R2+64),R9
 
 	# var t3
 
 	# t3 = j + 1
 	LOD R11,(R2+12)
-	ADD R11,R9
+	ADD R11,R10
 
 	# j = t3
 	STO (R2+68),R11
 
 	# label L2
-	STO (R2+8),R10
+	STO (R2+8),R9
 	STO (R2+12),R11
 L2:
 
@@ -143,16 +143,16 @@ L6:
 	# var t7
 
 	# t7 = arr1[t6]
+	LOD R10,(R2+84)
 	STO (R2+80),R7
-	LOD R11,(R2+84)
-	LOD R10,R2+16	ADD R10,R7
-	LOD R11,(R10)
+	LOD R11,R2+16    ADD R11,R7
+    LOD R10,(R11)
 
 	# i = t7
-	STO (R2+84),R11
+	STO (R2+84),R10
 
 	# output i
-	STO (R2+8),R11
+	STO (R2+8),R10
 	LOD R15,(R2+8)
 	OTI
 
