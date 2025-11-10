@@ -62,7 +62,7 @@ dims_decl:LBRACK INTEGER RBRACK
 }
 | dims_decl LBRACK INTEGER RBRACK
 {
-	EXP *node = mk_exp(NULL,mk_const(atoi($2)),NULL);
+	EXP *node = mk_exp(NULL,mk_const(atoi($3)),NULL);
 	node->next = $1;
 	$$ = node;
 }
@@ -72,12 +72,13 @@ dims_idx:LBRACK expression RBRACK
 {
 	$$ = mk_exp(NULL,$2->ret,$2->tac);
 }
-| dims_idx LBRACK INTEGER RBRACK
+| dims_idx LBRACK expression RBRACK
 {
 	EXP*node = mk_exp(NULL,$3->ret,$3->tac);
 	node->next = $1;
 	$$ = node;
 }
+;
 
 declaration : INT variable_list ';'
 {
@@ -116,10 +117,6 @@ variable_list_char: decl_item_char
 { 
 	$$ = join_tac($1, $3); 
 }
-| IDENTIFIER dims_decl
-{
-	$$ = declare_array_typed($1,SYM_CHAR,$2);
-}
 ;
 
 decl_item_char: IDENTIFIER
@@ -129,6 +126,10 @@ decl_item_char: IDENTIFIER
 | '*' IDENTIFIER
 { 
 	$$ = declare_var_typed($2, SYM_PTR); 
+}
+| IDENTIFIER dims_decl
+{
+	$$ = declare_array_typed($1,SYM_CHAR,$2);
 }
 ;
 
@@ -248,12 +249,12 @@ assignment_statement : IDENTIFIER '=' expression
 	$$ = do_array_store(get_var($1),$2,$4);
 }
 | '*' IDENTIFIER '=' expression    
-      {
-          SYM *ptr = get_var($2);
-          TAC *store = mk_tac(TAC_STORE, ptr, $4->ret, NULL);
-          store->prev = $4->tac;
-          $$ = store;
-      }
+{
+	SYM *ptr = get_var($2);
+	TAC *store = mk_tac(TAC_STORE, ptr, $4->ret, NULL);
+	store->prev = $4->tac;
+	$$ = store;
+}
 | IDENTIFIER '=' '&' IDENTIFIER        
 {
     SYM *dst = get_var($1);

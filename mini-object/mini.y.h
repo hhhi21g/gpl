@@ -79,7 +79,9 @@ extern int yydebug;
     IDENTIFIER = 280,              /* IDENTIFIER  */
     TEXT = 281,                    /* TEXT  */
     CHAR = 282,                    /* CHAR  */
-    CHAR_CONST = 283               /* CHAR_CONST  */
+    CHAR_CONST = 283,              /* CHAR_CONST  */
+    LBRACK = 284,                  /* LBRACK  */
+    RBRACK = 285                   /* RBRACK  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -114,6 +116,8 @@ extern int yydebug;
 #define TEXT 281
 #define CHAR 282
 #define CHAR_CONST 283
+#define LBRACK 284
+#define RBRACK 285
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -127,7 +131,7 @@ union YYSTYPE
 	TAC *tac;
 	EXP	*exp;
 
-#line 131 "mini.y.h"
+#line 135 "mini.y.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

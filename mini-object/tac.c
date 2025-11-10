@@ -645,6 +645,71 @@ TAC *declare_array_typed(const char *name, int type, EXP *dims)
 	return mk_tac(TAC_VARARRAY, sym, mk_const(ndim), NULL);
 }
 
+// 将下标转换为偏移量
+static EXP *cal_array_offset(SYM *arr, EXP *idxs)
+{
+	int ndim = arr->ndim;
+	int *dims = arr->dims;
+
+	EXP *result = idxs;
+	int d = 1;
+	for (EXP *p = idxs->next; p; p = p->next)
+	{
+		SYM *t = mk_tmp();
+		TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
+		TAC *mul = mk_tac(TAC_MUL, t, result->ret, mk_const(dims[ndim - d]));
+		TAC *add = mk_tac(TAC_ADD, t, mul->a, p->ret);
+
+		add->prev = join_tac(join_tac(result->tac, p->tac), join_tac(decl, mul));
+		result = mk_exp(NULL, t, add);
+
+		d++;
+	}
+
+	// int*4, char*1
+	SYM *t = mk_tmp();
+	TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
+	TAC *mul;
+	if (arr->etc == SYM_INT)
+		mul = mk_tac(TAC_MUL, t, result->ret, mk_const(4));
+	else
+		mul = mk_tac(TAC_MUL, t, result->ret, mk_const(1));
+	mul->prev = join_tac(result->tac, decl);
+	result = mk_exp(NULL, t, mul);
+
+	return result;
+}
+
+// 数组取值
+EXP *do_array_load(SYM *arr, EXP *idxs)
+{
+	if (arr->type != SYM_ARRAY)
+	{
+		error("not an array");
+	}
+
+	EXP *offset = cal_array_offset(arr, idxs);
+
+	SYM *t = mk_tmp();
+	TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
+	TAC *load = mk_tac(TAC_LOADIDX, t, arr, offset->ret); // LOAD t = arr[offset]
+	load->prev = join_tac(offset->tac, decl);
+
+	return mk_exp(NULL, t, load);
+}
+
+// 数组赋值
+TAC *do_array_store(SYM *arr, EXP *idxs, EXP *val)
+{
+	if (arr->type != SYM_ARRAY)
+		error("not an array");
+
+	EXP *offset = cal_array_offset(arr, idxs);
+	TAC *store = mk_tac(TAC_STOREIDX, arr, offset->ret, val->ret); // STORE arr[offset] = val
+	store->prev = join_tac(join_tac(offset->tac, val->tac), NULL);
+	return store;
+}
+
 TAC *mk_tac(int op, SYM *a, SYM *b, SYM *c)
 {
 	TAC *t = (TAC *)malloc(sizeof(TAC));
@@ -1093,7 +1158,7 @@ SYM *get_var(char *name)
 		return NULL;
 	}
 
-	if (sym->type != SYM_VAR)
+	if (sym->type != SYM_VAR && sym->type != SYM_ARRAY)
 	{
 		error("not a variable");
 		return NULL;
@@ -1189,6 +1254,7 @@ char *to_str(SYM *s, char *str)
 	{
 	case SYM_FUNC:
 	case SYM_VAR:
+	case SYM_ARRAY:
 		/* Just return the name */
 		return s->name;
 
@@ -1281,11 +1347,25 @@ void out_tac(FILE *f, TAC *i)
 	case TAC_ADDR:
 		fprintf(f, "%s = &%s", to_str(i->a, sa), to_str(i->b, sb));
 		break;
+
 	case TAC_LOAD:
 		fprintf(f, "%s = *%s", to_str(i->a, sa), to_str(i->b, sb));
 		break;
+
 	case TAC_STORE:
 		fprintf(f, "*%s = %s", to_str(i->a, sa), to_str(i->b, sb));
+		break;
+
+	case TAC_VARARRAY:
+		fprintf(f, "vararray %s[%dD]", to_str(i->a, sa), i->b ? i->b->value : 0);
+		break;
+
+	case TAC_LOADIDX:
+		fprintf(f, "%s = %s[%s]", to_str(i->a, sa), to_str(i->b, sb), to_str(i->c, sc));
+		break;
+
+	case TAC_STOREIDX:
+		fprintf(f, "%s[%s] = %s", to_str(i->a, sa), to_str(i->b, sb), to_str(i->c, sc));
 		break;
 
 	case TAC_NEG:

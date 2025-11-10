@@ -145,6 +145,11 @@ void pop_loop_labels(void);
 SYM *get_break_label(void);
 SYM *get_continue_label(void);
 
+TAC *declare_array_typed(const char *name, int type, EXP *dims);
+static EXP *cal_array_offset(SYM *arr, EXP *idxs);
+EXP *do_array_load(SYM *arr, EXP *idxs);
+TAC *do_array_store(SYM *arr, EXP *idxs, EXP *val);
+
 EXP *do_bin(int binop, EXP *exp1, EXP *exp2);
 EXP *do_cmp(int binop, EXP *exp1, EXP *exp2);
 EXP *do_un(int unop, EXP *exp);
