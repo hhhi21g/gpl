@@ -1,50 +1,50 @@
 
 # tac list
 
-0x59c1fd644930	label main
-0x59c1fd644970	begin
-0x59c1fd642810	var i
-0x59c1fd6428e0	var j
-0x59c1fd642b00	vararray arr1[1D]
-0x59c1fd642b60	input i
-0x59c1fd642c80	j = 0
-0x59c1fd643ab0	label L1
-0x59c1fd642dd0	var t0
-0x59c1fd642e10	t0 = (j < 10)
-0x59c1fd643b70	ifz t0 goto L3
-0x59c1fd643160	var t1
-0x59c1fd643620	t1 = j * 4
-0x59c1fd643690	arr1[t1] = i
-0x59c1fd643800	var t2
-0x59c1fd643840	t2 = i + 1
-0x59c1fd643880	i = t2
-0x59c1fd6439f0	var t3
-0x59c1fd643a30	t3 = j + 1
-0x59c1fd643a70	j = t3
-0x59c1fd643af0	label L2
-0x59c1fd643bb0	goto L1
-0x59c1fd643b30	label L3
-0x59c1fd643de0	ifz 0 goto L5
-0x59c1fd643cd0	output L4
-0x59c1fd643da0	label L5
-0x59c1fd644720	label L6
-0x59c1fd643f30	var t4
-0x59c1fd643f70	t4 = (j > 0)
-0x59c1fd6447e0	ifz t4 goto L8
-0x59c1fd644290	var t5
-0x59c1fd6442d0	t5 = j - 1
-0x59c1fd644310	j = t5
-0x59c1fd644480	var t6
-0x59c1fd6444c0	t6 = j * 4
-0x59c1fd6445a0	var t7
-0x59c1fd6445e0	t7 = arr1[t6]
-0x59c1fd644650	i = t7
-0x59c1fd6446e0	output i
-0x59c1fd644760	label L7
-0x59c1fd644820	goto L6
-0x59c1fd6447a0	label L8
-0x59c1fd644880	output L4
-0x59c1fd6449b0	end
+0x621b6c4f0520	label main
+0x621b6c4f0560	begin
+0x621b6c4ee810	var i
+0x621b6c4ee8e0	var j
+0x621b6c4eeb00	vararray arr1[1D]
+0x621b6c4eeb60	input i
+0x621b6c4eec80	j = 0
+0x621b6c4ef6a0	label L1
+0x621b6c4eedd0	var t0
+0x621b6c4eee10	t0 = (j < 10)
+0x621b6c4ef760	ifz t0 goto L3
+0x621b6c4ef160	var t1
+0x621b6c4ef210	t1 = j * 4
+0x621b6c4ef280	arr1[t1] = i
+0x621b6c4ef3f0	var t2
+0x621b6c4ef430	t2 = i + 1
+0x621b6c4ef470	i = t2
+0x621b6c4ef5e0	var t3
+0x621b6c4ef620	t3 = j + 1
+0x621b6c4ef660	j = t3
+0x621b6c4ef6e0	label L2
+0x621b6c4ef7a0	goto L1
+0x621b6c4ef720	label L3
+0x621b6c4ef9d0	ifz 0 goto L5
+0x621b6c4ef8c0	output L4
+0x621b6c4ef990	label L5
+0x621b6c4f0310	label L6
+0x621b6c4efb20	var t4
+0x621b6c4efb60	t4 = (j > 0)
+0x621b6c4f03d0	ifz t4 goto L8
+0x621b6c4efe80	var t5
+0x621b6c4efec0	t5 = j - 1
+0x621b6c4eff00	j = t5
+0x621b6c4f0070	var t6
+0x621b6c4f00b0	t6 = j * 4
+0x621b6c4f0190	var t7
+0x621b6c4f01d0	t7 = arr1[t6]
+0x621b6c4f0240	i = t7
+0x621b6c4f02d0	output i
+0x621b6c4f0350	label L7
+0x621b6c4f0410	goto L6
+0x621b6c4f0390	label L8
+0x621b6c4f0470	output L4
+0x621b6c4f05a0	end
 
 [B0]
 label main
