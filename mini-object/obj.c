@@ -406,7 +406,7 @@ static void asm_load_addr(int r, SYM *s) // offset+BP
 	case SYM_ARRAY:
 		if (s->scope == 1)
 		{
-			out_str(file_s, "	LOD R%u,R%u+%d", r, R_BP, s->offset);
+			out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_BP, s->offset);
 		}
 		else
 		{
