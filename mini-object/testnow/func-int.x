@@ -1,41 +1,41 @@
 
 # tac list
 
-0x6517c9f737a0	var i
-0x6517c9f743f0	label main
-0x6517c9f74430	begin
-0x6517c9f738e0	var a
-0x6517c9f739b0	var b
-0x6517c9f73a80	var c
-0x6517c9f73ae0	input a
-0x6517c9f73b40	input b
-0x6517c9f73cd0	var t0
-0x6517c9f73d10	actual b
-0x6517c9f73d50	actual a
-0x6517c9f73db0	t0 = call max
-0x6517c9f73e20	c = t0
-0x6517c9f73eb0	output c
-0x6517c9f73f80	output L1
-0x6517c9f74160	var t1
-0x6517c9f741a0	t1 = i + 1
-0x6517c9f741e0	i = t1
-0x6517c9f74270	output i
-0x6517c9f74340	output L2
-0x6517c9f74470	end
-0x6517c9f74c90	label max
-0x6517c9f74cd0	begin
-0x6517c9f74590	formal x
-0x6517c9f74640	formal y
-0x6517c9f74790	var t2
-0x6517c9f747d0	t2 = (x > y)
-0x6517c9f74b10	ifz t2 goto L3
-0x6517c9f74880	i = x
-0x6517c9f74b50	goto L4
-0x6517c9f74a00	label L3
-0x6517c9f74930	i = y
-0x6517c9f74ad0	label L4
-0x6517c9f74be0	return i
-0x6517c9f74d10	end
+0x62b467d3c7a0	var i
+0x62b467d3d3f0	label main
+0x62b467d3d430	begin
+0x62b467d3c8e0	var a
+0x62b467d3c9b0	var b
+0x62b467d3ca80	var c
+0x62b467d3cae0	input a
+0x62b467d3cb40	input b
+0x62b467d3ccd0	var t0
+0x62b467d3cd10	actual a
+0x62b467d3cd50	actual b
+0x62b467d3cdb0	t0 = call max
+0x62b467d3ce20	c = t0
+0x62b467d3ceb0	output c
+0x62b467d3cf80	output L1
+0x62b467d3d160	var t1
+0x62b467d3d1a0	t1 = i + 1
+0x62b467d3d1e0	i = t1
+0x62b467d3d270	output i
+0x62b467d3d340	output L2
+0x62b467d3d470	end
+0x62b467d3dc90	label max
+0x62b467d3dcd0	begin
+0x62b467d3d590	formal x
+0x62b467d3d640	formal y
+0x62b467d3d790	var t2
+0x62b467d3d7d0	t2 = (x > y)
+0x62b467d3db10	ifz t2 goto L3
+0x62b467d3d880	i = x
+0x62b467d3db50	goto L4
+0x62b467d3da00	label L3
+0x62b467d3d930	i = y
+0x62b467d3dad0	label L4
+0x62b467d3dbe0	return i
+0x62b467d3dd10	end
 
 [B0]
 var i
@@ -50,8 +50,8 @@ var c
 input a
 input b
 var t0
-actual b
 actual a
+actual b
 t0 = call max
 c = t0
 output c

@@ -29,13 +29,13 @@ main:
 
 	# var t0
 
-	# actual b
-	STO (R2+12),R6
-	STO (R2+24),R6
-
 	# actual a
 	STO (R2+8),R5
-	STO (R2+28),R5
+	STO (R2+24),R5
+
+	# actual b
+	STO (R2+12),R6
+	STO (R2+28),R6
 
 	# t0 = call max
 	STO (R2+32),R2

@@ -965,12 +965,28 @@ EXP *do_un(int unop, EXP *exp)
 	return exp;
 }
 
+// 反转参数链表
+EXP *reverse_args(EXP *head)
+{
+	EXP *prev = NULL, *cur = head, *next;
+	while (cur)
+	{
+		next = cur->next;
+		cur->next = prev;
+		prev = cur;
+		cur = next;
+	}
+	return prev;
+}
+
 // 没有返回值的函数调用
 TAC *do_call(char *name, EXP *arglist)
 {
 	EXP *alt;  /* For counting args */
 	TAC *code; /* Resulting code */
 	TAC *temp; /* Temporary for building code */
+
+	arglist = reverse_args(arglist);
 
 	code = NULL;
 	for (alt = arglist; alt != NULL; alt = alt->next)
@@ -1000,6 +1016,8 @@ EXP *do_call_ret(char *name, EXP *arglist)
 	SYM *ret;  /* Where function result will go */
 	TAC *code; /* Resulting code */
 	TAC *temp; /* Temporary for building code */
+
+	arglist = reverse_args(arglist);
 
 	ret = mk_tmp(); /* For the result */
 	code = mk_tac(TAC_VAR, ret, NULL, NULL);
