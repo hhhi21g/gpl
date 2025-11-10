@@ -619,6 +619,32 @@ TAC *declare_var_typed(const char *name, int sym_type)
 	return mk_tac(TAC_VAR, sym, NULL, NULL);
 }
 
+TAC *declare_array_typed(const char *name, int type, EXP *dims)
+{
+	SYM *sym = mk_var(name);
+	sym->type = SYM_ARRAY;
+	int ndim = 0;
+	for (EXP *p = dims; p; p = p->next)
+	{
+		ndim++;
+	}
+
+	sym->ndim = ndim;
+	sym->dims = malloc(sizeof(int) * ndim);
+
+	int i = ndim - 1;
+
+	for (EXP *p = dims; p; p = p->next)
+	{
+		sym->dims[i--] = p->ret->value;
+	}
+
+	sym->etc = malloc(sizeof(int));
+	*((int *)sym->etc) = type; // 使用etc存储数组类型
+
+	return mk_tac(TAC_VARARRAY, sym, mk_const(ndim), NULL);
+}
+
 TAC *mk_tac(int op, SYM *a, SYM *b, SYM *c)
 {
 	TAC *t = (TAC *)malloc(sizeof(TAC));

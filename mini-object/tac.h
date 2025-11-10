@@ -7,6 +7,7 @@
 #define SYM_LABEL 5
 #define SYM_CHAR 6
 #define SYM_PTR 7
+#define SYM_ARRAY 8
 
 /* type of tac */
 #define TAC_UNDEF 0		 /* undefine */
@@ -38,6 +39,9 @@
 #define TAC_LOAD 26		 /* t = *a */
 #define TAC_STORE 27	 /* *t = a */
 #define TAC_CASE 28
+#define TAC_VARARRAY 29
+#define TAC_LOADIDX 30
+#define TAC_STOREIDX 31
 
 typedef struct sym
 {
@@ -57,6 +61,8 @@ typedef struct sym
 	int label;
 	struct tac *address; /* SYM_FUNC */
 	struct sym *next;
+	int ndim;  // 数组维度数
+	int *dims; // 每个维度的长度
 	void *etc;
 } SYM;
 
