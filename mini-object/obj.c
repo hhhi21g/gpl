@@ -289,7 +289,7 @@ void asm_cond(char *op, SYM *a, char *l)
 	out_str(file_s, "	%s %s\n", op, l);
 }
 
-void asm_call(SYM *a, SYM *b)
+void asm_call(SYM *a, SYM *b) // a:返回值变量；b：函数名
 {
 	int r;
 	for (int r = R_GEN; r < R_NUM; r++)
@@ -298,15 +298,27 @@ void asm_call(SYM *a, SYM *b)
 		rdesc_clear(r);
 	out_str(file_s, "	STO (R2+%d),R2\n", tof + oon); /* store old bp */
 	oon += 4;
-	out_str(file_s, "	LOD R4,R1+32\n");			   /* return addr: 4*8=32 */
+	out_str(file_s, "	LOD R4,L%s\n", b->name);	   /* return addr: 4*8=32 */
 	out_str(file_s, "	STO (R2+%d),R4\n", tof + oon); /* store return addr */
 	oon += 4;
 	out_str(file_s, "	LOD R2,R2+%d\n", tof + oon - 8); /* load new bp */
 	out_str(file_s, "	JMP %s\n", (char *)b);			 /* jump to new func */
+
+	// 返回点
+	out_str(file_s, "L%s:\n", b->name);
+
+	// if (a != NULL)
+	// {
+	// 	r = reg_alloc(a);
+	// 	out_str(file_s, "	LOD R%u,R%u\n", r, R_TP);
+	// 	rdesc[r].mod = MODIFIED;
+	// }
+
+	// 取返回值，R15保存
 	if (a != NULL)
 	{
-		r = reg_alloc(a);
-		out_str(file_s, "	LOD R%u,R%u\n", r, R_TP);
+		int ra = reg_alloc(a);
+		out_str(file_s, "	LOD R%u,R15\n", ra);
 		rdesc[r].mod = MODIFIED;
 	}
 	oon = 0;

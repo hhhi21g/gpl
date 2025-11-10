@@ -39,15 +39,15 @@ main:
 
 	# t0 = call max
 	STO (R2+32),R2
-	LOD R4,R1+32
+	LOD R4,L(null)
 	STO (R2+36),R4
 	LOD R2,R2+32
 	JMP max
+L(null):
 	LOD R5,(R2+20)
-	LOD R5,R4
+	LOD R5,R15
 
 	# c = t0
-	STO (R2+20),R5
 
 	# output c
 	STO (R2+16),R5
