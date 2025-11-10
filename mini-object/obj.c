@@ -325,7 +325,7 @@ void asm_call(SYM *a, SYM *b) // a:返回值变量；b：函数名
 	{
 		int ra = reg_alloc(a);
 		out_str(file_s, "	LOD R%u,R15\n", ra);
-		rdesc[r].mod = MODIFIED;
+		rdesc[ra].mod = MODIFIED;
 	}
 	oon = 0;
 }
