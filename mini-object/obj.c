@@ -100,9 +100,7 @@ void asm_load(int r, SYM *s)
 
 int reg_alloc(SYM *s)
 {
-	int r;
-
-	/* already in a register */
+	int r; /* already in a register */
 	for (r = R_GEN; r < R_NUM; r++)
 	{
 		if (rdesc[r].var == s)
@@ -111,15 +109,44 @@ int reg_alloc(SYM *s)
 				asm_write_back(r);
 			return r;
 		}
-	}
-
-	/* empty register */
+	} /* empty register */
 	for (r = R_GEN; r < R_NUM; r++)
 	{
 		if (rdesc[r].var == NULL)
 		{
 			asm_load(r, s);
 			rdesc_fill(r, s, UNMODIFIED);
+			return r;
+		}
+	} /* unmodifed register */
+	for (r = R_GEN; r < R_NUM; r++)
+	{
+		if (!rdesc[r].mod)
+		{
+			asm_load(r, s);
+			rdesc_fill(r, s, UNMODIFIED);
+			return r;
+		}
+	} /* random register */
+	srand(time(NULL));
+	int random = (rand() % (R_NUM - R_GEN)) + R_GEN;
+	asm_write_back(random);
+	asm_load(random, s);
+	rdesc_fill(random, s, UNMODIFIED);
+	return random;
+}
+
+int reg_alloc_temp()
+{
+	int r;
+
+	/* empty register */
+	for (r = R_GEN; r < R_NUM; r++)
+	{
+		if (rdesc[r].var == NULL)
+		{
+			rdesc[r].var = (SYM *)-1;
+			rdesc[r].mod = 0;
 			return r;
 		}
 	}
@@ -129,18 +156,26 @@ int reg_alloc(SYM *s)
 	{
 		if (!rdesc[r].mod)
 		{
-			asm_load(r, s);
-			rdesc_fill(r, s, UNMODIFIED);
+			rdesc[r].var = (SYM *)-1;
+			rdesc[r].mod = 0;
 			return r;
 		}
 	}
 
 	/* random register */
-	srand(time(NULL));
+	static int seeded = 0;
+	if (!seeded)
+	{
+		srand((unsigned)time(NULL));
+		seeded = 1;
+	}
 	int random = (rand() % (R_NUM - R_GEN)) + R_GEN;
+
 	asm_write_back(random);
-	asm_load(random, s);
-	rdesc_fill(random, s, UNMODIFIED);
+	rdesc[random].var = (SYM *)-1;
+	rdesc[random].mod = 0;
+
+	out_str(file_s, "	# [DEBUG] reg_alloc_temp chose R%u randomly\n", random);
 	return random;
 }
 
@@ -366,6 +401,26 @@ void asm_static(void)
 	out_str(file_s, "STACK:\n");
 }
 
+static void asm_load_addr(int r, SYM *s) // offset+BP
+{
+	switch (s->type)
+	{
+	case SYM_VAR:
+	case SYM_ARRAY:
+		if (s->scope == 1)
+		{
+			out_str(file_s, "	LOD R%u,R%u+%d", r, R_BP, s->offset);
+		}
+		else
+		{
+			out_str(file_s, "	LOD R%u,STATIC\n", R_TP);
+			out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_TP, s->offset);
+		}
+		break;
+	default:
+		break;
+	}
+}
 void asm_code(TAC *c)
 {
 	int r;
@@ -485,23 +540,29 @@ void asm_code(TAC *c)
 	}
 
 	case TAC_LOADIDX:
-		int base_load = reg_alloc(c->b);
+		int base_load = reg_alloc_temp();
 		int offset_load = reg_alloc(c->c);
 		int ra = reg_alloc(c->a);
+
+		asm_load_addr(base_load, c->b);
 
 		out_str(file_s, "	ADD R%u,R%u\n", base_load, offset_load);
 		out_str(file_s, "	LOD R%u,(R%u)\n", ra, base_load);
 
 		rdesc_fill(ra, c->a, MODIFIED);
+		rdesc_clear(base_load);
 		return;
 
 	case TAC_STOREIDX:
-		int base_store = reg_alloc(c->a);
+		int base_store = reg_alloc_temp();
 		int offset_store = reg_alloc(c->b);
 		int rval = reg_alloc(c->c);
 
+		asm_load_addr(base_store, c->a);
+
 		out_str(file_s, "	ADD R%u,R%u\n", base_store, offset_store);
 		out_str(file_s, "	STO (R%u),R%u\n", base_store, rval);
+		rdesc_clear(base_store);
 		return;
 
 	case TAC_ADDR:

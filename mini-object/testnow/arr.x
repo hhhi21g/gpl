@@ -1,64 +1,64 @@
 
 # tac list
 
-0x5ad211ee76d0	label main
-0x5ad211ee7710	begin
-0x5ad211ee4810	var i
-0x5ad211ee48e0	var j
-0x5ad211ee4b00	vararray arr1[1D]
-0x5ad211ee4d70	vararray arr2[2D]
-0x5ad211ee5030	vararray arr3[3D]
-0x5ad211ee5090	input i
-0x5ad211ee52a0	var t0
-0x5ad211ee5760	t0 = 6 * 4
-0x5ad211ee57d0	arr1[t0] = i
-0x5ad211ee5dc0	var t4
-0x5ad211ee5e00	t4 = 6 * 20
-0x5ad211ee5e40	t4 = t4 + 6
-0x5ad211ee5f20	var t5
-0x5ad211ee5f60	t5 = t4 * 4
-0x5ad211ee5a40	var t1
-0x5ad211ee5a80	t1 = 6 * 4
-0x5ad211ee5b60	var t2
-0x5ad211ee5ba0	t2 = arr1[t1]
-0x5ad211ee5cd0	var t3
-0x5ad211ee5d10	t3 = t2 + 6
-0x5ad211ee5fd0	arr2[t5] = t3
-0x5ad211ee6820	var t10
-0x5ad211ee6860	t10 = 6 * 30
-0x5ad211ee68a0	t10 = t10 + 6
-0x5ad211ee6980	var t11
-0x5ad211ee69c0	t11 = t10 * 20
-0x5ad211ee6a00	t11 = t11 + 6
-0x5ad211ee6ae0	var t12
-0x5ad211ee6b20	t12 = t11 * 4
-0x5ad211ee6340	var t6
-0x5ad211ee6380	t6 = 6 * 20
-0x5ad211ee63c0	t6 = t6 + 6
-0x5ad211ee64a0	var t7
-0x5ad211ee64e0	t7 = t6 * 4
-0x5ad211ee65c0	var t8
-0x5ad211ee6600	t8 = arr2[t7]
-0x5ad211ee6730	var t9
-0x5ad211ee6770	t9 = t8 + 6
-0x5ad211ee6b90	arr3[t12] = t9
-0x5ad211ee6e50	ifz 0 goto L2
-0x5ad211ee6d20	output L1
-0x5ad211ee6e10	label L2
-0x5ad211ee70a0	var t13
-0x5ad211ee70e0	t13 = 6 * 30
-0x5ad211ee7120	t13 = t13 + 6
-0x5ad211ee7200	var t14
-0x5ad211ee7240	t14 = t13 * 20
-0x5ad211ee7280	t14 = t14 + 6
-0x5ad211ee7360	var t15
-0x5ad211ee73a0	t15 = t14 * 4
-0x5ad211ee7480	var t16
-0x5ad211ee74c0	t16 = arr3[t15]
-0x5ad211ee7530	j = t16
-0x5ad211ee75c0	output j
-0x5ad211ee7620	output L1
-0x5ad211ee7750	end
+0x61c89b7a46d0	label main
+0x61c89b7a4710	begin
+0x61c89b7a1810	var i
+0x61c89b7a18e0	var j
+0x61c89b7a1b00	vararray arr1[1D]
+0x61c89b7a1d70	vararray arr2[2D]
+0x61c89b7a2030	vararray arr3[3D]
+0x61c89b7a2090	input i
+0x61c89b7a22a0	var t0
+0x61c89b7a2760	t0 = 6 * 4
+0x61c89b7a27d0	arr1[t0] = i
+0x61c89b7a2dc0	var t4
+0x61c89b7a2e00	t4 = 6 * 20
+0x61c89b7a2e40	t4 = t4 + 6
+0x61c89b7a2f20	var t5
+0x61c89b7a2f60	t5 = t4 * 4
+0x61c89b7a2a40	var t1
+0x61c89b7a2a80	t1 = 6 * 4
+0x61c89b7a2b60	var t2
+0x61c89b7a2ba0	t2 = arr1[t1]
+0x61c89b7a2cd0	var t3
+0x61c89b7a2d10	t3 = t2 + 6
+0x61c89b7a2fd0	arr2[t5] = t3
+0x61c89b7a3820	var t10
+0x61c89b7a3860	t10 = 6 * 30
+0x61c89b7a38a0	t10 = t10 + 6
+0x61c89b7a3980	var t11
+0x61c89b7a39c0	t11 = t10 * 20
+0x61c89b7a3a00	t11 = t11 + 6
+0x61c89b7a3ae0	var t12
+0x61c89b7a3b20	t12 = t11 * 4
+0x61c89b7a3340	var t6
+0x61c89b7a3380	t6 = 6 * 20
+0x61c89b7a33c0	t6 = t6 + 6
+0x61c89b7a34a0	var t7
+0x61c89b7a34e0	t7 = t6 * 4
+0x61c89b7a35c0	var t8
+0x61c89b7a3600	t8 = arr2[t7]
+0x61c89b7a3730	var t9
+0x61c89b7a3770	t9 = t8 + 6
+0x61c89b7a3b90	arr3[t12] = t9
+0x61c89b7a3e50	ifz 0 goto L2
+0x61c89b7a3d20	output L1
+0x61c89b7a3e10	label L2
+0x61c89b7a40a0	var t13
+0x61c89b7a40e0	t13 = 6 * 30
+0x61c89b7a4120	t13 = t13 + 6
+0x61c89b7a4200	var t14
+0x61c89b7a4240	t14 = t13 * 20
+0x61c89b7a4280	t14 = t14 + 6
+0x61c89b7a4360	var t15
+0x61c89b7a43a0	t15 = t14 * 4
+0x61c89b7a4480	var t16
+0x61c89b7a44c0	t16 = arr3[t15]
+0x61c89b7a4530	j = t16
+0x61c89b7a45c0	output j
+0x61c89b7a4620	output L1
+0x61c89b7a4750	end
 
 [B0]
 label main
