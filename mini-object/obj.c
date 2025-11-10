@@ -140,7 +140,6 @@ int reg_alloc_temp()
 {
 	int r;
 
-	/* empty register */
 	for (r = R_GEN; r < R_NUM; r++)
 	{
 		if (rdesc[r].var == NULL)
@@ -151,7 +150,6 @@ int reg_alloc_temp()
 		}
 	}
 
-	/* unmodifed register */
 	for (r = R_GEN; r < R_NUM; r++)
 	{
 		if (!rdesc[r].mod)
@@ -162,7 +160,6 @@ int reg_alloc_temp()
 		}
 	}
 
-	/* random register */
 	static int seeded = 0;
 	if (!seeded)
 	{
@@ -175,7 +172,7 @@ int reg_alloc_temp()
 	rdesc[random].var = (SYM *)-1;
 	rdesc[random].mod = 0;
 
-	out_str(file_s, "	# [DEBUG] reg_alloc_temp chose R%u randomly\n", random);
+	// out_str(file_s, "	# [DEBUG] reg_alloc_temp chose R%u randomly\n", random);
 	return random;
 }
 
