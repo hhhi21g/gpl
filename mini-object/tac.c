@@ -128,94 +128,6 @@ static SYM *eval_un(int op, SYM *b)
 	return NULL;
 }
 
-int tac_constant_fold(BASIC_BLOCK *bb)
-{ // 每个BB内部
-	int changed = 0;
-	CMap *env = NULL;
-	SYM *bc, *cc;
-
-	for (TAC *t = bb->first; t; t = (t == bb->last ? NULL : t->next))
-	{
-		switch (t->op)
-		{
-		case TAC_COPY:
-			SYM *c = is_const_sym(t->b) ? t->b : cmap_get(env, t->b);
-			if (c)
-			{ // b是常量，则a也是常量
-				cmap_set(&env, t->a, c);
-			}
-			else
-			{
-				cmap_kill(&env, t->a);
-			}
-			break;
-		case TAC_ADD:
-		case TAC_SUB:
-		case TAC_MUL:
-		case TAC_DIV:
-		case TAC_EQ:
-		case TAC_NE:
-		case TAC_LT:
-		case TAC_LE:
-		case TAC_GT:
-		case TAC_GE:
-			bc = is_const_sym(t->b) ? t->b : cmap_get(env, t->b);
-			cc = is_const_sym(t->c) ? t->c : cmap_get(env, t->c);
-			if (bc && cc)
-			{
-				SYM *rc = eval_bin(t->op, bc, cc);
-				if (rc)
-				{
-					t->op = TAC_COPY;
-					t->b = rc;
-					t->c = NULL;
-					changed = 1;
-					cmap_set(&env, t->a, rc);
-				}
-				else
-				{
-					cmap_kill(&env, t->a);
-				}
-			}
-			else
-			{
-				cmap_kill(&env, t->a);
-			}
-			break;
-		case TAC_NEG:
-			bc = is_const_sym(t->b) ? t->b : cmap_get(env, t->b);
-			if (bc)
-			{
-				SYM *rc = eval_un(TAC_NEG, bc);
-				if (rc)
-				{
-					t->op = TAC_COPY;
-					t->b = rc;
-					t->c = NULL;
-					changed = 1;
-					cmap_set(&env, t->a, rc);
-				}
-				else
-				{
-					cmap_kill(&env, t->a);
-				}
-			}
-			break;
-		case TAC_IFZ:
-			bc = is_const_sym(t->b) ? t->b : cmap_get(env, t->b);
-			if (bc)
-			{
-				changed = 1;
-				t->b = bc;
-			}
-			break;
-		}
-		if (t == bb->last)
-			break;
-	}
-	return changed;
-}
-
 int cfg_fold_if()
 {
 	int changed = 0;
@@ -839,35 +751,128 @@ EXP *do_bin(int binop, EXP *exp1, EXP *exp2)
 	TAC *temp; /* TAC code for temp symbol */
 	TAC *ret;  /* TAC code for result */
 
-	/*
-	if((exp1->ret->type==SYM_INT) && (exp2->ret->type==SYM_INT))
+	SYM *x = exp1->ret; // 操作数1
+	SYM *y = exp2->ret; // 操作数2
+
+	if (binop == TAC_ADD)
+	{
+		// 0 + y = y
+		if (x->type == SYM_INT && x->value == 0)
+		{
+			exp2->tac = join_tac(exp1->tac, exp2->tac);
+			return exp2;
+		}
+		// x + 0 = x
+		if (y->type == SYM_INT && y->value == 0)
+		{
+			exp1->tac = join_tac(exp1->tac, exp2->tac);
+			return exp1;
+		}
+	}
+	else if (binop == TAC_SUB)
+	{
+		// x - 0 = x
+		if (y->type == SYM_INT && y->value == 0)
+		{
+			exp1->tac = join_tac(exp1->tac, exp2->tac);
+			return exp1;
+		}
+		// 0 - y = -y
+		if (x->type == SYM_INT && x->value == 0)
+		{
+			// 0 - 常量
+			if (y->type == SYM_INT)
+			{
+				EXP *e = exp1;
+				e->ret = mk_const(-(y->value));
+				e->tac = join_tac(exp1->tac, exp2->tac);
+				return e;
+			}
+			// 0 - 变量
+			TAC *tmp = mk_tac(TAC_VAR, mk_tmp(), NULL, NULL);
+			tmp->prev = join_tac(exp1->tac, exp2->tac);
+			TAC *neg = mk_tac(TAC_NEG, tmp->a, y, NULL);
+			neg->prev = tmp;
+			exp2->ret = tmp->a;
+			exp2->tac = neg;
+			return exp2;
+		}
+	}
+	else if (binop == TAC_MUL)
+	{
+		// 0 * y / x * 0 = 0
+		if ((x->type == SYM_INT && x->value == 0) || (y->type == SYM_INT && y->value == 0))
+		{
+			EXP *e = exp1;
+			e->ret = mk_const(0);
+			e->tac = join_tac(exp1->tac, exp2->tac);
+			return e;
+		}
+		// 1 * y = y
+		if (x->type == SYM_INT && x->value == 1)
+		{
+			exp2->tac = join_tac(exp1->tac, exp2->tac);
+			return exp2;
+		}
+		// x * 1 = x
+		if (y->type == SYM_INT && y->value == 1)
+		{
+			exp1->tac = join_tac(exp1->tac, exp2->tac);
+			return exp1;
+		}
+	}
+	else if (binop == TAC_DIV)
+	{
+		// 0 / y = 0
+		if (x->type == SYM_INT && x->value == 0)
+		{
+			EXP *e = exp1;
+			e->ret = mk_const(0);
+			e->tac = join_tac(exp1->tac, exp2->tac);
+			return e;
+		}
+		// x / 1 = x
+		if (y->type == SYM_INT && y->value == 1)
+		{
+			exp1->tac = join_tac(exp1->tac, exp2->tac);
+			return exp1;
+		}
+		// x / 0 报错
+		if (y->type == SYM_INT && y->value == 0)
+		{
+			error("divide by zero");
+			exp1->tac = join_tac(exp1->tac, exp2->tac);
+			return exp1;
+		}
+	}
+
+	if ((exp1->ret->type == SYM_INT || exp1->ret->type == SYM_CHAR) && (exp2->ret->type == SYM_INT || exp1->ret->type == SYM_CHAR))
 	{
 		int newval;
 
-		switch(binop)
+		switch (binop)
 		{
-			case TAC_ADD:
-			newval=exp1->ret->value + exp2->ret->value;
+		case TAC_ADD:
+			newval = exp1->ret->value + exp2->ret->value;
 			break;
 
-			case TAC_SUB:
-			newval=exp1->ret->value - exp2->ret->value;
+		case TAC_SUB:
+			newval = exp1->ret->value - exp2->ret->value;
 			break;
 
-			case TAC_MUL:
-			newval=exp1->ret->value * exp2->ret->value;
+		case TAC_MUL:
+			newval = exp1->ret->value * exp2->ret->value;
 			break;
 
-			case TAC_DIV:
-			newval=exp1->ret->value / exp2->ret->value;
+		case TAC_DIV:
+			newval = exp1->ret->value / exp2->ret->value;
 			break;
 		}
 
-		exp1->ret=mk_const(newval);
+		exp1->ret = mk_const(newval);
 
 		return exp1;
 	}
-	*/
 
 	temp = mk_tac(TAC_VAR, mk_tmp(), NULL, NULL);
 	temp->prev = join_tac(exp1->tac, exp2->tac);
