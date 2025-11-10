@@ -6,9 +6,6 @@
 #include "tac.h"
 #include "obj.h"
 
-extern TAC *tac_first;
-extern TAC *tac_last;
-
 /* global var */
 int tos; /* top of static */
 int tof; /* top of frame */
@@ -262,10 +259,6 @@ void asm_cond(char *op, SYM *a, char *l)
 
 void asm_call(SYM *a, SYM *b)
 {
-	static int call_id = 100;
-	char label_ret[32];
-	sprintf(label_ret, "L%d", call_id++);
-
 	int r;
 	for (int r = R_GEN; r < R_NUM; r++)
 		asm_write_back(r);
@@ -273,12 +266,11 @@ void asm_call(SYM *a, SYM *b)
 		rdesc_clear(r);
 	out_str(file_s, "	STO (R2+%d),R2\n", tof + oon); /* store old bp */
 	oon += 4;
-	// out_str(file_s, "	LOD R3,%s\n", label_ret);	   /* return addr: 4*8=32 */
-	out_str(file_s, "	STO (R2+%d),R2\n", tof + oon); /* store return addr */
+	out_str(file_s, "	LOD R4,R1+32\n");			   /* return addr: 4*8=32 */
+	out_str(file_s, "	STO (R2+%d),R4\n", tof + oon); /* store return addr */
 	oon += 4;
 	out_str(file_s, "	LOD R2,R2+%d\n", tof + oon - 8); /* load new bp */
 	out_str(file_s, "	JMP %s\n", (char *)b);			 /* jump to new func */
-	out_str(file_s, "%s:\n", label_ret);				 // 返回带你
 	if (a != NULL)
 	{
 		r = reg_alloc(a);
@@ -425,7 +417,7 @@ void asm_code(TAC *c)
 			out_str(file_s, "	ITC\n");
 		else
 			out_str(file_s, "	ITI\n");
-		out_str(file_s, "	STO (R%u+%d),R15\n", R_BP, c->a->offset);
+		out_str(file_s, "	LOD R%u,R15\n", r);
 		rdesc[r].mod = MODIFIED;
 		return;
 
@@ -563,8 +555,6 @@ void asm_code(TAC *c)
 
 void tac_obj()
 {
-	// printf("[obj] tac_first (seen here) = %p\n", tac_first);
-
 	tof = LOCAL_OFF; /* TOS allows space for link info */
 	oof = FORMAL_OFF;
 	oon = 0;
@@ -575,10 +565,8 @@ void tac_obj()
 	asm_head();
 
 	TAC *cur;
-	// printf("[obj] emit start\n");
 	for (cur = tac_first; cur != NULL; cur = cur->next)
 	{
-		printf("[obj] see label %s\n", cur->a->name);
 		out_str(file_s, "\n	# ");
 		out_tac(file_s, cur);
 		out_str(file_s, "\n");
@@ -586,7 +574,6 @@ void tac_obj()
 		// 	printf("asm_code %d", *((int *)cur->a->etc));
 		asm_code(cur);
 	}
-	// printf("[obj] emit end\n");
 	asm_tail();
 	asm_static();
 }

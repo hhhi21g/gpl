@@ -507,25 +507,17 @@ void tac_init()
 
 void tac_complete()
 {
-	// printf("[tac_complete] enter, tac_last=%p\n", tac_last);
 	TAC *cur = NULL;	  /* Current TAC */
 	TAC *prev = tac_last; /* Previous TAC */
 
-	int nlab = 0;
 	while (prev != NULL)
 	{
 		prev->next = cur;
 		cur = prev;
 		prev = prev->prev;
-		// if (prev->op == TAC_LABEL && prev->a && prev->a->name)
-		// {
-		// 	// printf("[tac_complete] label %s\n", prev->a->name);
-		// 	nlab++;
-		// }
 	}
 
 	tac_first = cur;
-	// printf("[tac_complete] labels total = %d\n", nlab);
 }
 
 SYM *lookup_sym(SYM *symtab, char *name)
@@ -595,7 +587,6 @@ SYM *mk_var(char *name)
 TAC *join_tac(TAC *c1, TAC *c2)
 {
 	TAC *t;
-	printf("[join_tac] join %p <- %p\n", c1, c2);
 
 	if (c1 == NULL)
 		return c2;
@@ -608,7 +599,6 @@ TAC *join_tac(TAC *c1, TAC *c2)
 		t = t->prev;
 
 	t->prev = c1;
-
 	return c2;
 }
 
@@ -653,7 +643,6 @@ SYM *mk_label(char *name)
 
 TAC *do_func(SYM *func, TAC *args, TAC *code)
 {
-	printf("[do_func] start func=%s\n", func->name);
 	TAC *tlist; /* The backpatch list */
 
 	TAC *tlab;	 /* Label at start of function */
@@ -667,7 +656,6 @@ TAC *do_func(SYM *func, TAC *args, TAC *code)
 	tbegin->prev = tlab;
 	code = join_tac(args, code);
 	tend->prev = join_tac(tbegin, code);
-	printf("[do_func] end func=%s\n", func->name);
 
 	return tend;
 }

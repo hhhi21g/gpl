@@ -48,7 +48,6 @@ program : function_declaration_list
 function_declaration_list : function_declaration
 | function_declaration_list function_declaration
 {
-	printf("[YACC] join function_declaration_list\n");
 	$$=join_tac($1, $2);
 }
 ;
@@ -115,6 +114,18 @@ function_head : IDENTIFIER
 	scope=1; /* Enter local scope. */
 	sym_tab_local=NULL; /* Init local symbol table. */
 }
+| INT IDENTIFIER
+{
+	$$ = declare_func($2);
+	scope = 1;
+	sym_tab_local = NULL;
+}
+| CHAR IDENTIFIER
+{
+	$$ = declare_func($2);
+	scope = 1;
+	sym_tab_local = NULL;
+}
 ;
 
 parameter_list : IDENTIFIER
@@ -124,7 +135,23 @@ parameter_list : IDENTIFIER
 | parameter_list ',' IDENTIFIER
 {
 	$$=join_tac($1, declare_para($3));
-}               
+}            
+| INT IDENTIFIER
+{
+	$$ = declare_para($2);
+}   
+| CHAR IDENTIFIER
+{
+	$$ = declare_para($2);
+}
+| parameter_list ',' INT IDENTIFIER
+{
+	$$ = join_tac($1,declare_para($4));
+}
+| parameter_list ',' CHAR IDENTIFIER
+{
+	$$ = join_tac($1,declare_para($4));
+}
 |
 {
 	$$=NULL;
