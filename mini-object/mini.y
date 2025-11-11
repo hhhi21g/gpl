@@ -138,7 +138,8 @@ struct_member_line:INT IDENTIFIER ';'
 }
 | CHAR IDENTIFIER ';'
 { 
-	add_struct_member(NULL, SYM_CHAR, $2); $$ = NULL; 
+	add_struct_member(NULL, SYM_CHAR, $2); 
+	$$ = NULL; 
 }
 | INT IDENTIFIER ',' IDENTIFIER ';'
 {
