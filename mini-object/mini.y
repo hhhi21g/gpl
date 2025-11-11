@@ -12,6 +12,8 @@ static SYM *g_for_cont  = NULL;
 static SYM *g_for_end   = NULL;
 static SYM *g_switch_end = NULL;
 
+static char *g_cur_struct = NULL;
+
 %}
 
 %union
@@ -23,8 +25,8 @@ static SYM *g_switch_end = NULL;
 	EXP	*exp;
 }
 
-%token INT EQ NE LT LE GT GE UMINUS IF ELSE SWITCH CASE DEFAULT WHILE FOR BREAK CONTINUE FUNC INPUT OUTPUT RETURN
-%token <string> INTEGER IDENTIFIER TEXT CHAR CHAR_CONST LBRACK RBRACK
+%token INT EQ NE LT LE GT GE UMINUS STRUCT_TOK PTR_OP IF ELSE SWITCH CASE DEFAULT WHILE FOR BREAK CONTINUE FUNC INPUT OUTPUT RETURN
+%token <string> INTEGER IDENTIFIER TEXT CHAR CHAR_CONST LBRACK RBRACK 
 
 %left EQ NE LT LE GT GE
 %left '+' '-'
@@ -32,7 +34,7 @@ static SYM *g_switch_end = NULL;
 %right UMINUS
 
 %type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement switch_statement case_list case_item default_list while_statement for_statement break_statement continue_statement opt_statement call_statement block declaration_list declaration statement_list input_statement output_statement 
-%type <tac> variable_list_char decl_item_char decl_item_int
+%type <tac> variable_list_char decl_item_char decl_item_int struct_definition struct_member_list struct_member_line struct_var_list
 %type <exp> argument_list expression_list expression call_expression  opt_expression dims_decl dims_idx
 %type <sym> function_head
 
@@ -55,6 +57,7 @@ function_declaration_list : function_declaration
 
 function_declaration : function
 | declaration
+| struct_definition;
 ;
 
 dims_decl:LBRACK INTEGER RBRACK
@@ -88,6 +91,66 @@ declaration : INT variable_list ';'
 | CHAR variable_list_char ';'
 {
 	$$=$2;
+}
+| STRUCT_TOK IDENTIFIER {g_cur_struct = $2;} struct_var_list ';'
+{
+	$$ = $4;
+	g_cur_struct = NULL;
+}
+;
+
+struct_var_list: IDENTIFIER
+{ 
+	$$ = declare_struct($1, g_cur_struct); 
+}
+| struct_var_list ',' IDENTIFIER
+{ 
+	$$ = join_tac($1, declare_struct($3, g_cur_struct)); 
+}
+;
+
+
+struct_definition: STRUCT_TOK IDENTIFIER
+{
+	begin_struct($2);
+}
+'{' struct_member_list'}' ';'
+{
+	end_struct(NULL);
+	$$ = NULL;
+}
+;
+
+struct_member_list:
+{
+	 $$ = NULL;
+}
+| struct_member_list struct_member_line
+{
+	$$ = join_tac($1,$2);
+}
+;
+
+struct_member_line:INT IDENTIFIER ';'
+{
+	add_struct_member(NULL,SYM_INT,$2);
+	$$ = NULL;
+}
+| CHAR IDENTIFIER ';'
+{ 
+	add_struct_member(NULL, SYM_CHAR, $2); $$ = NULL; 
+}
+| INT IDENTIFIER ',' IDENTIFIER ';'
+{
+	add_struct_member(NULL, SYM_INT, $2);
+	add_struct_member(NULL, SYM_INT, $4);
+	$$ = NULL;
+}
+| CHAR IDENTIFIER ',' IDENTIFIER ';'
+{
+	add_struct_member(NULL, SYM_CHAR, $2);
+	add_struct_member(NULL, SYM_CHAR, $4);
+	$$ = NULL;
 }
 ;
 
@@ -270,6 +333,12 @@ assignment_statement : IDENTIFIER '=' expression
     TAC *load = mk_tac(TAC_LOAD, dst, src, NULL);
     $$ = load;
 }
+| IDENTIFIER '.' IDENTIFIER '=' expression  // i.a = b
+{
+	SYM*base = get_var($1);
+	int offset = get_struct_offset(base,$3);
+	$$ = make_struct_store_tac(base,offset,$5);
+}
 ;
 
 expression : expression '+' expression
@@ -339,6 +408,12 @@ expression : expression '+' expression
 | call_expression
 {
 	$$=$1;
+}
+| IDENTIFIER '.' IDENTIFIER  // 结构体读值a.b
+{
+	SYM *base = get_var($1);
+	int offset = get_struct_offset(base,$3);
+	$$ = make_struct_load_exp(base,offset);
 }
 | error
 {

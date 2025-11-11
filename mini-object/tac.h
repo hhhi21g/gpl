@@ -8,6 +8,7 @@
 #define SYM_CHAR 6
 #define SYM_PTR 7
 #define SYM_ARRAY 8
+#define SYM_STRUCT 9
 
 /* type of tac */
 #define TAC_UNDEF 0		 /* undefine */
@@ -98,6 +99,22 @@ typedef struct basic_block
 	int mark;
 } BASIC_BLOCK;
 
+typedef struct STRUCT_MEMBER
+{
+	char *name;
+	int offset;
+	int type;
+	struct STRUCT_MEMBER *next;
+} STRUCT_MEMBER;
+
+typedef struct STRUCT
+{
+	char *name;
+	STRUCT_MEMBER *members;
+	int size;
+	struct STRUCT *next;
+} STRUCT;
+
 /* global var */
 extern FILE *file_x, *file_s;
 extern int yylineno, scope, next_tmp, next_label;
@@ -112,6 +129,7 @@ TAC *join_tac(TAC *c1, TAC *c2);
 void out_str(FILE *f, const char *format, ...);
 void out_sym(FILE *f, SYM *s);
 void out_tac(FILE *f, TAC *i);
+SYM *mk_var(char *name);
 SYM *mk_label(char *name);
 SYM *mk_tmp(void);
 SYM *mk_const(int n);
@@ -154,5 +172,15 @@ EXP *do_bin(int binop, EXP *exp1, EXP *exp2);
 EXP *do_cmp(int binop, EXP *exp1, EXP *exp2);
 EXP *do_un(int unop, EXP *exp);
 EXP *do_call_ret(char *name, EXP *arglist);
+
+STRUCT *begin_struct(const char *name);
+TAC *declare_struct(const char *var_name, const char *struct_name);
+void add_struct_member(STRUCT *unused, int member_type, const char *mname);
+void end_struct(STRUCT *def);
+static STRUCT *find_struct(const char *name);
+static STRUCT *get_struct_var(SYM *var);
+int get_struct_offset(SYM *struct_var, const char *name);
+TAC *make_struct_store_tac(SYM *base, int offset, EXP *exp);
+EXP *make_struct_load_exp(SYM *base, int offset);
 
 void error(const char *format, ...);

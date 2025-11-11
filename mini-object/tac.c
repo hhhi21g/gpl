@@ -17,6 +17,9 @@ static SYM *loop_continue_stack[LOOP_MAX_DEPTH];
 static SYM *loop_end_stack[LOOP_MAX_DEPTH];
 static int loop_depth = 0;
 
+static STRUCT *structs = NULL;
+static STRUCT *cur_structs = NULL;
+
 // 常量符号表
 typedef struct CMap
 {
@@ -73,6 +76,141 @@ static int is_const_sym(SYM *s)
 static SYM *mk_bool_const(int v)
 {
 	return mk_const(v ? 1 : 0);
+}
+// 结构体定义中,还未添加成员
+STRUCT *begin_struct(const char *name)
+{
+	STRUCT *s = (STRUCT *)malloc(sizeof(STRUCT));
+	s->name = strdup(name);
+	s->members = NULL;
+	s->size = 0;
+	s->next = structs;
+	structs = s;
+	cur_structs = s;
+	return s;
+}
+
+TAC *declare_struct(const char *var_name, const char *struct_name)
+{
+	STRUCT *define = find_struct(struct_name);
+	if (!define)
+		error("no struct defined");
+
+	SYM *sym = mk_var((char *)var_name);
+	sym->type = SYM_STRUCT;
+	sym->etc = define; // 使用etc指向结构体定义
+
+	return mk_tac(TAC_VAR, sym, NULL, NULL);
+}
+
+void add_struct_member(STRUCT *unused, int member_type, const char *mname)
+{
+	if (!cur_structs)
+		error("no struct member");
+
+	STRUCT_MEMBER *m = (STRUCT_MEMBER *)malloc(sizeof(STRUCT_MEMBER));
+	m->name = strdup(mname);
+	m->type = member_type;
+	m->offset = cur_structs->size;
+	m->next = cur_structs->members;
+	cur_structs->members = m; // 倒序
+
+	cur_structs->size += 4;
+}
+
+// 结束定义：成员添加完毕
+void end_struct(STRUCT *def)
+{
+	if (!def)
+		def = cur_structs;
+	cur_structs = NULL;
+}
+
+// 查找结构体
+static STRUCT *find_struct(const char *name)
+{
+	for (STRUCT *d = structs; d; d = d->next)
+	{
+		if (strcmp(d->name, name) == 0)
+			return d;
+	}
+	return NULL;
+}
+
+// 根据变量查找结构体
+static STRUCT *get_struct_var(SYM *var)
+{
+	if (!var || var->type != SYM_STRUCT)
+	{
+		error("not a struct");
+	}
+	return (STRUCT *)var->etc;
+}
+
+// 得到成员偏移量
+int get_struct_offset(SYM *struct_var, const char *name)
+{
+	STRUCT *def = get_struct_var(struct_var);
+	for (STRUCT_MEMBER *m = def->members; m; m = m->next)
+	{
+		if (strcmp(m->name, name) == 0)
+			return m->offset;
+	}
+	error("struct member not found");
+	return -1;
+}
+
+// base.a(offset) = exp
+TAC *make_struct_store_tac(SYM *base, int offset, EXP *exp)
+{
+	// t0 = &base
+	SYM *t0 = mk_tmp();
+	TAC *addr_base = mk_tac(TAC_VAR, t0, NULL, NULL);
+	TAC *addr_cnt1 = mk_tac(TAC_ADDR, t0, base, NULL);
+	addr_cnt1->prev = addr_base;
+
+	// t1 = t1 + offset
+	SYM *t1 = mk_tmp();
+	TAC *addr_final = mk_tac(TAC_VAR, t1, NULL, NULL);
+	TAC *addr_cnt2 = mk_tac(TAC_ADD, t1, t0, mk_const(offset));
+	addr_cnt2->prev = addr_final;
+	// addr_cnt2->prev = join_tac(addr_cnt1, addr_cnt2);
+
+	TAC *addr_code = join_tac(join_tac(addr_base, addr_cnt1), join_tac(addr_final, addr_cnt2));
+	// *t1 = exp
+	TAC *store = mk_tac(TAC_STORE, t1, exp->ret, NULL);
+	store->prev = join_tac(exp->tac, addr_code);
+
+	return store;
+}
+
+// base.a(offset)
+EXP *make_struct_load_exp(SYM *base, int offset)
+{
+	// t0 = &base
+	SYM *t0 = mk_tmp();
+	TAC *addr1 = mk_tac(TAC_VAR, t0, NULL, NULL);
+	TAC *addr_base = mk_tac(TAC_ADDR, t0, base, NULL);
+	addr_base->prev = addr1;
+
+	// t1 = t0 + offset
+	SYM *t1 = mk_tmp();
+	TAC *addr2 = mk_tac(TAC_VAR, t1, NULL, NULL);
+	TAC *addr_final = mk_tac(TAC_ADD, t1, mk_const(offset), t0);
+	addr_final->prev = addr2;
+	// addr_final->prev = join_tac(addr_base, addr_final);
+
+	TAC *addr_code = join_tac(join_tac(addr1, addr_base), join_tac(addr2, addr_final));
+
+	// t2 = *t1
+	SYM *t2 = mk_tmp();
+	TAC *tac_val = mk_tac(TAC_VAR, t2, NULL, NULL);
+	TAC *load = mk_tac(TAC_LOAD, t2, t1, NULL);
+	load->prev = tac_val;
+	TAC *total_code = join_tac(addr_code, join_tac(tac_val, load));
+
+	EXP *exp = mk_exp(NULL, t2, total_code);
+	return exp;
 }
 
 static SYM *eval_bin(int op, SYM *b, SYM *c)
@@ -500,21 +638,54 @@ SYM *mk_var(char *name)
 	return sym;
 }
 
+// TAC *join_tac(TAC *c1, TAC *c2)
+// {
+// 	TAC *t;
+
+// 	if (c1 == NULL)
+// 		return c2;
+// 	if (c2 == NULL)
+// 		return c1;
+
+// 	/* Run down c2, until we get to the beginning and then add c1 */
+// 	t = c2;
+// 	while (t->prev != NULL)
+// 		t = t->prev;
+
+// 	t->prev = c1;
+// 	return c2;
+// }
+
+// 判断 x 链（沿 prev 走）里是否包含某节点 target
+static int chain_contains(TAC *x, TAC *target)
+{
+	for (TAC *p = x; p; p = p->prev)
+		if (p == target)
+			return 1;
+	return 0;
+}
+
 TAC *join_tac(TAC *c1, TAC *c2)
 {
-	TAC *t;
-
-	if (c1 == NULL)
+	if (!c1)
 		return c2;
-	if (c2 == NULL)
+	if (!c2)
 		return c1;
 
-	/* Run down c2, until we get to the beginning and then add c1 */
-	t = c2;
-	while (t->prev != NULL)
-		t = t->prev;
+	// 保险：避免把同一条链 join 到自身造成环
+	if (chain_contains(c1, c2) || chain_contains(c2, c1))
+	{
+		// 这里不直接报错，用更保守的策略：认为已经连接好，返回 c2
+		// 也可以改成 error("join_tac: attempt to join overlapping chains");
+		return c2;
+	}
 
-	t->prev = c1;
+	// 找到 c2 的“头”（最早的指令）
+	TAC *head2 = c2;
+	while (head2->prev)
+		head2 = head2->prev;
+
+	head2->prev = c1;
 	return c2;
 }
 
@@ -1244,7 +1415,7 @@ SYM *get_var(char *name)
 		return NULL;
 	}
 
-	if (sym->type != SYM_VAR && sym->type != SYM_ARRAY)
+	if (sym->type != SYM_VAR && sym->type != SYM_ARRAY && sym->type != SYM_STRUCT)
 	{
 		error("not a variable");
 		return NULL;
@@ -1341,6 +1512,7 @@ char *to_str(SYM *s, char *str)
 	case SYM_FUNC:
 	case SYM_VAR:
 	case SYM_ARRAY:
+	case SYM_STRUCT:
 		/* Just return the name */
 		return s->name;
 

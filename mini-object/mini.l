@@ -36,6 +36,12 @@
 "case" { return CASE; }
 "default"  { return DEFAULT; }
 
+"struct" { return STRUCT_TOK; }
+"." { return '.'; }
+"->" { return PTR_OP; }
+"{" { return '{'; }
+"}" { return '}'; }
+
 "[" { return LBRACK; }
 "]" { return RBRACK; }
 
