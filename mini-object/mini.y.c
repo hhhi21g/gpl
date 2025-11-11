@@ -584,17 +584,17 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    41,    41,    49,    50,    57,    58,    61,    65,    73,
-      77,    85,    89,    95,    96,   102,   106,   110,   117,   118,
-     124,   128,   132,   140,   146,   153,   159,   165,   173,   177,
-     181,   185,   189,   193,   198,   203,   204,   205,   206,   207,
-     208,   209,   210,   211,   212,   213,   214,   215,   222,   229,
-     232,   238,   239,   245,   249,   253,   260,   267,   276,   280,
-     284,   288,   292,   296,   300,   304,   308,   312,   316,   320,
-     324,   328,   332,   336,   340,   344,   352,   355,   358,   359,
-     366,   372,   376,   380,   388,   396,   400,   408,   407,   421,
-     422,   428,   435,   438,   444,   443,   461,   460,   477,   482,
-     487,   492,   497,   503,   509,   515
+       0,    41,    41,    49,    50,    56,    57,    60,    64,    72,
+      76,    84,    88,    94,    95,   101,   105,   109,   116,   117,
+     123,   127,   131,   139,   145,   152,   158,   164,   172,   176,
+     180,   184,   188,   192,   197,   202,   203,   204,   205,   206,
+     207,   208,   209,   210,   211,   212,   213,   214,   221,   228,
+     231,   237,   238,   244,   248,   252,   259,   266,   275,   279,
+     283,   287,   291,   295,   299,   303,   307,   311,   315,   319,
+     323,   327,   331,   335,   339,   343,   351,   354,   357,   358,
+     365,   371,   375,   379,   387,   395,   399,   407,   406,   420,
+     421,   427,   434,   437,   443,   442,   460,   459,   476,   481,
+     486,   491,   496,   502,   508,   514
 };
 #endif
 
@@ -1332,710 +1332,709 @@ yyreduce:
   case 4: /* function_declaration_list: function_declaration_list function_declaration  */
 #line 51 "mini.y"
 {
-	// fprintf(stderr, "[JOIN] join %p <- %p\n", $1, $2);
 	(yyval.tac)=join_tac((yyvsp[-1].tac), (yyvsp[0].tac));
 }
-#line 1339 "mini.y.c"
+#line 1338 "mini.y.c"
     break;
 
   case 7: /* dims_decl: LBRACK INTEGER RBRACK  */
-#line 62 "mini.y"
+#line 61 "mini.y"
 {
 	(yyval.exp)=mk_exp(NULL,mk_const(atoi((yyvsp[-1].string))),NULL);
 }
-#line 1347 "mini.y.c"
+#line 1346 "mini.y.c"
     break;
 
   case 8: /* dims_decl: dims_decl LBRACK INTEGER RBRACK  */
-#line 66 "mini.y"
+#line 65 "mini.y"
 {
 	EXP *node = mk_exp(NULL,mk_const(atoi((yyvsp[-1].string))),NULL);
 	node->next = (yyvsp[-3].exp);
 	(yyval.exp) = node;
 }
-#line 1357 "mini.y.c"
+#line 1356 "mini.y.c"
     break;
 
   case 9: /* dims_idx: LBRACK expression RBRACK  */
-#line 74 "mini.y"
+#line 73 "mini.y"
 {
 	(yyval.exp) = mk_exp(NULL,(yyvsp[-1].exp)->ret,(yyvsp[-1].exp)->tac);
 }
-#line 1365 "mini.y.c"
+#line 1364 "mini.y.c"
     break;
 
   case 10: /* dims_idx: dims_idx LBRACK expression RBRACK  */
-#line 78 "mini.y"
+#line 77 "mini.y"
 {
 	EXP*node = mk_exp(NULL,(yyvsp[-1].exp)->ret,(yyvsp[-1].exp)->tac);
 	node->next = (yyvsp[-3].exp);
 	(yyval.exp) = node;
 }
-#line 1375 "mini.y.c"
+#line 1374 "mini.y.c"
     break;
 
   case 11: /* declaration: INT variable_list ';'  */
-#line 86 "mini.y"
+#line 85 "mini.y"
 {
 	(yyval.tac)=(yyvsp[-1].tac);
 }
-#line 1383 "mini.y.c"
+#line 1382 "mini.y.c"
     break;
 
   case 12: /* declaration: CHAR variable_list_char ';'  */
-#line 90 "mini.y"
+#line 89 "mini.y"
 {
 	(yyval.tac)=(yyvsp[-1].tac);
 }
-#line 1391 "mini.y.c"
+#line 1390 "mini.y.c"
     break;
 
   case 14: /* variable_list: variable_list ',' decl_item_int  */
-#line 97 "mini.y"
+#line 96 "mini.y"
 { 
 	(yyval.tac) = join_tac((yyvsp[-2].tac), (yyvsp[0].tac)); 
 }
-#line 1399 "mini.y.c"
+#line 1398 "mini.y.c"
     break;
 
   case 15: /* decl_item_int: IDENTIFIER  */
-#line 103 "mini.y"
+#line 102 "mini.y"
 { 
 	(yyval.tac) = declare_var_typed((yyvsp[0].string), SYM_INT); 
 }
-#line 1407 "mini.y.c"
+#line 1406 "mini.y.c"
     break;
 
   case 16: /* decl_item_int: '*' IDENTIFIER  */
-#line 107 "mini.y"
+#line 106 "mini.y"
 { 
 	(yyval.tac) = declare_var_typed((yyvsp[0].string), SYM_PTR); 
 }
-#line 1415 "mini.y.c"
+#line 1414 "mini.y.c"
     break;
 
   case 17: /* decl_item_int: IDENTIFIER dims_decl  */
-#line 111 "mini.y"
+#line 110 "mini.y"
 {
 	(yyval.tac) = declare_array_typed((yyvsp[-1].string),SYM_INT,(yyvsp[0].exp));
 }
-#line 1423 "mini.y.c"
+#line 1422 "mini.y.c"
     break;
 
   case 19: /* variable_list_char: variable_list_char ',' decl_item_char  */
-#line 119 "mini.y"
+#line 118 "mini.y"
 { 
 	(yyval.tac) = join_tac((yyvsp[-2].tac), (yyvsp[0].tac)); 
 }
-#line 1431 "mini.y.c"
+#line 1430 "mini.y.c"
     break;
 
   case 20: /* decl_item_char: IDENTIFIER  */
-#line 125 "mini.y"
+#line 124 "mini.y"
 { 
 	(yyval.tac) = declare_var_typed((yyvsp[0].string), SYM_CHAR); 
 }
-#line 1439 "mini.y.c"
+#line 1438 "mini.y.c"
     break;
 
   case 21: /* decl_item_char: '*' IDENTIFIER  */
-#line 129 "mini.y"
+#line 128 "mini.y"
 { 
 	(yyval.tac) = declare_var_typed((yyvsp[0].string), SYM_PTR); 
 }
-#line 1447 "mini.y.c"
+#line 1446 "mini.y.c"
     break;
 
   case 22: /* decl_item_char: IDENTIFIER dims_decl  */
-#line 133 "mini.y"
+#line 132 "mini.y"
 {
 	(yyval.tac) = declare_array_typed((yyvsp[-1].string),SYM_CHAR,(yyvsp[0].exp));
 }
-#line 1455 "mini.y.c"
+#line 1454 "mini.y.c"
     break;
 
   case 23: /* function: function_head '(' parameter_list ')' block  */
-#line 141 "mini.y"
+#line 140 "mini.y"
 {
 	(yyval.tac)=do_func((yyvsp[-4].sym), (yyvsp[-2].tac), (yyvsp[0].tac));
 	scope=0; /* Leave local scope. */
 	sym_tab_local=NULL; /* Clear local symbol table. */
 }
-#line 1465 "mini.y.c"
+#line 1464 "mini.y.c"
     break;
 
   case 24: /* function: error  */
-#line 147 "mini.y"
+#line 146 "mini.y"
 {
 	error("Bad function syntax");
 	(yyval.tac)=NULL;
 }
-#line 1474 "mini.y.c"
+#line 1473 "mini.y.c"
     break;
 
   case 25: /* function_head: IDENTIFIER  */
-#line 154 "mini.y"
+#line 153 "mini.y"
 {
 	(yyval.sym)=declare_func((yyvsp[0].string));
 	scope=1; /* Enter local scope. */
 	sym_tab_local=NULL; /* Init local symbol table. */
 }
-#line 1484 "mini.y.c"
+#line 1483 "mini.y.c"
     break;
 
   case 26: /* function_head: INT IDENTIFIER  */
-#line 160 "mini.y"
+#line 159 "mini.y"
 {
 	(yyval.sym) = declare_func((yyvsp[0].string));
 	scope = 1;
 	sym_tab_local = NULL;
 }
-#line 1494 "mini.y.c"
+#line 1493 "mini.y.c"
     break;
 
   case 27: /* function_head: CHAR IDENTIFIER  */
-#line 166 "mini.y"
+#line 165 "mini.y"
 {
 	(yyval.sym) = declare_func((yyvsp[0].string));
 	scope = 1;
 	sym_tab_local = NULL;
 }
-#line 1504 "mini.y.c"
+#line 1503 "mini.y.c"
     break;
 
   case 28: /* parameter_list: IDENTIFIER  */
-#line 174 "mini.y"
+#line 173 "mini.y"
 {
 	(yyval.tac)=declare_para((yyvsp[0].string));
 }
-#line 1512 "mini.y.c"
+#line 1511 "mini.y.c"
     break;
 
   case 29: /* parameter_list: parameter_list ',' IDENTIFIER  */
-#line 178 "mini.y"
+#line 177 "mini.y"
 {
 	(yyval.tac)=join_tac((yyvsp[-2].tac), declare_para((yyvsp[0].string)));
 }
-#line 1520 "mini.y.c"
+#line 1519 "mini.y.c"
     break;
 
   case 30: /* parameter_list: INT IDENTIFIER  */
-#line 182 "mini.y"
+#line 181 "mini.y"
 {
 	(yyval.tac) = declare_para((yyvsp[0].string));
 }
-#line 1528 "mini.y.c"
+#line 1527 "mini.y.c"
     break;
 
   case 31: /* parameter_list: CHAR IDENTIFIER  */
-#line 186 "mini.y"
+#line 185 "mini.y"
 {
 	(yyval.tac) = declare_para((yyvsp[0].string));
 }
-#line 1536 "mini.y.c"
+#line 1535 "mini.y.c"
     break;
 
   case 32: /* parameter_list: parameter_list ',' INT IDENTIFIER  */
-#line 190 "mini.y"
+#line 189 "mini.y"
 {
 	(yyval.tac) = join_tac((yyvsp[-3].tac),declare_para((yyvsp[0].string)));
 }
-#line 1544 "mini.y.c"
+#line 1543 "mini.y.c"
     break;
 
   case 33: /* parameter_list: parameter_list ',' CHAR IDENTIFIER  */
-#line 194 "mini.y"
+#line 193 "mini.y"
 {
 	(yyval.tac) = join_tac((yyvsp[-3].tac),declare_para((yyvsp[0].string)));
 }
-#line 1552 "mini.y.c"
+#line 1551 "mini.y.c"
     break;
 
   case 34: /* parameter_list: %empty  */
-#line 198 "mini.y"
+#line 197 "mini.y"
 {
 	(yyval.tac)=NULL;
 }
-#line 1560 "mini.y.c"
+#line 1559 "mini.y.c"
     break;
 
   case 47: /* statement: error  */
-#line 216 "mini.y"
+#line 215 "mini.y"
 {
 	error("Bad statement syntax");
 	(yyval.tac)=NULL;
 }
-#line 1569 "mini.y.c"
+#line 1568 "mini.y.c"
     break;
 
   case 48: /* block: '{' declaration_list statement_list '}'  */
-#line 223 "mini.y"
+#line 222 "mini.y"
 {
 	(yyval.tac)=join_tac((yyvsp[-2].tac), (yyvsp[-1].tac));
 }
-#line 1577 "mini.y.c"
+#line 1576 "mini.y.c"
     break;
 
   case 49: /* declaration_list: %empty  */
-#line 229 "mini.y"
+#line 228 "mini.y"
 {
 	(yyval.tac)=NULL;
 }
-#line 1585 "mini.y.c"
+#line 1584 "mini.y.c"
     break;
 
   case 50: /* declaration_list: declaration_list declaration  */
-#line 233 "mini.y"
+#line 232 "mini.y"
 {
 	(yyval.tac)=join_tac((yyvsp[-1].tac), (yyvsp[0].tac));
 }
-#line 1593 "mini.y.c"
+#line 1592 "mini.y.c"
     break;
 
   case 52: /* statement_list: statement_list statement  */
-#line 240 "mini.y"
+#line 239 "mini.y"
 {
 	(yyval.tac)=join_tac((yyvsp[-1].tac), (yyvsp[0].tac));
 }
-#line 1601 "mini.y.c"
+#line 1600 "mini.y.c"
     break;
 
   case 53: /* assignment_statement: IDENTIFIER '=' expression  */
-#line 246 "mini.y"
+#line 245 "mini.y"
 {
 	(yyval.tac)=do_assign(get_var((yyvsp[-2].string)), (yyvsp[0].exp));
 }
-#line 1609 "mini.y.c"
+#line 1608 "mini.y.c"
     break;
 
   case 54: /* assignment_statement: IDENTIFIER dims_idx '=' expression  */
-#line 250 "mini.y"
+#line 249 "mini.y"
 {
 	(yyval.tac) = do_array_store(get_var((yyvsp[-3].string)),(yyvsp[-2].exp),(yyvsp[0].exp));
 }
-#line 1617 "mini.y.c"
+#line 1616 "mini.y.c"
     break;
 
   case 55: /* assignment_statement: '*' IDENTIFIER '=' expression  */
-#line 254 "mini.y"
+#line 253 "mini.y"
 {
 	SYM *ptr = get_var((yyvsp[-2].string));
 	TAC *store = mk_tac(TAC_STORE, ptr, (yyvsp[0].exp)->ret, NULL);
 	store->prev = (yyvsp[0].exp)->tac;
 	(yyval.tac) = store;
 }
-#line 1628 "mini.y.c"
+#line 1627 "mini.y.c"
     break;
 
   case 56: /* assignment_statement: IDENTIFIER '=' '&' IDENTIFIER  */
-#line 261 "mini.y"
+#line 260 "mini.y"
 {
     SYM *dst = get_var((yyvsp[-3].string));
     SYM *src = get_var((yyvsp[0].string));
     TAC *addr = mk_tac(TAC_ADDR, dst, src, NULL);
     (yyval.tac) = addr;
 }
-#line 1639 "mini.y.c"
+#line 1638 "mini.y.c"
     break;
 
   case 57: /* assignment_statement: IDENTIFIER '=' '*' IDENTIFIER  */
-#line 268 "mini.y"
+#line 267 "mini.y"
 {
     SYM *dst = get_var((yyvsp[-3].string));
     SYM *src = get_var((yyvsp[0].string));
     TAC *load = mk_tac(TAC_LOAD, dst, src, NULL);
     (yyval.tac) = load;
 }
-#line 1650 "mini.y.c"
+#line 1649 "mini.y.c"
     break;
 
   case 58: /* expression: expression '+' expression  */
-#line 277 "mini.y"
+#line 276 "mini.y"
 {
 	(yyval.exp)=do_bin(TAC_ADD, (yyvsp[-2].exp), (yyvsp[0].exp));
 }
-#line 1658 "mini.y.c"
+#line 1657 "mini.y.c"
     break;
 
   case 59: /* expression: expression '-' expression  */
-#line 281 "mini.y"
+#line 280 "mini.y"
 {
 	(yyval.exp)=do_bin(TAC_SUB, (yyvsp[-2].exp), (yyvsp[0].exp));
 }
-#line 1666 "mini.y.c"
+#line 1665 "mini.y.c"
     break;
 
   case 60: /* expression: expression '*' expression  */
-#line 285 "mini.y"
+#line 284 "mini.y"
 {
 	(yyval.exp)=do_bin(TAC_MUL, (yyvsp[-2].exp), (yyvsp[0].exp));
 }
-#line 1674 "mini.y.c"
+#line 1673 "mini.y.c"
     break;
 
   case 61: /* expression: expression '/' expression  */
-#line 289 "mini.y"
+#line 288 "mini.y"
 {
 	(yyval.exp)=do_bin(TAC_DIV, (yyvsp[-2].exp), (yyvsp[0].exp));
 }
-#line 1682 "mini.y.c"
+#line 1681 "mini.y.c"
     break;
 
   case 62: /* expression: '-' expression  */
-#line 293 "mini.y"
+#line 292 "mini.y"
 {
 	(yyval.exp)=do_un(TAC_NEG, (yyvsp[0].exp));
 }
-#line 1690 "mini.y.c"
+#line 1689 "mini.y.c"
     break;
 
   case 63: /* expression: expression EQ expression  */
-#line 297 "mini.y"
+#line 296 "mini.y"
 {
 	(yyval.exp)=do_cmp(TAC_EQ, (yyvsp[-2].exp), (yyvsp[0].exp));
 }
-#line 1698 "mini.y.c"
+#line 1697 "mini.y.c"
     break;
 
   case 64: /* expression: expression NE expression  */
-#line 301 "mini.y"
+#line 300 "mini.y"
 {
 	(yyval.exp)=do_cmp(TAC_NE, (yyvsp[-2].exp), (yyvsp[0].exp));
 }
-#line 1706 "mini.y.c"
+#line 1705 "mini.y.c"
     break;
 
   case 65: /* expression: expression LT expression  */
-#line 305 "mini.y"
+#line 304 "mini.y"
 {
 	(yyval.exp)=do_cmp(TAC_LT, (yyvsp[-2].exp), (yyvsp[0].exp));
 }
-#line 1714 "mini.y.c"
+#line 1713 "mini.y.c"
     break;
 
   case 66: /* expression: expression LE expression  */
-#line 309 "mini.y"
+#line 308 "mini.y"
 {
 	(yyval.exp)=do_cmp(TAC_LE, (yyvsp[-2].exp), (yyvsp[0].exp));
 }
-#line 1722 "mini.y.c"
+#line 1721 "mini.y.c"
     break;
 
   case 67: /* expression: expression GT expression  */
-#line 313 "mini.y"
+#line 312 "mini.y"
 {
 	(yyval.exp)=do_cmp(TAC_GT, (yyvsp[-2].exp), (yyvsp[0].exp));
 }
-#line 1730 "mini.y.c"
+#line 1729 "mini.y.c"
     break;
 
   case 68: /* expression: expression GE expression  */
-#line 317 "mini.y"
+#line 316 "mini.y"
 {
 	(yyval.exp)=do_cmp(TAC_GE, (yyvsp[-2].exp), (yyvsp[0].exp));
 }
-#line 1738 "mini.y.c"
+#line 1737 "mini.y.c"
     break;
 
   case 69: /* expression: '(' expression ')'  */
-#line 321 "mini.y"
+#line 320 "mini.y"
 {
 	(yyval.exp)=(yyvsp[-1].exp);
 }
-#line 1746 "mini.y.c"
+#line 1745 "mini.y.c"
     break;
 
   case 70: /* expression: INTEGER  */
-#line 325 "mini.y"
+#line 324 "mini.y"
 {
 	(yyval.exp)=mk_exp(NULL, mk_const(atoi((yyvsp[0].string))), NULL);
 }
-#line 1754 "mini.y.c"
+#line 1753 "mini.y.c"
     break;
 
   case 71: /* expression: IDENTIFIER  */
-#line 329 "mini.y"
+#line 328 "mini.y"
 {
 	(yyval.exp)=mk_exp(NULL, get_var((yyvsp[0].string)), NULL);
 }
-#line 1762 "mini.y.c"
+#line 1761 "mini.y.c"
     break;
 
   case 72: /* expression: CHAR_CONST  */
-#line 333 "mini.y"
+#line 332 "mini.y"
 {
 	(yyval.exp)=mk_exp(NULL,mk_char((yyvsp[0].string)[1]),NULL);
 }
-#line 1770 "mini.y.c"
+#line 1769 "mini.y.c"
     break;
 
   case 73: /* expression: IDENTIFIER dims_idx  */
-#line 337 "mini.y"
+#line 336 "mini.y"
 {
 	(yyval.exp) = do_array_load(get_var((yyvsp[-1].string)),(yyvsp[0].exp));  // 加载数组值
 }
-#line 1778 "mini.y.c"
+#line 1777 "mini.y.c"
     break;
 
   case 74: /* expression: call_expression  */
-#line 341 "mini.y"
+#line 340 "mini.y"
 {
 	(yyval.exp)=(yyvsp[0].exp);
 }
-#line 1786 "mini.y.c"
+#line 1785 "mini.y.c"
     break;
 
   case 75: /* expression: error  */
-#line 345 "mini.y"
+#line 344 "mini.y"
 {
 	error("Bad expression syntax");
 	(yyval.exp)=mk_exp(NULL, NULL, NULL);
 }
-#line 1795 "mini.y.c"
+#line 1794 "mini.y.c"
     break;
 
   case 76: /* argument_list: %empty  */
-#line 352 "mini.y"
+#line 351 "mini.y"
 {
 	(yyval.exp)=NULL;
 }
-#line 1803 "mini.y.c"
+#line 1802 "mini.y.c"
     break;
 
   case 79: /* expression_list: expression_list ',' expression  */
-#line 360 "mini.y"
+#line 359 "mini.y"
 {
 	(yyvsp[0].exp)->next=(yyvsp[-2].exp);
 	(yyval.exp)=(yyvsp[0].exp);
 }
-#line 1812 "mini.y.c"
+#line 1811 "mini.y.c"
     break;
 
   case 80: /* input_statement: INPUT IDENTIFIER  */
-#line 367 "mini.y"
+#line 366 "mini.y"
 {
 	(yyval.tac)=do_input(get_var((yyvsp[0].string)));
 }
-#line 1820 "mini.y.c"
+#line 1819 "mini.y.c"
     break;
 
   case 81: /* output_statement: OUTPUT IDENTIFIER  */
-#line 373 "mini.y"
+#line 372 "mini.y"
 {
 	(yyval.tac)=do_output(get_var((yyvsp[0].string)));
 }
-#line 1828 "mini.y.c"
+#line 1827 "mini.y.c"
     break;
 
   case 82: /* output_statement: OUTPUT TEXT  */
-#line 377 "mini.y"
+#line 376 "mini.y"
 {
 	(yyval.tac)=do_output(mk_text((yyvsp[0].string)));
 }
-#line 1836 "mini.y.c"
+#line 1835 "mini.y.c"
     break;
 
   case 83: /* output_statement: OUTPUT expression  */
-#line 381 "mini.y"
+#line 380 "mini.y"
 {
 	TAC*t = mk_tac(TAC_OUTPUT,(yyvsp[0].exp)->ret,NULL,NULL);
 	t->prev = (yyvsp[0].exp)->tac;
 	(yyval.tac) = t;
 }
-#line 1846 "mini.y.c"
+#line 1845 "mini.y.c"
     break;
 
   case 84: /* return_statement: RETURN expression  */
-#line 389 "mini.y"
+#line 388 "mini.y"
 {
 	TAC *t=mk_tac(TAC_RETURN, (yyvsp[0].exp)->ret, NULL, NULL);
 	t->prev=(yyvsp[0].exp)->tac;
 	(yyval.tac)=t;
 }
-#line 1856 "mini.y.c"
+#line 1855 "mini.y.c"
     break;
 
   case 85: /* if_statement: IF '(' expression ')' block  */
-#line 397 "mini.y"
+#line 396 "mini.y"
 {
 	(yyval.tac)=do_if((yyvsp[-2].exp), (yyvsp[0].tac));
 }
-#line 1864 "mini.y.c"
+#line 1863 "mini.y.c"
     break;
 
   case 86: /* if_statement: IF '(' expression ')' block ELSE block  */
-#line 401 "mini.y"
+#line 400 "mini.y"
 {
 	(yyval.tac)=do_test((yyvsp[-4].exp), (yyvsp[-2].tac), (yyvsp[0].tac));
 }
-#line 1872 "mini.y.c"
+#line 1871 "mini.y.c"
     break;
 
   case 87: /* $@1: %empty  */
-#line 408 "mini.y"
+#line 407 "mini.y"
     {
       g_switch_end = mk_label(mk_lstr(next_label++));
       push_loop_labels(NULL, g_switch_end);  // 同for, 只有end
     }
-#line 1881 "mini.y.c"
+#line 1880 "mini.y.c"
     break;
 
   case 88: /* switch_statement: SWITCH '(' expression ')' $@1 '{' case_list default_list '}'  */
-#line 413 "mini.y"
+#line 412 "mini.y"
     {
       (yyval.tac) = do_switch((yyvsp[-6].exp), (yyvsp[-2].tac), (yyvsp[-1].tac), g_switch_end);
       pop_loop_labels();
       g_switch_end = NULL;
     }
-#line 1891 "mini.y.c"
+#line 1890 "mini.y.c"
     break;
 
   case 89: /* case_list: case_item  */
-#line 421 "mini.y"
+#line 420 "mini.y"
            { (yyval.tac) = (yyvsp[0].tac); }
-#line 1897 "mini.y.c"
+#line 1896 "mini.y.c"
     break;
 
   case 90: /* case_list: case_list case_item  */
-#line 423 "mini.y"
+#line 422 "mini.y"
 {
 	(yyval.tac) = join_tac((yyvsp[-1].tac),(yyvsp[0].tac));
 }
-#line 1905 "mini.y.c"
+#line 1904 "mini.y.c"
     break;
 
   case 91: /* case_item: CASE INTEGER ':' statement_list  */
-#line 429 "mini.y"
+#line 428 "mini.y"
 {
 	(yyval.tac) = do_case(atoi((yyvsp[-2].string)),(yyvsp[0].tac));
 }
-#line 1913 "mini.y.c"
+#line 1912 "mini.y.c"
     break;
 
   case 92: /* default_list: %empty  */
-#line 435 "mini.y"
+#line 434 "mini.y"
 {
 	 (yyval.tac) = NULL; 
 }
-#line 1921 "mini.y.c"
+#line 1920 "mini.y.c"
     break;
 
   case 93: /* default_list: DEFAULT ':' statement_list  */
-#line 439 "mini.y"
+#line 438 "mini.y"
 { 
 	(yyval.tac) = (yyvsp[0].tac); 
 }
-#line 1929 "mini.y.c"
+#line 1928 "mini.y.c"
     break;
 
   case 94: /* $@2: %empty  */
-#line 444 "mini.y"
+#line 443 "mini.y"
 {
 	g_for_start = mk_label(mk_lstr(next_label++));
     g_for_cont  = mk_label(mk_lstr(next_label++));
     g_for_end   = mk_label(mk_lstr(next_label++));
     push_loop_labels(g_for_cont, g_for_end);
 }
-#line 1940 "mini.y.c"
+#line 1939 "mini.y.c"
     break;
 
   case 95: /* while_statement: WHILE '(' expression ')' $@2 block  */
-#line 451 "mini.y"
+#line 450 "mini.y"
 {
 	(yyval.tac)=do_while((yyvsp[-3].exp), (yyvsp[0].tac),g_for_start,g_for_cont,g_for_end);
 	pop_loop_labels();
 	g_for_start = g_for_cont = g_for_end = NULL;
 }
-#line 1950 "mini.y.c"
+#line 1949 "mini.y.c"
     break;
 
   case 96: /* $@3: %empty  */
-#line 461 "mini.y"
+#line 460 "mini.y"
     {
       g_for_start = mk_label(mk_lstr(next_label++));
       g_for_cont  = mk_label(mk_lstr(next_label++));
       g_for_end   = mk_label(mk_lstr(next_label++));
       push_loop_labels(g_for_cont, g_for_end);
     }
-#line 1961 "mini.y.c"
+#line 1960 "mini.y.c"
     break;
 
   case 97: /* for_statement: FOR '(' opt_statement ';' opt_expression ';' opt_statement ')' $@3 block  */
-#line 468 "mini.y"
+#line 467 "mini.y"
     {
       (yyval.tac) = do_for((yyvsp[-7].tac), (yyvsp[-5].exp), (yyvsp[-3].tac), (yyvsp[0].tac), g_for_start, g_for_cont, g_for_end);
       pop_loop_labels();
       g_for_start = g_for_cont = g_for_end = NULL;
     }
-#line 1971 "mini.y.c"
+#line 1970 "mini.y.c"
     break;
 
   case 98: /* opt_statement: assignment_statement  */
-#line 478 "mini.y"
+#line 477 "mini.y"
 {
 	(yyval.tac) = (yyvsp[0].tac);
 }
-#line 1979 "mini.y.c"
+#line 1978 "mini.y.c"
     break;
 
   case 99: /* opt_statement: %empty  */
-#line 482 "mini.y"
+#line 481 "mini.y"
 {
 	(yyval.tac) = NULL;
 }
-#line 1987 "mini.y.c"
+#line 1986 "mini.y.c"
     break;
 
   case 100: /* opt_expression: expression  */
-#line 488 "mini.y"
+#line 487 "mini.y"
 {
 	(yyval.exp) = (yyvsp[0].exp);
 }
-#line 1995 "mini.y.c"
+#line 1994 "mini.y.c"
     break;
 
   case 101: /* opt_expression: %empty  */
-#line 492 "mini.y"
+#line 491 "mini.y"
 {
 	(yyval.exp) = NULL;
 }
-#line 2003 "mini.y.c"
+#line 2002 "mini.y.c"
     break;
 
   case 102: /* break_statement: BREAK  */
-#line 498 "mini.y"
+#line 497 "mini.y"
 {
 	(yyval.tac)=do_break();
 }
-#line 2011 "mini.y.c"
+#line 2010 "mini.y.c"
     break;
 
   case 103: /* continue_statement: CONTINUE  */
-#line 504 "mini.y"
+#line 503 "mini.y"
 {
 	(yyval.tac)=do_continue();
 }
-#line 2019 "mini.y.c"
+#line 2018 "mini.y.c"
     break;
 
   case 104: /* call_statement: IDENTIFIER '(' argument_list ')'  */
-#line 510 "mini.y"
+#line 509 "mini.y"
 {
 	(yyval.tac)=do_call((yyvsp[-3].string), (yyvsp[-1].exp));
 }
-#line 2027 "mini.y.c"
+#line 2026 "mini.y.c"
     break;
 
   case 105: /* call_expression: IDENTIFIER '(' argument_list ')'  */
-#line 516 "mini.y"
+#line 515 "mini.y"
 {
 	(yyval.exp)=do_call_ret((yyvsp[-3].string), (yyvsp[-1].exp));
 }
-#line 2035 "mini.y.c"
+#line 2034 "mini.y.c"
     break;
 
 
-#line 2039 "mini.y.c"
+#line 2038 "mini.y.c"
 
       default: break;
     }
@@ -2228,7 +2227,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 521 "mini.y"
+#line 520 "mini.y"
 
 
 void yyerror(char* msg) 

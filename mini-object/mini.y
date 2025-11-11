@@ -49,7 +49,6 @@ program : function_declaration_list
 function_declaration_list : function_declaration
 | function_declaration_list function_declaration
 {
-	// fprintf(stderr, "[JOIN] join %p <- %p\n", $1, $2);
 	$$=join_tac($1, $2);
 }
 ;

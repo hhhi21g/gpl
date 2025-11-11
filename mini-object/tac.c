@@ -1010,11 +1010,7 @@ TAC *do_call(char *name, EXP *arglist)
 		arglist = alt;
 	};
 
-	SYM *func_sym = lookup_sym(sym_tab_global, name);
-	if (!func_sym)
-		func_sym = declare_func(name);
-
-	temp = mk_tac(TAC_CALL, NULL, func_sym, NULL);
+	temp = mk_tac(TAC_CALL, NULL, (SYM *)strdup(name), NULL);
 	temp->prev = code;
 	code = temp;
 
@@ -1052,6 +1048,7 @@ EXP *do_call_ret(char *name, EXP *arglist)
 		func_sym = declare_func(name);
 
 	temp = mk_tac(TAC_CALL, ret, func_sym, NULL);
+	// temp = mk_tac(TAC_CALL, ret, (SYM *)strdup(name), NULL);
 
 	temp->prev = code;
 	code = temp;

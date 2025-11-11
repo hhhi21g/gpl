@@ -300,7 +300,7 @@ void asm_call(SYM *a, SYM *b) // a:返回值变量；b：函数名
 		rdesc_clear(r);
 
 	char ret_label[32];
-	sprintf(ret_label, "L%d", ret_label_id++);
+	sprintf(ret_label, "L%d", ret_label_id++); // 跳转回的LABEL
 
 	out_str(file_s, "	STO (R2+%d),R2\n", tof + oon); /* store old bp */
 	oon += 4;
@@ -720,21 +720,6 @@ void tac_obj()
 	tof = LOCAL_OFF; /* TOS allows space for link info */
 	oof = FORMAL_OFF;
 	oon = 0;
-
-	// fprintf(stderr, "[OBJ] ENTER tac_obj()\n");
-	// fprintf(stderr, "tac_first=%p  tac_last=%p\n", tac_first, tac_last);
-
-	// // 打印前10条TAC看是否有max
-	// int count = 0;
-	// for (TAC *p = tac_first; p && count < 20; p = p->next, count++)
-	// {
-	// 	if (p->op == TAC_LABEL && p->a && p->a->name)
-	// 		fprintf(stderr, "[OBJ] label: %s\n", p->a->name);
-	// }
-
-	// for (TAC *p = tac_first; p; p = p->next)
-	// 	if (p->op == TAC_LABEL && p->a && p->a->name)
-	// 		fprintf(stderr, "[DEBUG] label: %s\n", p->a->name);
 
 	for (int r = 0; r < R_NUM; r++)
 		rdesc[r].var = NULL;
