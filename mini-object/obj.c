@@ -470,9 +470,34 @@ void asm_code(TAC *c)
 		return;
 
 	case TAC_COPY:
-		r = reg_alloc(c->b);
-		rdesc_fill(r, c->a, MODIFIED);
+	{
+		int rb = reg_alloc(c->b);
+
+		// 左值是变量
+		if (c->a->type == SYM_VAR)
+		{
+			if (c->a->scope == 1)
+			{
+				// 局部变量
+				out_str(file_s, "	STO (R%u+%d),R%u\n", R_BP, c->a->offset, rb);
+			}
+			else
+			{
+				// 全局变量
+				out_str(file_s, "	LOD R4,STATIC\n");
+				out_str(file_s, "	STO (R4+%d),R%u\n", c->a->offset, rb);
+			}
+		}
+		else
+		{
+			// 临时变量或寄存器变量
+			int ra = reg_alloc(c->a);
+			out_str(file_s, "	LOD R%u,R%u\n", ra, rb);
+		}
+
+		rdesc_fill(rb, c->a, UNMODIFIED);
 		return;
+	}
 
 	case TAC_INPUT:
 		r = reg_alloc(c->a);
@@ -500,7 +525,17 @@ void asm_code(TAC *c)
 			// if (real_type != SYM_PTR)
 			// 	out_str(file_s, "	LOD R15,R%u\n", r);
 			// else
-			out_str(file_s, "	LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
+			if (c->a->scope == 1)
+			{
+				// 局部变量
+				out_str(file_s, "	LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
+			}
+			else
+			{
+				// 全局变量：从 STATIC 段取
+				out_str(file_s, "	LOD R4,STATIC\n");
+				out_str(file_s, "	LOD R15,(R4+%d)\n", c->a->offset);
+			}
 
 			if (real_type == SYM_CHAR)
 				out_str(file_s, "	OTC\n");

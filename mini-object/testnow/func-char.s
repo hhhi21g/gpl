@@ -19,12 +19,12 @@ main:
 
 	# input a
 	LOD R5,(R2+8)
-	ITI
+	ITC
 	LOD R5,R15
 
 	# input b
 	LOD R6,(R2+12)
-	ITI
+	ITC
 	LOD R6,R15
 
 	# var t0
@@ -53,7 +53,7 @@ L1000:
 
 	# output c
 	LOD R15,(R2+16)
-	OTI
+	OTC
 
 	# output L1
 	LOD R6,L1
@@ -76,7 +76,7 @@ L1000:
 	# output i
 	LOD R4,STATIC
 	LOD R15,(R4+0)
-	OTI
+	OTC
 
 	# output L2
 	LOD R9,L2
