@@ -1476,9 +1476,9 @@ void out_tac(FILE *f, TAC *i)
 
 	case TAC_CALL:
 		if (i->a == NULL)
-			fprintf(f, "call %s", (char *)i->b);
+			fprintf(f, "call %s", i->b ? i->b->name : "<null>");
 		else
-			fprintf(f, "%s = call %s", to_str(i->a, sa), (char *)i->b);
+			fprintf(f, "%s = call %s", to_str(i->a, sa), i->b ? i->b->name : "<null>");
 		break;
 
 	case TAC_INPUT:
