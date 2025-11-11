@@ -686,6 +686,21 @@ void tac_obj()
 	oof = FORMAL_OFF;
 	oon = 0;
 
+	// fprintf(stderr, "[OBJ] ENTER tac_obj()\n");
+	// fprintf(stderr, "tac_first=%p  tac_last=%p\n", tac_first, tac_last);
+
+	// // 打印前10条TAC看是否有max
+	// int count = 0;
+	// for (TAC *p = tac_first; p && count < 20; p = p->next, count++)
+	// {
+	// 	if (p->op == TAC_LABEL && p->a && p->a->name)
+	// 		fprintf(stderr, "[OBJ] label: %s\n", p->a->name);
+	// }
+
+	// for (TAC *p = tac_first; p; p = p->next)
+	// 	if (p->op == TAC_LABEL && p->a && p->a->name)
+	// 		fprintf(stderr, "[DEBUG] label: %s\n", p->a->name);
+
 	for (int r = 0; r < R_NUM; r++)
 		rdesc[r].var = NULL;
 

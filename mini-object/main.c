@@ -61,8 +61,8 @@ int main(int argc, char *argv[])
 	// for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
 	// 	tac_constant_fold(bb);
 
-	cfg_fold_if();
-	remove_unreachable_blocks();
+	// cfg_fold_if();
+	// remove_unreachable_blocks();
 
 	build_cfg();
 	tac_obj();

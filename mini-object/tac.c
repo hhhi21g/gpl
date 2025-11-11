@@ -470,7 +470,11 @@ SYM *mk_var(char *name)
 	SYM *sym = NULL;
 
 	if (scope)
+	{
 		sym = lookup_sym(sym_tab_local, name);
+		if (!sym)
+			sym = lookup_sym(sym_tab_global, name);
+	}
 	else
 		sym = lookup_sym(sym_tab_global, name);
 
@@ -709,6 +713,8 @@ TAC *do_func(SYM *func, TAC *args, TAC *code)
 	code = join_tac(args, code);
 	tend->prev = join_tac(tbegin, code);
 
+	// fprintf(stderr, "[FUNC] build func %s, tlab=%p tend=%p\n", func->name, tlab, tend);
+
 	return tend;
 }
 
@@ -758,6 +764,7 @@ SYM *declare_func(char *name)
 	sym->address = NULL;
 
 	insert_sym(&sym_tab_global, sym);
+	// fprintf(stderr, "[FUNC DECL] new func %s\n", name);
 	return sym;
 }
 
