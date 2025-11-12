@@ -182,8 +182,16 @@ lvalue: IDENTIFIER
 }
 | lvalue '.' IDENTIFIER
 {
-	int offset = get_struct_offset($1->ret,$3);
-	$$ = make_struct_field_addr($1,offset);
+	// printf("[DEBUG] . access: %s\n", $3);
+    // if (!$1 || !$1->ret)
+    //     printf("[DEBUG] $1 or $1->ret is NULL!\n");
+    // else
+    //     printf("[DEBUG] base type=%d name=%s\n", $1->ret->type, $1->ret->name);
+	// int offset = get_struct_offset($1->ret,$3);
+	STRUCT_MEMBER *mem = get_struct_member($1->ret,$3);
+	$$ = make_struct_field_addr($1,mem->offset);
+	$$->ret->type = mem->type;
+	$$->ret->etc = mem->etc;
 }
 | lvalue LBRACK expression RBRACK
 {

@@ -104,6 +104,7 @@ typedef struct STRUCT_MEMBER
 	char *name;
 	int offset;
 	int type;
+	void *etc;
 	struct STRUCT_MEMBER *next;
 } STRUCT_MEMBER;
 
@@ -189,5 +190,6 @@ EXP *make_struct_field_addr(EXP *base, int offset);
 EXP *make_array_elem_addr(EXP *base, EXP *index);
 TAC *do_assign_lvalue(EXP *lv, EXP *rhs);
 EXP *do_load_lvalue(EXP *lv);
+STRUCT_MEMBER *get_struct_member(SYM *struct_var, const char *name);
 
 void error(const char *format, ...);

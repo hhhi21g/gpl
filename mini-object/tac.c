@@ -112,6 +112,7 @@ void add_struct_member(STRUCT *unused, int member_type, const char *mname, int s
 	m->name = strdup(mname);
 	m->type = member_type;
 	m->offset = cur_structs->size;
+	m->etc = NULL;
 	m->next = cur_structs->members;
 	cur_structs->members = m; // 倒序
 
@@ -137,6 +138,7 @@ void add_struct_struct_member(SYM *cur, SYM *struct_type, char *name, int cnt)
 	int struct_size = def->size;
 	for (int i = 0; i < cnt; i++)
 	{
+		STRUCT_MEMBER *m = malloc(sizeof(STRUCT_MEMBER));
 		char buf[32];
 		if (cnt > 1)
 		{
@@ -146,7 +148,15 @@ void add_struct_struct_member(SYM *cur, SYM *struct_type, char *name, int cnt)
 		{
 			strcpy(buf, name);
 		}
-		add_struct_member(cur, SYM_STRUCT, strdup(buf), struct_size);
+		// add_struct_member(cur, SYM_STRUCT, strdup(buf), struct_size);
+		m->name = strdup(buf);
+		m->type = SYM_STRUCT;
+		m->offset = cur_structs->size;
+		m->etc = def;
+		m->next = cur_structs->members;
+		cur_structs->members = m;
+
+		cur_structs->size += struct_size;
 	}
 }
 
@@ -174,17 +184,40 @@ static STRUCT *get_struct_var(SYM *var)
 {
 	if (!var || var->type != SYM_STRUCT)
 	{
+		// printf("[DEBUG] get_struct_var: %s type=%d\n",
+		// 	   var ? var->name : "(null)",
+		// 	   var ? var->type : -1);
+
 		error("not a struct");
 	}
 	return (STRUCT *)var->etc;
+}
+
+// 返回成员
+STRUCT_MEMBER *get_struct_member(SYM *struct_var, const char *name)
+{
+	STRUCT *def = get_struct_var(struct_var);
+	// printf("%s\n", name);
+	// printf("[DEBUG] lookup member '%s' in struct '%s'\n", name, def->name);
+
+	for (STRUCT_MEMBER *m = def->members; m; m = m->next)
+	{
+		// printf("-%s\n", m->name);
+		if (strcmp(m->name, name) == 0)
+			return m;
+		if (strncmp(m->name, name, strlen(name)) == 0 && m->name[strlen(name)] == '[') // 数组类型匹配名称即可
+			return m;
+	}
+	error("struct member not found");
+	return NULL;
 }
 
 // 得到成员偏移量
 int get_struct_offset(SYM *struct_var, const char *name)
 {
 	STRUCT *def = get_struct_var(struct_var);
-	printf("%s\n", name);
-	printf("[DEBUG] lookup member '%s' in struct '%s'\n", name, def->name);
+	// printf("%s\n", name);
+	// printf("[DEBUG] lookup member '%s' in struct '%s'\n", name, def->name);
 
 	for (STRUCT_MEMBER *m = def->members; m; m = m->next)
 	{
@@ -301,10 +334,15 @@ EXP *make_array_elem_addr(EXP *base, EXP *index)
 	TAC *decl2 = mk_tac(TAC_VAR, addr, NULL, NULL);
 	TAC *add = mk_tac(TAC_ADD, addr, base->ret, t_mul);
 	add->prev = join_tac(decl2, mul);
-
-	addr->type = base_type;
-	if (base_type == SYM_STRUCT)
+	addr->type = base->ret->type;
+	if (base->ret->type == SYM_STRUCT)
 		addr->etc = base->ret->etc;
+	else
+		addr->etc = NULL;
+
+	printf("[DEBUG] make_array_elem_addr: base=%s type=%d etc=%p -> addr=%s type=%d etc=%p\n",
+		   base->ret->name, base->ret->type, base->ret->etc,
+		   addr->name, addr->type, addr->etc);
 
 	return mk_exp(NULL, addr, add);
 }
