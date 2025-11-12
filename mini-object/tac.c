@@ -87,6 +87,14 @@ STRUCT *begin_struct(const char *name)
 	s->next = structs;
 	structs = s;
 	cur_structs = s;
+
+	SYM *sym = mk_sym();
+	sym->type = SYM_STRUCT;
+	sym->name = strdup(name);
+	sym->etc = s;
+
+	insert_sym(&sym_tab_global, sym);
+	printf("insert %s\n", name);
 	return s;
 }
 
@@ -115,36 +123,54 @@ void add_struct_member(STRUCT *unused, int member_type, const char *mname)
 	m->next = cur_structs->members;
 	cur_structs->members = m; // 倒序
 
-	cur_structs->size += 4;
+	int size_in = 0;
+	if (member_type == SYM_INT)
+		size_in = 4;
+	else if (member_type == SYM_CHAR)
+		size_in = 1;
+
+	cur_structs->size += size_in;
 }
 
 // 结构体成员类型：数组
 void add_struct_array_member(SYM *cur, int base_type, char *name, int cnt)
 {
-	for (int i = 0; i < cnt; i++)
-	{
-		char buf[32];
-		sprintf(buf, "%s[%d]", name, i);
-		add_struct_member(cur, base_type, strdup(buf));
-	}
+	int elem_size = (base_type == SYM_CHAR) ? 1 : 4;
+	int total_size = elem_size * cnt;
+
+	STRUCT_MEMBER *m = (STRUCT_MEMBER *)malloc(sizeof(STRUCT_MEMBER));
+	m->name = strdup(name);
+	m->type = SYM_ARRAY;
+	m->elem_type = base_type;
+	m->ndim = 1;
+	m->dims = malloc(sizeof(int));
+	m->offset = cur_structs->size;
+	m->next = cur_structs->members;
+	cur_structs->members = m;
+
+	cur_structs->size += total_size;
 }
 
 // 结构体成员类型：结构体(数组)
 void add_struct_struct_member(SYM *cur, SYM *struct_type, char *name, int cnt)
 {
-	for (int i = 0; i < cnt; i++)
-	{
-		char buf[32];
-		if (cnt > 1)
-		{
-			sprintf(buf, "%s[%d]", name, i);
-		}
-		else
-		{
-			strcpy(buf, name);
-		}
-		add_struct_member(cur, SYM_STRUCT, strdup(buf));
-	}
+	if (!cur_structs)
+		error("no struct context");
+	if (!struct_type || struct_type->type != SYM_STRUCT)
+		error("invalid struct member type");
+
+	STRUCT *subdef = (STRUCT *)struct_type->etc;
+	int sub_size = subdef->size;
+	int total_size = sub_size * cnt;
+
+	STRUCT_MEMBER *m = (STRUCT_MEMBER *)malloc(sizeof(STRUCT_MEMBER));
+	m->name = strdup(name);
+	m->type = SYM_STRUCT;
+	m->offset = cur_structs->size;
+	m->next = cur_structs->members;
+	cur_structs->members = m;
+
+	cur_structs->size += total_size;
 }
 
 // 结束定义：成员添加完毕
@@ -214,31 +240,94 @@ TAC *make_struct_store_tac(SYM *base, int offset, EXP *exp)
 }
 
 // base.a(offset)
+// EXP *make_struct_load_exp(SYM *base, int offset)
+// {
+// 	// t0 = &base
+// 	SYM *t0 = mk_tmp();
+// 	TAC *addr1 = mk_tac(TAC_VAR, t0, NULL, NULL);
+// 	TAC *addr_base = mk_tac(TAC_ADDR, t0, base, NULL);
+// 	addr_base->prev = addr1;
+
+// 	// t1 = t0 + offset
+// 	SYM *t1 = mk_tmp();
+// 	TAC *addr2 = mk_tac(TAC_VAR, t1, NULL, NULL);
+// 	TAC *addr_final = mk_tac(TAC_ADD, t1, mk_const(offset), t0);
+// 	addr_final->prev = addr2;
+// 	// addr_final->prev = join_tac(addr_base, addr_final);
+
+// 	TAC *addr_code = join_tac(join_tac(addr1, addr_base), join_tac(addr2, addr_final));
+
+// 	// t2 = *t1
+// 	SYM *t2 = mk_tmp();
+// 	TAC *tac_val = mk_tac(TAC_VAR, t2, NULL, NULL);
+// 	TAC *load = mk_tac(TAC_LOAD, t2, t1, NULL);
+// 	load->prev = tac_val;
+// 	TAC *total_code = join_tac(addr_code, join_tac(tac_val, load));
+
+// 	EXP *exp = mk_exp(NULL, t2, total_code);
+// 	return exp;
+// }
+
 EXP *make_struct_load_exp(SYM *base, int offset)
 {
-	// t0 = &base
-	SYM *t0 = mk_tmp();
-	TAC *addr1 = mk_tac(TAC_VAR, t0, NULL, NULL);
-	TAC *addr_base = mk_tac(TAC_ADDR, t0, base, NULL);
-	addr_base->prev = addr1;
+	STRUCT *def = get_struct_var(base);
+	if (!def)
+		error("invalid struct access");
 
-	// t1 = t0 + offset
-	SYM *t1 = mk_tmp();
-	TAC *addr2 = mk_tac(TAC_VAR, t1, NULL, NULL);
-	TAC *addr_final = mk_tac(TAC_ADD, t1, mk_const(offset), t0);
-	addr_final->prev = addr2;
-	// addr_final->prev = join_tac(addr_base, addr_final);
+	STRUCT_MEMBER *m = def->members;
+	while (m && m->offset != offset)
+		m = m->next;
 
-	TAC *addr_code = join_tac(join_tac(addr1, addr_base), join_tac(addr2, addr_final));
+	// step1: &base + offset
+	SYM *t_addr = mk_tmp();
+	TAC *decl_addr = mk_tac(TAC_VAR, t_addr, NULL, NULL);
+	TAC *addr_base = mk_tac(TAC_ADDR, t_addr, base, NULL);
+	TAC *addr_add = mk_tac(TAC_ADD, t_addr, t_addr, mk_const(offset));
+	addr_add->prev = join_tac(decl_addr, addr_base);
+	TAC *addr_code = join_tac(decl_addr, join_tac(addr_base, addr_add));
 
-	// t2 = *t1
-	SYM *t2 = mk_tmp();
-	TAC *tac_val = mk_tac(TAC_VAR, t2, NULL, NULL);
-	TAC *load = mk_tac(TAC_LOAD, t2, t1, NULL);
-	load->prev = tac_val;
-	TAC *total_code = join_tac(addr_code, join_tac(tac_val, load));
+	// step2: 根据成员类型构造符号
+	SYM *member_sym = mk_sym();
+	member_sym->name = strdup("<member>");
+	member_sym->scope = base->scope;
 
-	EXP *exp = mk_exp(NULL, t2, total_code);
+	if (m)
+		member_sym->type = m->type;
+	else
+		member_sym->type = SYM_VAR;
+
+	member_sym->offset = offset;
+
+	// ✅ 如果是数组成员，复制维度信息
+	if (m && m->type == SYM_ARRAY)
+	{
+		member_sym->ndim = m->ndim;
+		member_sym->dims = malloc(sizeof(int) * m->ndim);
+		memcpy(member_sym->dims, m->dims, sizeof(int) * m->ndim);
+
+		member_sym->etc = malloc(sizeof(int));
+		*((int *)member_sym->etc) = m->elem_type;
+	}
+	else if (m && m->type == SYM_STRUCT)
+	{
+		member_sym->etc = m; // 保留结构体定义
+	}
+	else
+		member_sym->etc = NULL;
+
+	// ⚠️ 仅当是基础类型时才 LOAD
+	TAC *total_code = addr_code;
+	if (member_sym->type == SYM_INT || member_sym->type == SYM_CHAR)
+	{
+		SYM *t_val = mk_tmp();
+		TAC *decl_val = mk_tac(TAC_VAR, t_val, NULL, NULL);
+		TAC *load_val = mk_tac(TAC_LOAD, t_val, t_addr, NULL);
+		load_val->prev = decl_val;
+		total_code = join_tac(addr_code, join_tac(decl_val, load_val));
+		member_sym = t_val;
+	}
+
+	EXP *exp = mk_exp(NULL, member_sym, total_code);
 	return exp;
 }
 
@@ -605,6 +694,7 @@ SYM *lookup_sym(SYM *symtab, char *name)
 
 	while (t != NULL)
 	{
+		printf("[look_up] looking for %s, now %s(%d)\n", name, t->name, t->type);
 		if (strcmp(t->name, name) == 0)
 			break;
 		else

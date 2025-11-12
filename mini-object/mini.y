@@ -35,7 +35,7 @@ static char *g_cur_struct = NULL;
 
 %type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement switch_statement case_list case_item default_list while_statement for_statement break_statement continue_statement opt_statement call_statement block declaration_list declaration statement_list input_statement output_statement 
 %type <tac> variable_list_char decl_item_char decl_item_int struct_definition struct_member_list struct_member_line struct_var_list
-%type <exp> argument_list expression_list expression call_expression  opt_expression dims_decl dims_idx
+%type <exp> argument_list expression_list expression call_expression  opt_expression dims_decl dims_idx postfix_expr primary_expr
 %type <sym> function_head
 
 %%
@@ -133,6 +133,7 @@ struct_member_list:
 
 struct_member_line:INT IDENTIFIER ';'
 {
+	printf("int in struct\n");
 	add_struct_member(NULL,SYM_INT,$2);
 	$$ = NULL;
 }
@@ -141,29 +142,48 @@ struct_member_line:INT IDENTIFIER ';'
 	add_struct_member(NULL, SYM_CHAR, $2); 
 	$$ = NULL; 
 }
-| INT IDENTIFIER '[' INTEGER ']' ';'
+| INT IDENTIFIER LBRACK INTEGER RBRACK ';'
 {
 	add_struct_array_member(NULL,SYM_INT,$2,atoi($4));
 	$$ = NULL;
 }
-| CHAR IDENTIFIER '[' INTEGER ']' ';'
+| CHAR IDENTIFIER LBRACK INTEGER RBRACK ';'
 {
+	printf("char array in struct\n");
 	add_struct_array_member(NULL,SYM_CHAR,$2,atoi($4));
 	$$=NULL;
 }
 | STRUCT_TOK IDENTIFIER IDENTIFIER ';'
 {
-	SYM * stype = lookup_sym(sym_tab_local,$2);
-	if(!stype || stype->type != SYM_STRUCT)
-		error("not defined struct");
+	SYM * stype = lookup_sym(sym_tab_global,$2);
+	if(!stype || stype->type != SYM_STRUCT){
+		if(!stype)
+			error("not defined struct");
+		else
+			error("type %d",stype->type);
+	}
 	add_struct_struct_member(NULL,stype,$3,1);
 	$$=NULL;
 }
-| STRUCT_TOK IDENTIFIER IDENTIFIER '[' INTEGER ']'
+| STRUCT_TOK IDENTIFIER IDENTIFIER LBRACK INTEGER RBRACK ';'
 {
-	SYM*stype = lookup_sym(sym_tab_local,$2);;
-	if(!stype || stype->type != SYM_STRUCT)
-		error("not defined struct");
+	printf("struct array in struct\n");
+	SYM*stype = lookup_sym(sym_tab_global,$2);
+
+
+	fprintf(stderr, "[CHK] stype=%p name=%s type=%d etc=%p\n",
+			(void*)stype,
+			stype ? stype->name : "(null)",
+			stype ? stype->type : -1,
+			stype ? stype->etc  : NULL);
+
+
+	if(!stype || stype->type != SYM_STRUCT){
+		if(!stype)
+			error("here not defined struct");
+		else
+			error("type %d",stype->type);
+	}
 	add_struct_struct_member(NULL,stype,$3,atoi($5));
 	$$ = NULL;
 }
@@ -319,10 +339,11 @@ statement_list : statement
 }               
 ;
 
-assignment_statement : IDENTIFIER '=' expression
-{
-	$$=do_assign(get_var($1), $3);
-}
+assignment_statement : 
+// IDENTIFIER '=' expression
+// {
+// 	$$=do_assign(get_var($1), $3);
+// }
 | IDENTIFIER dims_idx '=' expression  // 存入数组
 {
 	$$ = do_array_store(get_var($1),$2,$4);
@@ -348,15 +369,80 @@ assignment_statement : IDENTIFIER '=' expression
     TAC *load = mk_tac(TAC_LOAD, dst, src, NULL);
     $$ = load;
 }
-| IDENTIFIER '.' IDENTIFIER '=' expression  // i.a = b
+// | IDENTIFIER '.' IDENTIFIER '=' expression  // i.a = b
+// {
+// 	SYM*base = get_var($1);
+// 	int offset = get_struct_offset(base,$3);
+// 	$$ = make_struct_store_tac(base,offset,$5);
+// }
+| postfix_expr '=' expression
 {
-	SYM*base = get_var($1);
-	int offset = get_struct_offset(base,$3);
-	$$ = make_struct_store_tac(base,offset,$5);
+	SYM *dst = $1->ret;
+    TAC *lhs_code = $1->tac;
+    TAC *rhs_code = $3->tac;
+
+	 // 如果是结构体成员
+	if (dst->type == SYM_STRUCT)
+	{
+		// 暂时不支持整块拷贝
+		error("cannot assign struct directly");
+	}
+	else
+	{
+		TAC *assign = mk_tac(TAC_COPY, dst, $3->ret, NULL);
+		assign->prev = join_tac(lhs_code, rhs_code);
+		$$ = assign;
+	}
 }
 ;
 
-expression : expression '+' expression
+primary_expr: IDENTIFIER
+{
+	$$ = mk_exp(NULL, get_var($1), NULL);
+}
+| INTEGER
+{
+	$$ = mk_exp(NULL, mk_const(atoi($1)), NULL);
+}
+| CHAR_CONST
+{
+	$$ = mk_exp(NULL, mk_char($1[1]), NULL);
+}
+| '(' expression ')'
+{
+	$$ = $2;
+}
+;
+
+postfix_expr
+    : primary_expr
+    | postfix_expr '.' IDENTIFIER
+      {
+        SYM *base = $1->ret;
+        int offset = get_struct_offset(base, $3);
+        $$ = make_struct_load_exp(base, offset);
+      }
+    | postfix_expr LBRACK expression RBRACK
+      {
+        SYM *base = $1->ret;
+        if (base->type == SYM_ARRAY)
+            $$ = do_array_load(base, $3);
+        else if (base->type == SYM_STRUCT)
+        {
+            EXP *idx = mk_exp(NULL, $3->ret, $3->tac);
+            $$ = do_array_load(base, idx);
+        }
+        else
+            error("invalid array access");
+      }
+;
+
+
+expression : postfix_expr
+{
+	$$ = $1;
+}
+| expression '+' expression
 {
 	$$=do_bin(TAC_ADD, $1, $3);
 }
