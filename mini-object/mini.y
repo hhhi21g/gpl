@@ -141,16 +141,30 @@ struct_member_line:INT IDENTIFIER ';'
 	add_struct_member(NULL, SYM_CHAR, $2); 
 	$$ = NULL; 
 }
-| INT IDENTIFIER ',' IDENTIFIER ';'
+| INT IDENTIFIER '[' INTEGER ']' ';'
 {
-	add_struct_member(NULL, SYM_INT, $2);
-	add_struct_member(NULL, SYM_INT, $4);
+	add_struct_array_member(NULL,SYM_INT,$2,atoi($4));
 	$$ = NULL;
 }
-| CHAR IDENTIFIER ',' IDENTIFIER ';'
+| CHAR IDENTIFIER '[' INTEGER ']' ';'
 {
-	add_struct_member(NULL, SYM_CHAR, $2);
-	add_struct_member(NULL, SYM_CHAR, $4);
+	add_struct_array_member(NULL,SYM_CHAR,$2,atoi($4));
+	$$=NULL;
+}
+| STRUCT_TOK IDENTIFIER IDENTIFIER ';'
+{
+	SYM * stype = lookup_sym(sym_tab_local,$2);
+	if(!stype || stype->type != SYM_STRUCT)
+		error("not defined struct");
+	add_struct_struct_member(NULL,stype,$3,1);
+	$$-NULL;
+}
+| STRUCT_TOK IDENTIFIER IDENTIFIER '[' INTEGER ']'
+{
+	SYM*stype = lookup_sym(sym_tab_local,$2);;
+	if(!stype || stype->type != SYM_STRUCT)
+		error("not defined struct");
+	add_struct_struct_member(NULL,stype,$3,atoi($5));
 	$$ = NULL;
 }
 ;
