@@ -183,9 +183,15 @@ static STRUCT *get_struct_var(SYM *var)
 int get_struct_offset(SYM *struct_var, const char *name)
 {
 	STRUCT *def = get_struct_var(struct_var);
+	printf("%s\n", name);
+	printf("[DEBUG] lookup member '%s' in struct '%s'\n", name, def->name);
+
 	for (STRUCT_MEMBER *m = def->members; m; m = m->next)
 	{
+		printf("-%s\n", m->name);
 		if (strcmp(m->name, name) == 0)
+			return m->offset;
+		if (strncmp(m->name, name, strlen(name)) == 0 && m->name[strlen(name)] == '[') // 数组类型匹配名称即可
 			return m->offset;
 	}
 	error("struct member not found");
@@ -243,6 +249,83 @@ EXP *make_struct_load_exp(SYM *base, int offset)
 
 	EXP *exp = mk_exp(NULL, t2, total_code);
 	return exp;
+}
+
+// 获得结构体成员地址(所在结构体地址+偏移)
+EXP *make_struct_field_addr(EXP *base, int offset)
+{
+	SYM *tmp = mk_tmp();
+	TAC *decl = mk_tac(TAC_VAR, tmp, NULL, NULL);
+
+	SYM *off = mk_const(offset);
+	TAC *add = mk_tac(TAC_ADD, tmp, base->ret, off);
+	add->prev = join_tac(decl, base->tac);
+
+	return mk_exp(NULL, tmp, add);
+}
+
+// 计算数组元素的地址(struct,int,char)
+EXP *make_array_elem_addr(EXP *base, EXP *index)
+{
+	int elem_size = 0;
+	int base_type = 0;
+
+	if (base->ret)
+	{
+		if (base->ret->type == SYM_STRUCT && base->ret->etc)
+		{
+			STRUCT *sdef = (STRUCT *)base->ret->etc;
+			elem_size = sdef->size;
+			base_type = SYM_STRUCT;
+		}
+		else if (base->ret->etc)
+		{
+			int t = *((int *)base->ret->etc);
+			if (t == SYM_CHAR)
+				elem_size = 1;
+			else if (t == SYM_INT)
+				elem_size = 4;
+			base_type = t;
+		}
+	}
+
+	SYM *t_mul = mk_tmp();
+	TAC *decl1 = mk_tac(TAC_VAR, t_mul, NULL, NULL);
+
+	// index * elem_size
+	TAC *mul = mk_tac(TAC_MUL, t_mul, index->ret, mk_const(elem_size));
+	mul->prev = join_tac(decl1, join_tac(base->tac, index->tac));
+
+	// base + t_mul
+	SYM *addr = mk_tmp();
+	TAC *decl2 = mk_tac(TAC_VAR, addr, NULL, NULL);
+	TAC *add = mk_tac(TAC_ADD, addr, base->ret, t_mul);
+	add->prev = join_tac(decl2, mul);
+
+	addr->type = base_type;
+	if (base_type == SYM_STRUCT)
+		addr->etc = base->ret->etc;
+
+	return mk_exp(NULL, addr, add);
+}
+
+// 对 lvalue 赋值
+TAC *do_assign_lvalue(EXP *lv, EXP *rhs)
+{
+	// 生成 *addr = value
+	TAC *store = mk_tac(TAC_STORE, lv->ret, rhs->ret, NULL);
+	store->prev = join_tac(lv->tac, rhs->tac);
+	return store;
+}
+
+// 从 lvalue 加载值
+EXP *do_load_lvalue(EXP *lv)
+{
+	SYM *tmp = mk_tmp();
+	TAC *decl = mk_tac(TAC_VAR, tmp, NULL, NULL);
+	TAC *load = mk_tac(TAC_LOAD, tmp, lv->ret, NULL);
+	load->prev = join_tac(decl, lv->tac);
+	return mk_exp(NULL, tmp, load);
 }
 
 static SYM *eval_bin(int op, SYM *b, SYM *c)

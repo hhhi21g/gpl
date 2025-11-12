@@ -185,5 +185,9 @@ int get_struct_offset(SYM *struct_var, const char *name);
 TAC *make_struct_store_tac(SYM *base, int offset, EXP *exp);
 EXP *make_struct_load_exp(SYM *base, int offset);
 STRUCT *find_struct(const char *name);
+EXP *make_struct_field_addr(EXP *base, int offset);
+EXP *make_array_elem_addr(EXP *base, EXP *index);
+TAC *do_assign_lvalue(EXP *lv, EXP *rhs);
+EXP *do_load_lvalue(EXP *lv);
 
 void error(const char *format, ...);

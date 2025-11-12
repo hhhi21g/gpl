@@ -35,7 +35,7 @@ static char *g_cur_struct = NULL;
 
 %type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement switch_statement case_list case_item default_list while_statement for_statement break_statement continue_statement opt_statement call_statement block declaration_list declaration statement_list input_statement output_statement 
 %type <tac> variable_list_char decl_item_char decl_item_int struct_definition struct_member_list struct_member_line struct_var_list
-%type <exp> argument_list expression_list expression call_expression  opt_expression dims_decl dims_idx
+%type <exp> argument_list expression_list expression call_expression  opt_expression dims_decl dims_idx lvalue
 %type <sym> function_head
 
 %%
@@ -174,6 +174,21 @@ struct_member_line:INT IDENTIFIER ';'
 	$$ = NULL;
 }
 ;
+
+// 结构体内部数组，'.'，标识符的递归访问，地址(为什么是地址不是值？)
+lvalue: IDENTIFIER  
+{
+	$$ = mk_exp(NULL,get_var($1),NULL);
+}
+| lvalue '.' IDENTIFIER
+{
+	int offset = get_struct_offset($1->ret,$3);
+	$$ = make_struct_field_addr($1,offset);
+}
+| lvalue LBRACK expression RBRACK
+{
+	$$ = make_array_elem_addr($1,$3);
+}
 
 variable_list: decl_item_int
 | variable_list ',' decl_item_int
@@ -325,9 +340,9 @@ statement_list : statement
 }               
 ;
 
-assignment_statement : IDENTIFIER '=' expression
+assignment_statement : lvalue '=' expression
 {
-	$$=do_assign(get_var($1), $3);
+	$$=do_assign_lvalue($1, $3);
 }
 | IDENTIFIER dims_idx '=' expression  // 存入数组
 {
@@ -354,12 +369,12 @@ assignment_statement : IDENTIFIER '=' expression
     TAC *load = mk_tac(TAC_LOAD, dst, src, NULL);
     $$ = load;
 }
-| IDENTIFIER '.' IDENTIFIER '=' expression  // i.a = b
-{
-	SYM*base = get_var($1);
-	int offset = get_struct_offset(base,$3);
-	$$ = make_struct_store_tac(base,offset,$5);
-}
+// | IDENTIFIER '.' IDENTIFIER '=' expression  // i.a = b
+// {
+// 	SYM*base = get_var($1);
+// 	int offset = get_struct_offset(base,$3);
+// 	$$ = make_struct_store_tac(base,offset,$5);
+// }
 ;
 
 expression : expression '+' expression
@@ -414,10 +429,10 @@ expression : expression '+' expression
 {
 	$$=mk_exp(NULL, mk_const(atoi($1)), NULL);
 }
-| IDENTIFIER
-{
-	$$=mk_exp(NULL, get_var($1), NULL);
-}
+// | IDENTIFIER
+// {
+// 	$$=mk_exp(NULL, get_var($1), NULL);
+// }
 | CHAR_CONST
 {
 	$$=mk_exp(NULL,mk_char($1[1]),NULL);
@@ -430,12 +445,16 @@ expression : expression '+' expression
 {
 	$$=$1;
 }
-| IDENTIFIER '.' IDENTIFIER  // 结构体读值a.b
+| lvalue
 {
-	SYM *base = get_var($1);
-	int offset = get_struct_offset(base,$3);
-	$$ = make_struct_load_exp(base,offset);
+	$$ = do_load_lvalue($1);
 }
+// | IDENTIFIER '.' IDENTIFIER  // 结构体读值a.b
+// {
+// 	SYM *base = get_var($1);
+// 	int offset = get_struct_offset(base,$3);
+// 	$$ = make_struct_load_exp(base,offset);
+// }
 | error
 {
 	error("Bad expression syntax");
