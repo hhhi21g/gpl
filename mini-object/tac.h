@@ -105,9 +105,6 @@ typedef struct STRUCT_MEMBER
 	int offset;
 	int type;
 	struct STRUCT_MEMBER *next;
-	int ndim;
-	int *dims;
-	int elem_type;
 } STRUCT_MEMBER;
 
 typedef struct STRUCT
@@ -135,7 +132,6 @@ void out_tac(FILE *f, TAC *i);
 SYM *mk_var(char *name);
 SYM *mk_label(char *name);
 SYM *mk_tmp(void);
-SYM *mk_sym(void);
 SYM *mk_const(int n);
 SYM *mk_char(int c);
 SYM *mk_text(char *text);
@@ -159,8 +155,6 @@ TAC *do_break();
 TAC *do_continue();
 TAC *do_switch(EXP *expr, TAC *cases, TAC *def, SYM *end_label);
 TAC *do_case(int value, TAC *body);
-void insert_sym(SYM **symtab, SYM *sym);
-SYM *lookup_sym(SYM *symtab, char *name);
 
 TAC *do_for(TAC *init, EXP *cond, TAC *step, TAC *body,
 			SYM *start_sym, SYM *cont_sym, SYM *end_sym);
