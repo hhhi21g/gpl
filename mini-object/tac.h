@@ -137,6 +137,7 @@ SYM *mk_char(int c);
 SYM *mk_text(char *text);
 TAC *mk_tac(int op, SYM *a, SYM *b, SYM *c);
 EXP *mk_exp(EXP *next, SYM *ret, TAC *code);
+SYM *mk_sym(void);
 char *mk_lstr(int i);
 SYM *get_var(char *name);
 SYM *declare_func(char *name);
@@ -175,14 +176,14 @@ EXP *do_call_ret(char *name, EXP *arglist);
 
 STRUCT *begin_struct(const char *name);
 TAC *declare_struct(const char *var_name, const char *struct_name);
-void add_struct_member(STRUCT *unused, int member_type, const char *mname);
+void add_struct_member(STRUCT *unused, int member_type, const char *mname, int size);
 void add_struct_struct_member(SYM *cur, SYM *struct_type, char *name, int cnt);
 void add_struct_array_member(SYM *cur, int base_type, char *name, int cnt);
 void end_struct(STRUCT *def);
-static STRUCT *find_struct(const char *name);
 static STRUCT *get_struct_var(SYM *var);
 int get_struct_offset(SYM *struct_var, const char *name);
 TAC *make_struct_store_tac(SYM *base, int offset, EXP *exp);
 EXP *make_struct_load_exp(SYM *base, int offset);
+STRUCT *find_struct(const char *name);
 
 void error(const char *format, ...);

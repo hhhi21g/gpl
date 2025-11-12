@@ -133,12 +133,12 @@ struct_member_list:
 
 struct_member_line:INT IDENTIFIER ';'
 {
-	add_struct_member(NULL,SYM_INT,$2);
+	add_struct_member(NULL,SYM_INT,$2,4);
 	$$ = NULL;
 }
 | CHAR IDENTIFIER ';'
 { 
-	add_struct_member(NULL, SYM_CHAR, $2); 
+	add_struct_member(NULL, SYM_CHAR, $2,1); 
 	$$ = NULL; 
 }
 | INT IDENTIFIER LBRACK INTEGER RBRACK ';'
@@ -153,18 +153,24 @@ struct_member_line:INT IDENTIFIER ';'
 }
 | STRUCT_TOK IDENTIFIER IDENTIFIER ';'
 {
-	SYM * stype = lookup_sym(sym_tab_local,$2);
-	if(!stype || stype->type != SYM_STRUCT)
+	STRUCT* stype = find_struct($2);
+	if(!stype)
 		error("not defined struct");
-	add_struct_struct_member(NULL,stype,$3,1);
+	SYM*s = mk_sym();
+	s->type = SYM_STRUCT;
+	s->etc = stype;
+	add_struct_struct_member(NULL,s,$3,1);
 	$$=NULL;
 }
 | STRUCT_TOK IDENTIFIER IDENTIFIER LBRACK INTEGER RBRACK ';'
 {
-	SYM*stype = lookup_sym(sym_tab_local,$2);;
-	if(!stype || stype->type != SYM_STRUCT)
+	STRUCT* stype = find_struct($2);
+	if(!stype)
 		error("not defined struct");
-	add_struct_struct_member(NULL,stype,$3,atoi($5));
+	SYM*s = mk_sym();
+	s->type = SYM_STRUCT;
+	s->etc = stype;
+	add_struct_struct_member(NULL,s,$3,atoi($5));
 	$$ = NULL;
 }
 ;

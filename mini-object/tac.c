@@ -103,7 +103,7 @@ TAC *declare_struct(const char *var_name, const char *struct_name)
 	return mk_tac(TAC_VAR, sym, NULL, NULL);
 }
 
-void add_struct_member(STRUCT *unused, int member_type, const char *mname)
+void add_struct_member(STRUCT *unused, int member_type, const char *mname, int size)
 {
 	if (!cur_structs)
 		error("no struct member");
@@ -115,23 +115,26 @@ void add_struct_member(STRUCT *unused, int member_type, const char *mname)
 	m->next = cur_structs->members;
 	cur_structs->members = m; // 倒序
 
-	cur_structs->size += 4;
+	cur_structs->size += size;
 }
 
 // 结构体成员类型：数组
 void add_struct_array_member(SYM *cur, int base_type, char *name, int cnt)
 {
+	int elem_size = (base_type == SYM_CHAR) ? 1 : 4;
 	for (int i = 0; i < cnt; i++)
 	{
 		char buf[32];
 		sprintf(buf, "%s[%d]", name, i);
-		add_struct_member(cur, base_type, strdup(buf));
+		add_struct_member(cur, base_type, strdup(buf), elem_size);
 	}
 }
 
 // 结构体成员类型：结构体(数组)
 void add_struct_struct_member(SYM *cur, SYM *struct_type, char *name, int cnt)
 {
+	STRUCT *def = (STRUCT *)struct_type->etc;
+	int struct_size = def->size;
 	for (int i = 0; i < cnt; i++)
 	{
 		char buf[32];
@@ -143,7 +146,7 @@ void add_struct_struct_member(SYM *cur, SYM *struct_type, char *name, int cnt)
 		{
 			strcpy(buf, name);
 		}
-		add_struct_member(cur, SYM_STRUCT, strdup(buf));
+		add_struct_member(cur, SYM_STRUCT, strdup(buf), struct_size);
 	}
 }
 
@@ -156,7 +159,7 @@ void end_struct(STRUCT *def)
 }
 
 // 查找结构体
-static STRUCT *find_struct(const char *name)
+STRUCT *find_struct(const char *name)
 {
 	for (STRUCT *d = structs; d; d = d->next)
 	{
