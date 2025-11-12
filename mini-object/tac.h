@@ -176,6 +176,8 @@ EXP *do_call_ret(char *name, EXP *arglist);
 STRUCT *begin_struct(const char *name);
 TAC *declare_struct(const char *var_name, const char *struct_name);
 void add_struct_member(STRUCT *unused, int member_type, const char *mname);
+void add_struct_struct_member(SYM *cur, SYM *struct_type, char *name, int cnt);
+void add_struct_array_member(SYM *cur, int base_type, char *name, int cnt);
 void end_struct(STRUCT *def);
 static STRUCT *find_struct(const char *name);
 static STRUCT *get_struct_var(SYM *var);

@@ -157,7 +157,7 @@ struct_member_line:INT IDENTIFIER ';'
 	if(!stype || stype->type != SYM_STRUCT)
 		error("not defined struct");
 	add_struct_struct_member(NULL,stype,$3,1);
-	$$-NULL;
+	$$=NULL;
 }
 | STRUCT_TOK IDENTIFIER IDENTIFIER '[' INTEGER ']'
 {

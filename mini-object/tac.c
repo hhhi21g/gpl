@@ -118,6 +118,35 @@ void add_struct_member(STRUCT *unused, int member_type, const char *mname)
 	cur_structs->size += 4;
 }
 
+// 结构体成员类型：数组
+void add_struct_array_member(SYM *cur, int base_type, char *name, int cnt)
+{
+	for (int i = 0; i < cnt; i++)
+	{
+		char buf[32];
+		sprintf(buf, "%s[%d]", name, i);
+		add_struct_member(cur, base_type, strdup(buf));
+	}
+}
+
+// 结构体成员类型：结构体(数组)
+void add_struct_struct_member(SYM *cur, SYM *struct_type, char *name, int cnt)
+{
+	for (int i = 0; i < cnt; i++)
+	{
+		char buf[32];
+		if (cnt > 1)
+		{
+			sprintf(buf, "%s[%d]", name, i);
+		}
+		else
+		{
+			strcpy(buf, name);
+		}
+		add_struct_member(cur, SYM_STRUCT, strdup(buf));
+	}
+}
+
 // 结束定义：成员添加完毕
 void end_struct(STRUCT *def)
 {
