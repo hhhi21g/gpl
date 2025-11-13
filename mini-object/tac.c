@@ -1271,15 +1271,34 @@ TAC *do_func(SYM *func, TAC *args, TAC *code)
 	return tend;
 }
 
-SYM *mk_tmp(void)
+// SYM *mk_tmp(void)
+// {
+// 	SYM *sym;
+// 	char *name;
+// 	// sym->type = SYM_TMP;
+// 	name = malloc(12);
+// 	sprintf(name, "t%d", next_tmp++); /* Set up text */
+// 	return mk_var(name);
+// 	// return sym;
+// }
+
+SYM *mk_tmp()
 {
-	SYM *sym;
-	char *name;
-	// sym->type = SYM_TMP;
-	name = malloc(12);
-	sprintf(name, "t%d", next_tmp++); /* Set up text */
-	return mk_var(name);
-	// return sym;
+	SYM *s = malloc(sizeof(SYM));
+	char buf[32];
+
+	sprintf(buf, "_t%d", next_tmp++);
+	s->name = strdup(buf);
+
+	s->type = SYM_TMP; // ❗不再是 SYM_VAR
+	s->scope = -1;	   // ❗永不进入局部变量表
+	s->offset = 0;
+	s->next = NULL;
+	s->ndim = 0;
+	s->dims = NULL;
+	s->etc = NULL;
+
+	return s;
 }
 
 TAC *declare_para(char *name)
