@@ -180,31 +180,13 @@ int reg_alloc(SYM *s)
 // 	return random;
 // }
 
-// int reg_alloc_temp()
-// {
-// 	for (int r = R_GEN; r < R_NUM; r++)
-// 		if (rdesc[r].var == NULL)
-// 			return r;
-
-// 	// 如果无空位，就随机选一个但不要写入 rdesc
-// 	return R_GEN;
-// }
-
 int reg_alloc_temp()
 {
 	for (int r = R_GEN; r < R_NUM; r++)
-	{
 		if (rdesc[r].var == NULL)
-		{
-			rdesc[r].var = (SYM *)-1; // 占位，防止再次被选中
-			rdesc[r].mod = 0;
 			return r;
-		}
-	}
 
-	// 如果实在没有空的寄存器，那就用第一个，但仍然要标记
-	rdesc[R_GEN].var = (SYM *)-1;
-	rdesc[R_GEN].mod = 0;
+	// 如果无空位，就随机选一个但不要写入 rdesc
 	return R_GEN;
 }
 
@@ -688,50 +670,20 @@ void asm_code(TAC *c)
 		rdesc_clear(base_store);
 		return;
 
-		// case TAC_ADDR:
-		// {
-		// 	// a = &b
-		// 	int r = reg_alloc(c->a);
-		// 	if (c->b->scope == 1)
-		// 		// out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, c->b->offset);
-		// 		if (c->b->offset >= 0)
-		// 			out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, c->b->offset);
-		// 		else
-		// 			out_str(file_s, "    LOD R%u,R%u-%d\n", r, R_BP, -c->b->offset);
-
-		// 	else
-		// 		out_str(file_s, "    LOD R%u,STATIC+%d\n", r, c->b->offset);
-		// 	rdesc_fill(r, c->a, MODIFIED);
-		// 	return;
-		// }
-
 	case TAC_ADDR:
 	{
 		// a = &b
-		int ra = reg_alloc(c->a);	  // result register (holds the final pointer)
-		int rbase = reg_alloc_temp(); // base register
-		int roff = reg_alloc_temp();  // offset register
-
-		// Load frame pointer / static base
+		int r = reg_alloc(c->a);
 		if (c->b->scope == 1)
-		{
-			// local variable → base is R2
-			out_str(file_s, "    LOD R%d,R2\n", rbase);
-		}
+			// out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, c->b->offset);
+			if (c->b->offset >= 0)
+				out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, c->b->offset);
+			else
+				out_str(file_s, "    LOD R%u,R%u-%d\n", r, R_BP, -c->b->offset);
+
 		else
-		{
-			// global variable → base is STATIC
-			out_str(file_s, "    LOD R%d,STATIC\n", rbase);
-		}
-
-		// Load offset value
-		out_str(file_s, "    LOD R%d,%d\n", roff, c->b->offset);
-
-		// ADD base + offset → result (ra)
-		out_str(file_s, "    LOD R%d,R%d\n", ra, rbase); // ra = base
-		out_str(file_s, "    ADD R%d,R%d\n", ra, roff);	 // ra += offset
-
-		rdesc_fill(ra, c->a, MODIFIED);
+			out_str(file_s, "    LOD R%u,STATIC+%d\n", r, c->b->offset);
+		rdesc_fill(r, c->a, MODIFIED);
 		return;
 	}
 
@@ -801,46 +753,20 @@ void asm_code(TAC *c)
 		oof -= 4;
 		return;
 
-	// case TAC_VAR:
-	// 	if (scope)
-	// 	{
-	// 		c->a->scope = 1; /* local var */
-	// 		c->a->offset = tof;
-	// 		tof += 4;
-	// 	}
-	// 	else
-	// 	{
-	// 		c->a->scope = 0; /* global var */
-	// 		c->a->offset = tos;
-	// 		tos += 4;
-	// 	}
-	// 	return;
 	case TAC_VAR:
-	{
-		// 如果是临时变量，如 t0,t1,t2
-		if (c->a->name[0] == '_')
-		{
-			// 临时变量不能占用栈，也不能占用 STATIC
-			c->a->scope = -1; // 标记为 “仅寄存器”
-			c->a->offset = 0;
-			return;
-		}
-
-		// 正常变量，分配空间
 		if (scope)
 		{
-			c->a->scope = 1;
+			c->a->scope = 1; /* local var */
 			c->a->offset = tof;
 			tof += 4;
 		}
 		else
 		{
-			c->a->scope = 0;
+			c->a->scope = 0; /* global var */
 			c->a->offset = tos;
 			tos += 4;
 		}
 		return;
-	}
 
 	case TAC_RETURN:
 		asm_return(c->a);

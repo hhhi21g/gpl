@@ -19,265 +19,221 @@ main:
 
 	# var c1
 
-	# var _t0
+	# var t0
 
-	# _t0 = &c1
-	LOD R4,STATIC
-	LOD R5,(R4+0)
-    LOD R6,R2
-    LOD R7,24
-    LOD R5,R6
-    ADD R5,R7
+	# t0 = &c1
+	LOD R5,(R2+28)
+    LOD R5,R2+24
 
-	# var _t1
+	# var t1
 
-	# _t1 = _t0 + 0
-	LOD R4,STATIC
-	STO (R4+0),R5
-    LOD R8,0
-    ADD R5,R8
+	# t1 = t0 + 0
+    STO (R2+28),R5
+    LOD R6,0
+    ADD R5,R6
 
-	# *_t1 = 1
-	LOD R4,STATIC
-	STO (R4+0),R5
-	LOD R9,1
-    LOD R5,(R2+0)
-    STO (R5),R9
+	# *t1 = 1
+    STO (R2+32),R5
+	LOD R6,1
+    LOD R5,(R2+32)
+    STO (R5),R6
 
-	# var _t2
+	# var t2
 
-	# _t2 = &c1
-	LOD R4,STATIC
-	LOD R10,(R4+0)
-    LOD R11,R2
-    LOD R12,24
-    LOD R10,R11
+	# t2 = &c1
+	LOD R7,(R2+36)
+    LOD R7,R2+24
+
+	# var t3
+
+	# t3 = t2 + 14
+    STO (R2+36),R7
+    LOD R8,14
+    ADD R7,R8
+
+	# var t4
+
+	# t4 = 2 * 554
+    LOD R8,2
+    LOD R8,554
+    LOD R8,554
+    MUL R8,R8
+
+	# var t5
+
+	# t5 = t3 + t4
+    STO (R2+40),R7
+    STO (R2+44),R8
+    ADD R7,R8
+
+	# var t6
+
+	# t6 = t5 + 0
+    STO (R2+48),R7
+    LOD R9,0
+    ADD R7,R9
+
+	# *t6 = 2
+    STO (R2+52),R7
+	LOD R9,2
+    LOD R7,(R2+52)
+    STO (R7),R9
+
+	# var t7
+
+	# t7 = &c1
+	LOD R10,(R2+56)
+    LOD R10,R2+24
+
+	# var t8
+
+	# t8 = t7 + 14
+    STO (R2+56),R10
+    LOD R11,14
+    ADD R10,R11
+
+	# var t9
+
+	# t9 = 2 * 554
+    LOD R11,2
+    LOD R11,554
+    LOD R11,554
+    MUL R11,R11
+
+	# var t10
+
+	# t10 = t8 + t9
+    STO (R2+60),R10
+    STO (R2+64),R11
+    ADD R10,R11
+
+	# var t11
+
+	# t11 = t10 + 14
+    STO (R2+68),R10
+    LOD R12,14
     ADD R10,R12
 
-	# var _t3
+	# var t12
 
-	# _t3 = _t2 + 14
-	LOD R4,STATIC
-	STO (R4+0),R10
-    LOD R13,14
+	# t12 = 3 * 54
+    LOD R12,3
+    LOD R12,54
+    LOD R12,54
+    MUL R12,R12
+
+	# var t13
+
+	# t13 = t11 + t12
+    STO (R2+72),R10
+    STO (R2+76),R12
+    ADD R10,R12
+
+	# var t14
+
+	# t14 = t13 + 4
+    STO (R2+80),R10
+    LOD R13,4
     ADD R10,R13
 
-	# var _t4
+	# var t15
 
-	# _t4 = 2 * 554
-    LOD R14,2
-    LOD R15,554
-    MUL R14,R15
+	# t15 = 1 * 1
+    LOD R13,1
+    LOD R13,1
+    LOD R13,1
+    MUL R13,R13
 
-	# var _t5
+	# var t16
 
-	# _t5 = _t3 + _t4
-	LOD R4,STATIC
-	STO (R4+0),R10
-	LOD R4,STATIC
-	STO (R4+0),R14
-    ADD R10,R14
+	# t16 = t14 + t15
+    STO (R2+84),R10
+    STO (R2+88),R13
+    ADD R10,R13
 
-	# var _t6
+	# *t16 = 'b'
+    STO (R2+92),R10
+	LOD R14,98
+    LOD R10,(R2+92)
+    STO (R10),R14
 
-	# _t6 = _t5 + 0
-	LOD R4,STATIC
-	STO (R4+0),R10
-    LOD R5,0
-    ADD R10,R5
+	# var t17
 
-	# *_t6 = 2
-	LOD R4,STATIC
-	STO (R4+0),R10
-	LOD R5,2
-    LOD R10,(R2+0)
-    STO (R10),R5
+	# t17 = &c1
+	LOD R15,(R2+96)
+    LOD R15,R2+24
 
-	# var _t7
+	# var t18
 
-	# _t7 = &c1
-	LOD R4,STATIC
-	LOD R5,(R4+0)
-    LOD R5,R2
-    LOD R5,24
-    LOD R5,R5
-    ADD R5,R5
-
-	# var _t8
-
-	# _t8 = _t7 + 14
-	LOD R4,STATIC
-	STO (R4+0),R5
+	# t18 = t17 + 14
+    STO (R2+96),R15
     LOD R5,14
-    LOD R5,14
-    ADD R5,R5
+    ADD R15,R5
 
-	# var _t9
+	# var t19
 
-	# _t9 = 2 * 554
+	# t19 = 2 * 554
     LOD R5,2
     LOD R5,554
     LOD R5,554
     MUL R5,R5
 
-	# var _t10
+	# var t20
 
-	# _t10 = _t8 + _t9
-	LOD R4,STATIC
-	LOD R6,(R4+0)
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
+	# t20 = t18 + t19
+    STO (R2+100),R15
+    STO (R2+104),R5
+    ADD R15,R5
 
-	# var _t11
+	# var t21
 
-	# _t11 = _t10 + 14
-	LOD R4,STATIC
-	STO (R4+0),R6
+	# t21 = t20 + 14
+    STO (R2+108),R15
     LOD R5,14
-    ADD R6,R5
+    ADD R15,R5
 
-	# var _t12
+	# var t22
 
-	# _t12 = 3 * 54
+	# t22 = 3 * 54
     LOD R5,3
     LOD R5,54
     LOD R5,54
     MUL R5,R5
 
-	# var _t13
+	# var t23
 
-	# _t13 = _t11 + _t12
-	LOD R4,STATIC
-	STO (R4+0),R6
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
+	# t23 = t21 + t22
+    STO (R2+112),R15
+    STO (R2+116),R5
+    ADD R15,R5
 
-	# var _t14
+	# var t24
 
-	# _t14 = _t13 + 4
-	LOD R4,STATIC
-	STO (R4+0),R6
+	# t24 = t23 + 4
+    STO (R2+120),R15
     LOD R5,4
-    ADD R6,R5
+    ADD R15,R5
 
-	# var _t15
+	# var t25
 
-	# _t15 = 1 * 1
-    LOD R5,1
-    LOD R5,1
-    LOD R5,1
-    MUL R5,R5
-
-	# var _t16
-
-	# _t16 = _t14 + _t15
-	LOD R4,STATIC
-	STO (R4+0),R6
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
-
-	# *_t16 = 'b'
-	LOD R4,STATIC
-	STO (R4+0),R6
-	LOD R5,98
-    LOD R6,(R2+0)
-    STO (R6),R5
-
-	# var _t17
-
-	# _t17 = &c1
-	LOD R4,STATIC
-	LOD R5,(R4+0)
-    LOD R5,R2
-    LOD R5,24
-    LOD R5,R5
-    ADD R5,R5
-
-	# var _t18
-
-	# _t18 = _t17 + 14
-	LOD R4,STATIC
-	STO (R4+0),R5
-    LOD R5,14
-    LOD R5,14
-    ADD R5,R5
-
-	# var _t19
-
-	# _t19 = 2 * 554
-    LOD R5,2
-    LOD R5,554
-    LOD R5,554
-    MUL R5,R5
-
-	# var _t20
-
-	# _t20 = _t18 + _t19
-	LOD R4,STATIC
-	LOD R6,(R4+0)
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
-
-	# var _t21
-
-	# _t21 = _t20 + 14
-	LOD R4,STATIC
-	STO (R4+0),R6
-    LOD R5,14
-    ADD R6,R5
-
-	# var _t22
-
-	# _t22 = 3 * 54
-    LOD R5,3
-    LOD R5,54
-    LOD R5,54
-    MUL R5,R5
-
-	# var _t23
-
-	# _t23 = _t21 + _t22
-	LOD R4,STATIC
-	STO (R4+0),R6
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
-
-	# var _t24
-
-	# _t24 = _t23 + 4
-	LOD R4,STATIC
-	STO (R4+0),R6
-    LOD R5,4
-    ADD R6,R5
-
-	# var _t25
-
-	# _t25 = 0 * 1
+	# t25 = 0 * 1
     LOD R5,0
     LOD R5,1
     LOD R5,1
     MUL R5,R5
 
-	# var _t26
+	# var t26
 
-	# _t26 = _t24 + _t25
-	LOD R4,STATIC
-	STO (R4+0),R6
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
+	# t26 = t24 + t25
+    STO (R2+124),R15
+    STO (R2+128),R5
+    ADD R15,R5
 
-	# *_t26 = 'a'
-	LOD R4,STATIC
-	STO (R4+0),R6
+	# *t26 = 'a'
+    STO (R2+132),R15
 	LOD R5,97
-    LOD R6,(R2+0)
-    STO (R6),R5
+    LOD R15,(R2+132)
+    STO (R15),R5
 
 	# ifz 0 goto L2
 	LOD R5,0
@@ -292,292 +248,240 @@ main:
 	# label L2
 L2:
 
-	# var _t27
+	# var t27
 
-	# _t27 = &c1
-	LOD R4,STATIC
-	LOD R5,(R4+0)
-    LOD R6,R2
-    LOD R7,24
-    LOD R5,R6
-    ADD R5,R7
+	# t27 = &c1
+	LOD R5,(R2+136)
+    LOD R5,R2+24
 
-	# var _t28
+	# var t28
 
-	# _t28 = _t27 + 0
-	LOD R4,STATIC
-	STO (R4+0),R5
-    LOD R8,0
-    ADD R5,R8
+	# t28 = t27 + 0
+    STO (R2+136),R5
+    LOD R6,0
+    ADD R5,R6
 
-	# var _t29
+	# var t29
 
-	# _t29 = *_t28
-	LOD R4,STATIC
-	STO (R4+0),R5
-	LOD R4,STATIC
-	LOD R9,(R4+0)
-    LOD R9,(R5)
+	# t29 = *t28
+    STO (R2+140),R5
+	LOD R6,(R2+144)
+    LOD R6,(R5)
 
-	# i = _t29
-	LOD R4,STATIC
-	STO (R4+0),R9
-   STO (R2+8),R9
+	# i = t29
+    STO (R2+144),R6
+   STO (R2+8),R6
 
-	# var _t30
+	# var t30
 
-	# _t30 = &c1
-	LOD R4,STATIC
-	LOD R10,(R4+0)
-    LOD R11,R2
-    LOD R12,24
-    LOD R10,R11
+	# t30 = &c1
+	LOD R7,(R2+148)
+    LOD R7,R2+24
+
+	# var t31
+
+	# t31 = t30 + 14
+    STO (R2+148),R7
+    LOD R8,14
+    ADD R7,R8
+
+	# var t32
+
+	# t32 = 2 * 554
+    LOD R8,2
+    LOD R8,554
+    LOD R8,554
+    MUL R8,R8
+
+	# var t33
+
+	# t33 = t31 + t32
+    STO (R2+152),R7
+    STO (R2+156),R8
+    ADD R7,R8
+
+	# var t34
+
+	# t34 = t33 + 0
+    STO (R2+160),R7
+    LOD R9,0
+    ADD R7,R9
+
+	# var t35
+
+	# t35 = *t34
+    STO (R2+164),R7
+	LOD R9,(R2+168)
+    LOD R9,(R7)
+
+	# j = t35
+    STO (R2+168),R9
+   STO (R2+12),R9
+
+	# var t36
+
+	# t36 = &c1
+	LOD R10,(R2+172)
+    LOD R10,R2+24
+
+	# var t37
+
+	# t37 = t36 + 14
+    STO (R2+172),R10
+    LOD R11,14
+    ADD R10,R11
+
+	# var t38
+
+	# t38 = 2 * 554
+    LOD R11,2
+    LOD R11,554
+    LOD R11,554
+    MUL R11,R11
+
+	# var t39
+
+	# t39 = t37 + t38
+    STO (R2+176),R10
+    STO (R2+180),R11
+    ADD R10,R11
+
+	# var t40
+
+	# t40 = t39 + 14
+    STO (R2+184),R10
+    LOD R12,14
     ADD R10,R12
 
-	# var _t31
+	# var t41
 
-	# _t31 = _t30 + 14
-	LOD R4,STATIC
-	STO (R4+0),R10
-    LOD R13,14
+	# t41 = 3 * 54
+    LOD R12,3
+    LOD R12,54
+    LOD R12,54
+    MUL R12,R12
+
+	# var t42
+
+	# t42 = t40 + t41
+    STO (R2+188),R10
+    STO (R2+192),R12
+    ADD R10,R12
+
+	# var t43
+
+	# t43 = t42 + 4
+    STO (R2+196),R10
+    LOD R13,4
     ADD R10,R13
 
-	# var _t32
+	# var t44
 
-	# _t32 = 2 * 554
-    LOD R14,2
-    LOD R15,554
-    MUL R14,R15
+	# t44 = 0 * 1
+    LOD R13,0
+    LOD R13,1
+    LOD R13,1
+    MUL R13,R13
 
-	# var _t33
+	# var t45
 
-	# _t33 = _t31 + _t32
-	LOD R4,STATIC
-	STO (R4+0),R10
-	LOD R4,STATIC
-	STO (R4+0),R14
-    ADD R10,R14
+	# t45 = t43 + t44
+    STO (R2+200),R10
+    STO (R2+204),R13
+    ADD R10,R13
 
-	# var _t34
+	# var t46
 
-	# _t34 = _t33 + 0
-	LOD R4,STATIC
-	STO (R4+0),R10
-    LOD R5,0
-    ADD R10,R5
+	# t46 = *t45
+    STO (R2+208),R10
+	LOD R14,(R2+212)
+    LOD R14,(R10)
 
-	# var _t35
+	# a = t46
+    STO (R2+212),R14
+   STO (R2+16),R14
 
-	# _t35 = *_t34
-	LOD R4,STATIC
-	STO (R4+0),R10
-	LOD R4,STATIC
-	LOD R5,(R4+0)
-    LOD R5,(R10)
+	# var t47
 
-	# j = _t35
-	LOD R4,STATIC
-	STO (R4+0),R5
-   STO (R2+12),R5
+	# t47 = &c1
+	LOD R15,(R2+216)
+    LOD R15,R2+24
 
-	# var _t36
+	# var t48
 
-	# _t36 = &c1
-	LOD R4,STATIC
-	LOD R5,(R4+0)
-    LOD R5,R2
-    LOD R5,24
-    LOD R5,R5
-    ADD R5,R5
-
-	# var _t37
-
-	# _t37 = _t36 + 14
-	LOD R4,STATIC
-	STO (R4+0),R5
+	# t48 = t47 + 14
+    STO (R2+216),R15
     LOD R5,14
-    LOD R5,14
-    ADD R5,R5
+    ADD R15,R5
 
-	# var _t38
+	# var t49
 
-	# _t38 = 2 * 554
+	# t49 = 2 * 554
     LOD R5,2
     LOD R5,554
     LOD R5,554
     MUL R5,R5
 
-	# var _t39
+	# var t50
 
-	# _t39 = _t37 + _t38
-	LOD R4,STATIC
-	LOD R6,(R4+0)
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
+	# t50 = t48 + t49
+    STO (R2+220),R15
+    STO (R2+224),R5
+    ADD R15,R5
 
-	# var _t40
+	# var t51
 
-	# _t40 = _t39 + 14
-	LOD R4,STATIC
-	STO (R4+0),R6
+	# t51 = t50 + 14
+    STO (R2+228),R15
     LOD R5,14
-    ADD R6,R5
+    ADD R15,R5
 
-	# var _t41
+	# var t52
 
-	# _t41 = 3 * 54
+	# t52 = 3 * 54
     LOD R5,3
     LOD R5,54
     LOD R5,54
     MUL R5,R5
 
-	# var _t42
+	# var t53
 
-	# _t42 = _t40 + _t41
-	LOD R4,STATIC
-	STO (R4+0),R6
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
+	# t53 = t51 + t52
+    STO (R2+232),R15
+    STO (R2+236),R5
+    ADD R15,R5
 
-	# var _t43
+	# var t54
 
-	# _t43 = _t42 + 4
-	LOD R4,STATIC
-	STO (R4+0),R6
+	# t54 = t53 + 4
+    STO (R2+240),R15
     LOD R5,4
-    ADD R6,R5
+    ADD R15,R5
 
-	# var _t44
+	# var t55
 
-	# _t44 = 0 * 1
-    LOD R5,0
-    LOD R5,1
-    LOD R5,1
-    MUL R5,R5
-
-	# var _t45
-
-	# _t45 = _t43 + _t44
-	LOD R4,STATIC
-	STO (R4+0),R6
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
-
-	# var _t46
-
-	# _t46 = *_t45
-	LOD R4,STATIC
-	STO (R4+0),R6
-	LOD R4,STATIC
-	LOD R5,(R4+0)
-    LOD R5,(R6)
-
-	# a = _t46
-	LOD R4,STATIC
-	STO (R4+0),R5
-   STO (R2+16),R5
-
-	# var _t47
-
-	# _t47 = &c1
-	LOD R4,STATIC
-	LOD R5,(R4+0)
-    LOD R5,R2
-    LOD R5,24
-    LOD R5,R5
-    ADD R5,R5
-
-	# var _t48
-
-	# _t48 = _t47 + 14
-	LOD R4,STATIC
-	STO (R4+0),R5
-    LOD R5,14
-    LOD R5,14
-    ADD R5,R5
-
-	# var _t49
-
-	# _t49 = 2 * 554
-    LOD R5,2
-    LOD R5,554
-    LOD R5,554
-    MUL R5,R5
-
-	# var _t50
-
-	# _t50 = _t48 + _t49
-	LOD R4,STATIC
-	LOD R6,(R4+0)
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
-
-	# var _t51
-
-	# _t51 = _t50 + 14
-	LOD R4,STATIC
-	STO (R4+0),R6
-    LOD R5,14
-    ADD R6,R5
-
-	# var _t52
-
-	# _t52 = 3 * 54
-    LOD R5,3
-    LOD R5,54
-    LOD R5,54
-    MUL R5,R5
-
-	# var _t53
-
-	# _t53 = _t51 + _t52
-	LOD R4,STATIC
-	STO (R4+0),R6
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
-
-	# var _t54
-
-	# _t54 = _t53 + 4
-	LOD R4,STATIC
-	STO (R4+0),R6
-    LOD R5,4
-    ADD R6,R5
-
-	# var _t55
-
-	# _t55 = 1 * 1
+	# t55 = 1 * 1
     LOD R5,1
     LOD R5,1
     LOD R5,1
     MUL R5,R5
 
-	# var _t56
+	# var t56
 
-	# _t56 = _t54 + _t55
-	LOD R4,STATIC
-	STO (R4+0),R6
-	LOD R4,STATIC
-	STO (R4+0),R5
-    ADD R6,R5
+	# t56 = t54 + t55
+    STO (R2+244),R15
+    STO (R2+248),R5
+    ADD R15,R5
 
-	# var _t57
+	# var t57
 
-	# _t57 = *_t56
-	LOD R4,STATIC
-	STO (R4+0),R6
-	LOD R4,STATIC
-	LOD R5,(R4+0)
-    LOD R5,(R6)
+	# t57 = *t56
+    STO (R2+252),R15
+	LOD R5,(R2+256)
+    LOD R5,(R15)
 
-	# b = _t57
-	LOD R4,STATIC
-	STO (R4+0),R5
+	# b = t57
+    STO (R2+256),R5
    STO (R2+20),R5
 
 	# ifz 0 goto L3

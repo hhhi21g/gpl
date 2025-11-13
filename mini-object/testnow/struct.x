@@ -1,68 +1,68 @@
 
 # tac list
 
-0x57be580cfd30	label main
-0x57be580cfd70	begin
-0x57be580cd9a0	var i
-0x57be580cda70	var j
-0x57be580cdb40	var k
-0x57be580cdc10	var zs
-0x57be580cdc70	input i
-0x57be580cdcd0	input j
-0x57be580cdd30	input k
-0x57be580cde70	var t0
-0x57be580cdeb0	t0 = &zs
-0x57be580cdf60	var t1
-0x57be580ce010	t1 = t0 + 0
-0x57be580ce050	*t1 = i
-0x57be580ce190	var t2
-0x57be580ce1d0	t2 = &zs
-0x57be580ce280	var t3
-0x57be580ce330	t3 = t2 + 4
-0x57be580ce370	*t3 = j
-0x57be580ce4b0	var t4
-0x57be580ce4f0	t4 = &zs
-0x57be580ce5a0	var t5
-0x57be580ce650	t5 = t4 + 8
-0x57be580ce690	*t5 = k
-0x57be580ce8e0	ifz 0 goto L2
-0x57be580ce7b0	output L1
-0x57be580ce8a0	label L2
-0x57be580ce9d0	var t6
-0x57be580cea10	t6 = &zs
-0x57be580ceac0	var t7
-0x57be580ceb00	t7 = 8 + t6
-0x57be580cebb0	var t8
-0x57be580cebf0	t8 = *t7
-0x57be580ced90	var t9
-0x57be580cedd0	t9 = t8 + 100
-0x57be580cee10	i = t9
-0x57be580cef20	var t10
-0x57be580cef60	t10 = &zs
-0x57be580cf010	var t11
-0x57be580cf050	t11 = 4 + t10
-0x57be580cf100	var t12
-0x57be580cf140	t12 = *t11
-0x57be580cf2e0	var t13
-0x57be580cf320	t13 = t12 + 200
-0x57be580cf360	j = t13
-0x57be580cf470	var t14
-0x57be580cf4b0	t14 = &zs
-0x57be580cf560	var t15
-0x57be580cf5a0	t15 = 0 + t14
-0x57be580cf650	var t16
-0x57be580cf690	t16 = *t15
-0x57be580cf830	var t17
-0x57be580cf870	t17 = t16 + 300
-0x57be580cf8b0	k = t17
-0x57be580cfa70	ifz 0 goto L3
-0x57be580cf960	output L1
-0x57be580cfa30	label L3
-0x57be580cfb00	output i
-0x57be580cfb90	output j
-0x57be580cfc20	output k
-0x57be580cfc80	output L1
-0x57be580cfdb0	end
+0x629eafb104d0	label main
+0x629eafb10510	begin
+0x629eafb0d9d0	var i
+0x629eafb0daa0	var j
+0x629eafb0db70	var k
+0x629eafb0dc40	var zs
+0x629eafb0dca0	input i
+0x629eafb0dd00	input j
+0x629eafb0dd60	input k
+0x629eafb0e340	var t0
+0x629eafb0e380	t0 = &zs
+0x629eafb0e430	var t1
+0x629eafb0e4e0	t1 = t0 + 0
+0x629eafb0e520	*t1 = i
+0x629eafb0e6f0	var t2
+0x629eafb0e730	t2 = &zs
+0x629eafb0e7e0	var t3
+0x629eafb0e890	t3 = t2 + 4
+0x629eafb0e8d0	*t3 = j
+0x629eafb0eaa0	var t4
+0x629eafb0eae0	t4 = &zs
+0x629eafb0eb90	var t5
+0x629eafb0ec40	t5 = t4 + 8
+0x629eafb0ec80	*t5 = k
+0x629eafb0eed0	ifz 0 goto L2
+0x629eafb0eda0	output L1
+0x629eafb0ee90	label L2
+0x629eafb0f050	var t6
+0x629eafb0f090	t6 = &zs
+0x629eafb0f140	var t7
+0x629eafb0f180	t7 = t6 + 8
+0x629eafb0f230	var t8
+0x629eafb0f270	t8 = *t7
+0x629eafb0f410	var t9
+0x629eafb0f450	t9 = t8 + 100
+0x629eafb0f490	i = t9
+0x629eafb0f630	var t10
+0x629eafb0f670	t10 = &zs
+0x629eafb0f720	var t11
+0x629eafb0f760	t11 = t10 + 4
+0x629eafb0f810	var t12
+0x629eafb0f850	t12 = *t11
+0x629eafb0f9f0	var t13
+0x629eafb0fa30	t13 = t12 + 200
+0x629eafb0fa70	j = t13
+0x629eafb0fc10	var t14
+0x629eafb0fc50	t14 = &zs
+0x629eafb0fd00	var t15
+0x629eafb0fd40	t15 = t14 + 0
+0x629eafb0fdf0	var t16
+0x629eafb0fe30	t16 = *t15
+0x629eafb0ffd0	var t17
+0x629eafb10010	t17 = t16 + 300
+0x629eafb10050	k = t17
+0x629eafb10210	ifz 0 goto L3
+0x629eafb10100	output L1
+0x629eafb101d0	label L3
+0x629eafb102a0	output i
+0x629eafb10330	output j
+0x629eafb103c0	output k
+0x629eafb10420	output L1
+0x629eafb10550	end
 
 [B0]
 label main
@@ -104,7 +104,7 @@ label L2
 var t6
 t6 = &zs
 var t7
-t7 = 8 + t6
+t7 = t6 + 8
 var t8
 t8 = *t7
 var t9
@@ -113,7 +113,7 @@ i = t9
 var t10
 t10 = &zs
 var t11
-t11 = 4 + t10
+t11 = t10 + 4
 var t12
 t12 = *t11
 var t13
@@ -122,7 +122,7 @@ j = t13
 var t14
 t14 = &zs
 var t15
-t15 = 0 + t14
+t15 = t14 + 0
 var t16
 t16 = *t15
 var t17
