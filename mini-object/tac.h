@@ -225,5 +225,6 @@ SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code);
 STRUCT_MEMBER *find_member(STRUCT *def, const char *name);
 TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs);
 EXP *do_lvalue_load(LVALUE_PATH *lv);
+static TAC *clone_tac_chain(TAC *t);
 
 void error(const char *format, ...);

@@ -28,8 +28,8 @@ main:
 	# var t0
 
 	# t0 = (i == j)
-	STO (R2+8),R5
-	STO (R2+12),R6
+    STO (R2+8),R5
+    STO (R2+12),R6
 	SUB R5,R6
 	TST R5
 	LOD R3,R1+40
@@ -40,7 +40,7 @@ main:
 	LOD R5,1
 
 	# ifz t0 goto L3
-	STO (R2+20),R5
+    STO (R2+20),R5
 	TST R5
 	JEZ L3
 
@@ -68,14 +68,14 @@ L4:
 	# t1 = i + j
 	LOD R5,(R2+8)
 	LOD R6,(R2+12)
-	ADD R5,R6
+    ADD R5,R6
 
 	# k = t1
-	STO (R2+24),R5
+    STO (R2+24),R5
+   STO (R2+16),R5
 
 	# output k
-	STO (R2+16),R5
-	LOD R15,(R2+16)
+    LOD R15,(R2+16)
 	OTI
 
 	# output L5

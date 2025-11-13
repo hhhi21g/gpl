@@ -21,9 +21,11 @@ struct class
 
 main()
 {
+    int c;
     int i,j;    
     char a,b;
     struct class c1;
+    c = 1 * 10;
     c1.num = 1;
     c1.grp[2].num = 2;
     c1.grp[2].stu[3].name[1] = 'b';

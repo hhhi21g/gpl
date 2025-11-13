@@ -237,6 +237,42 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 	rdesc_fill(reg_b, a, MODIFIED);
 }
 
+// void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
+// {
+// 	int reg_a = reg_alloc(a);
+// 	int reg_b, reg_c;
+
+// 	// load b
+// 	if (b->type == SYM_INT)
+// 	{
+// 		reg_b = reg_alloc_temp();
+// 		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
+// 	}
+// 	else
+// 	{
+// 		reg_b = reg_alloc(b);
+// 	}
+
+// 	// load c
+// 	if (c->type == SYM_INT)
+// 	{
+// 		reg_c = reg_alloc_temp();
+// 		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
+// 	}
+// 	else
+// 	{
+// 		reg_c = reg_alloc(c);
+// 	}
+
+// 	// r_a = r_b
+// 	out_str(file_s, "    LOD R%u,R%u\n", reg_a, reg_b);
+
+// 	// r_a = r_a op r_c
+// 	out_str(file_s, "    %s R%u,R%u\n", op, reg_a, reg_c);
+
+// 	rdesc_fill(reg_a, a, MODIFIED);
+// }
+
 void asm_cmp(int op, SYM *a, SYM *b, SYM *c)
 {
 	int reg_b = -1, reg_c = -1;
@@ -669,6 +705,57 @@ void asm_code(TAC *c)
 		out_str(file_s, "	STO (R%u),R%u\n", base_store, rval);
 		rdesc_clear(base_store);
 		return;
+		// case TAC_LOADIDX:
+		// {
+		// 	int base = reg_alloc_temp();
+		// 	int index = reg_alloc(c->c);
+		// 	int ra = reg_alloc(c->a);
+
+		// 	// 取数组的起始地址
+		// 	asm_load_addr(base, c->b);
+
+		// 	// 加上 index * elem_size
+		// 	int es = ((*(int *)c->b->etc) == SYM_CHAR) ? 4 : 1; // ← 你要在 SYM 里加这个字段
+		// 	if (es == 1)
+		// 	{
+		// 		out_str(file_s, "   ADD R%u,R%u\n", base, index);
+		// 	}
+		// 	else
+		// 	{
+		// 		int tmp = reg_alloc_temp();
+		// 		out_str(file_s, "   LOD R%u,%d\n", tmp, es);
+		// 		out_str(file_s, "   MUL R%u,R%u\n", index, tmp);
+		// 		out_str(file_s, "   ADD R%u,R%u\n", base, index);
+		// 	}
+
+		// 	out_str(file_s, "   LOD R%u,(R%u)\n", ra, base);
+		// 	return;
+		// }
+
+		// case TAC_STOREIDX:
+		// {
+		// 	int base = reg_alloc_temp();
+		// 	int index = reg_alloc(c->b);
+		// 	int rval = reg_alloc(c->c);
+
+		// 	asm_load_addr(base, c->a);
+
+		// 	int es = ((*(int *)c->b->etc) == SYM_CHAR) ? 4 : 1;
+		// 	if (es == 1)
+		// 	{
+		// 		out_str(file_s, "   ADD R%u,R%u\n", base, index);
+		// 	}
+		// 	else
+		// 	{
+		// 		int tmp = reg_alloc_temp();
+		// 		out_str(file_s, "   LOD R%u,%d\n", tmp, es);
+		// 		out_str(file_s, "   MUL R%u,R%u\n", index, tmp);
+		// 		out_str(file_s, "   ADD R%u,R%u\n", base, index);
+		// 	}
+
+		// 	out_str(file_s, "   STO (R%u),R%u\n", base, rval);
+		// 	return;
+		// }
 
 	case TAC_ADDR:
 	{

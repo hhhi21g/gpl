@@ -32,8 +32,8 @@ main:
 	LOD R6,R15
 
 	# ifz 0 goto L2
-	STO (R2+8),R5
-	STO (R2+20),R6
+    STO (R2+8),R5
+    STO (R2+20),R6
 	LOD R7,0
 	TST R7
 	JEZ L2
@@ -55,18 +55,18 @@ L2:
     LOD R6,R2+20
 
 	# b = *pa
-	STO (R2+12),R5
+    STO (R2+12),R5
 	LOD R7,(R2+16)
     LOD R7,(R5)
 
 	# j = *pi
-	STO (R2+24),R6
+    STO (R2+24),R6
 	LOD R8,(R2+28)
     LOD R8,(R6)
 
 	# ifz 0 goto L3
-	STO (R2+16),R7
-	STO (R2+28),R8
+    STO (R2+16),R7
+    STO (R2+28),R8
 	LOD R9,0
 	TST R9
 	JEZ L3
@@ -81,12 +81,12 @@ L3:
 
 	# output b
 	LOD R5,(R2+16)
-	LOD R15,(R2+16)
+    LOD R15,(R2+16)
 	OTC
 
 	# output j
 	LOD R6,(R2+28)
-	LOD R15,(R2+28)
+    LOD R15,(R2+28)
 	OTI
 
 	# output L1

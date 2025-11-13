@@ -29,86 +29,86 @@ main:
 	# var t0
 
 	# t0 = a + 10
-	STO (R2+8),R5
-	LOD R6,10
-	ADD R5,R6
+    STO (R2+8),R5
+    LOD R6,10
+    ADD R5,R6
 
 	# b = t0
-	STO (R2+32),R5
+    STO (R2+32),R5
+   STO (R2+16),R5
 
 	# var t1
 
 	# t1 = b - 20
-	STO (R2+16),R5
-	LOD R7,20
-	SUB R5,R7
+    LOD R6,20
+    SUB R5,R6
 
 	# c = t1
-	STO (R2+36),R5
+    STO (R2+36),R5
+   STO (R2+20),R5
 
 	# var t2
 
 	# t2 = c * 30
-	STO (R2+20),R5
-	LOD R8,30
-	MUL R5,R8
+    LOD R6,30
+    MUL R5,R6
 
 	# d = t2
-	STO (R2+40),R5
+    STO (R2+40),R5
+   STO (R2+24),R5
 
 	# output a
-	LOD R9,(R2+8)
-	LOD R15,(R2+8)
+	LOD R6,(R2+8)
+    LOD R15,(R2+8)
 	OTI
 
 	# output b
-	LOD R10,(R2+16)
-	LOD R15,(R2+16)
+	LOD R7,(R2+16)
+    LOD R15,(R2+16)
 	OTI
 
 	# output c
-	LOD R11,(R2+20)
-	LOD R15,(R2+20)
+	LOD R8,(R2+20)
+    LOD R15,(R2+20)
 	OTI
 
 	# output d
-	STO (R2+24),R5
-	LOD R15,(R2+24)
+    LOD R15,(R2+24)
 	OTI
 
 	# output L1
-	LOD R12,L1
-	LOD R15,R12
+	LOD R9,L1
+	LOD R15,R9
 	OTS
 
 	# pa = &a
-	LOD R13,(R2+12)
-    LOD R13,R2+8
+	LOD R10,(R2+12)
+    LOD R10,R2+8
 
 	# *pa = 111
-	STO (R2+12),R13
-	LOD R14,111
-    LOD R13,(R2+12)
-    STO (R13),R14
+    STO (R2+12),R10
+	LOD R11,111
+    LOD R10,(R2+12)
+    STO (R10),R11
 
 	# output a
-	LOD R15,(R2+8)
+    LOD R15,(R2+8)
 	OTI
 
 	# ptr = pa
+   STO (R2+28),R10
 
 	# *ptr = 222
-	STO (R2+28),R13
-	LOD R15,222
-    LOD R13,(R2+28)
-    STO (R13),R15
+	LOD R12,222
+    LOD R10,(R2+28)
+    STO (R10),R12
 
 	# output a
-	LOD R15,(R2+8)
+    LOD R15,(R2+8)
 	OTI
 
 	# output L1
-	LOD R15,R12
+	LOD R15,R9
 	OTS
 
 	# end

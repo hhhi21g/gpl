@@ -20,11 +20,13 @@ main:
 
 	# i = 0
 	LOD R6,0
+   STO (R2+8),R6
 
 	# label L1
-	STO (R2+12),R5
-	STO (R2+8),R6
+    STO (R2+12),R5
 L1:
+
+	# var t0
 
 	# t0 = (i < j)
 	LOD R5,(R2+8)
@@ -39,23 +41,30 @@ L1:
 	LOD R5,1
 
 	# ifz t0 goto L3
-	STO (R2+4294967295),R5
+    STO (R2+16),R5
 	TST R5
 	JEZ L3
 
 	# output i
 	LOD R7,(R2+8)
-	LOD R15,(R2+8)
+    LOD R15,(R2+8)
 	OTI
 
 	# label L2
 L2:
 
+	# var t1
+
+	# t1 = i + 1
+	LOD R5,(R2+8)
+    LOD R6,1
+    ADD R5,R6
+
 	# i = t1
-	LOD R5,(R2-1)
+    STO (R2+20),R5
+   STO (R2+8),R5
 
 	# goto L1
-	STO (R2+8),R5
 	JMP L1
 
 	# label L3
