@@ -30,8 +30,9 @@ main()
     c1.grp[2].stu[3].name[0] = 'a';
 
     if(0) { output "\n"; }
-
+    
     i = c1.num;
+    
     j = c1.grp[2].num;
     a = c1.grp[2].stu[3].name[0];
     b = c1.grp[2].stu[3].name[1];

@@ -110,9 +110,9 @@ void add_struct_member(STRUCT *unused, int member_type, const char *mname, int s
 
 	STRUCT_MEMBER *m = (STRUCT_MEMBER *)malloc(sizeof(STRUCT_MEMBER));
 	m->name = strdup(mname);
-	m->type = member_type;
+	m->type = SYM_VAR;
 	m->offset = cur_structs->size;
-	m->etc = NULL;
+	m->etc = member_type;
 	m->next = cur_structs->members;
 	cur_structs->members = m; // 倒序
 
@@ -184,9 +184,10 @@ static STRUCT *get_struct_var(SYM *var)
 {
 	if (!var || var->type != SYM_STRUCT)
 	{
-		// printf("[DEBUG] get_struct_var: %s type=%d\n",
-		// 	   var ? var->name : "(null)",
-		// 	   var ? var->type : -1);
+		printf("[DEBUG] get_struct_var: %s type=%d\n",
+			   var ? var->name : "(null)",
+			   var ? var->type : -1);
+		printf("%d\n", yylineno);
 
 		error("not a struct");
 	}
@@ -294,38 +295,137 @@ EXP *make_struct_field_addr(EXP *base, int offset)
 	TAC *add = mk_tac(TAC_ADD, tmp, base->ret, off);
 	add->prev = join_tac(decl, base->tac);
 
+	tmp->type = SYM_STRUCT;
+	tmp->etc = base->ret->etc;
+
 	return mk_exp(NULL, tmp, add);
 }
+
+// // 计算数组元素的地址(struct,int,char)
+// EXP *make_array_elem_addr(EXP *base, EXP *index)
+// {
+// 	int elem_size = 0;
+// 	int elem_type = 0;
+// 	void *elem_etc = NULL;
+
+// 	printf("%d\n", base->ret->type);
+// 	if (base->ret)
+// 	{
+// 		switch (base->ret->type)
+// 		{
+// 		case SYM_STRUCT:
+// 		{
+// 			// 结构体数组
+// 			STRUCT *sdef = (STRUCT *)base->ret->etc;
+// 			elem_size = sdef->size;
+// 			elem_type = SYM_STRUCT;
+// 			elem_etc = sdef; // 保留结构体定义
+// 			break;
+// 		}
+
+// 		case SYM_ARRAY:
+// 		{
+// 			// 普通数组 (etc里是元素类型)
+// 			int t = *((int *)base->ret->etc);
+// 			elem_size = (t == SYM_CHAR) ? 1 : 4;
+// 			elem_type = SYM_ARRAY;
+// 			// 为元素保存基础类型指针（int*）
+// 			elem_etc = malloc(sizeof(int *));
+// 			*((int *)elem_etc) = t;
+// 			break;
+// 		}
+
+// 		case SYM_VAR:
+// 		{
+// 			printf("SYM_VAR\n");
+// 			printf("%d\n", yylineno);
+// 			int t = *((int *)base->ret->etc);
+// 			printf("%d\n", t);
+// 			elem_size = (t == SYM_CHAR) ? 1 : 4;
+// 			elem_type = SYM_VAR;
+// 			elem_etc = malloc(sizeof(int *));
+// 			*((int *)elem_etc) = t;
+// 			break;
+// 		}
+
+// 		default:
+// 			printf("line:%d\n", yylineno);
+// 			error("invalid array base type");
+// 		}
+// 	}
+
+// 	SYM *t_mul = mk_tmp();
+// 	TAC *decl1 = mk_tac(TAC_VAR, t_mul, NULL, NULL);
+
+// 	// index * elem_size
+// 	TAC *mul = mk_tac(TAC_MUL, t_mul, index->ret, mk_const(elem_size));
+// 	mul->prev = join_tac(decl1, join_tac(base->tac, index->tac));
+
+// 	// base + t_mul
+// 	SYM *addr = mk_tmp();
+// 	TAC *decl2 = mk_tac(TAC_VAR, addr, NULL, NULL);
+// 	TAC *add = mk_tac(TAC_ADD, addr, base->ret, t_mul);
+// 	add->prev = join_tac(decl2, mul);
+// 	// addr->type = base->ret->type;
+
+// 	addr->type = elem_type;
+// 	addr->etc = elem_etc;
+
+// 	printf("[DEBUG] make_array_elem_addr: base=%s type=%d etc=%p -> addr=%s type=%d etc=%p\n",
+// 		   base->ret->name, base->ret->type, base->ret->etc,
+// 		   addr->name, addr->type, addr->etc);
+
+// 	return mk_exp(NULL, addr, add);
+// }
 
 // 计算数组元素的地址(struct,int,char)
 EXP *make_array_elem_addr(EXP *base, EXP *index)
 {
 	int elem_size = 0;
-	int base_type = 0;
+	int elem_type = SYM_UNDEF;
+	void *elem_etc = NULL;
 
-	if (base->ret)
+	if (base && base->ret)
 	{
+		// 结构体数组
 		if (base->ret->type == SYM_STRUCT && base->ret->etc)
 		{
 			STRUCT *sdef = (STRUCT *)base->ret->etc;
 			elem_size = sdef->size;
-			base_type = SYM_STRUCT;
+			elem_type = SYM_STRUCT;
+			elem_etc = sdef;
 		}
-		else if (base->ret->etc)
+		// 普通数组（如 int a[10]; char b[20];）
+		else if (base->ret->type == SYM_ARRAY && base->ret->etc)
 		{
 			int t = *((int *)base->ret->etc);
-			if (t == SYM_CHAR)
-				elem_size = 1;
-			else if (t == SYM_INT)
-				elem_size = 4;
-			base_type = t;
+			elem_size = (t == SYM_CHAR) ? 1 : 4;
+			elem_type = SYM_VAR; // 元素是变量地址
+			elem_etc = malloc(sizeof(int));
+			*((int *)elem_etc) = t;
+		}
+		// 一般变量的数组成员（如 stu[3].name[2]）
+		else if (base->ret->type == SYM_VAR && base->ret->etc)
+		{
+			int t = *((int *)base->ret->etc);
+			elem_size = (t == SYM_CHAR) ? 1 : 4;
+			elem_type = SYM_VAR;
+			elem_etc = malloc(sizeof(int));
+			*((int *)elem_etc) = t;
+		}
+		// 最后保险：未知情况
+		else
+		{
+			elem_size = 1;
+			elem_type = SYM_VAR;
+			elem_etc = malloc(sizeof(int));
+			*((int *)elem_etc) = SYM_CHAR;
 		}
 	}
 
+	// index * elem_size
 	SYM *t_mul = mk_tmp();
 	TAC *decl1 = mk_tac(TAC_VAR, t_mul, NULL, NULL);
-
-	// index * elem_size
 	TAC *mul = mk_tac(TAC_MUL, t_mul, index->ret, mk_const(elem_size));
 	mul->prev = join_tac(decl1, join_tac(base->tac, index->tac));
 
@@ -334,11 +434,10 @@ EXP *make_array_elem_addr(EXP *base, EXP *index)
 	TAC *decl2 = mk_tac(TAC_VAR, addr, NULL, NULL);
 	TAC *add = mk_tac(TAC_ADD, addr, base->ret, t_mul);
 	add->prev = join_tac(decl2, mul);
-	addr->type = base->ret->type;
-	if (base->ret->type == SYM_STRUCT)
-		addr->etc = base->ret->etc;
-	else
-		addr->etc = NULL;
+
+	// ✅ 修正类型语义
+	addr->type = elem_type;
+	addr->etc = elem_etc;
 
 	printf("[DEBUG] make_array_elem_addr: base=%s type=%d etc=%p -> addr=%s type=%d etc=%p\n",
 		   base->ret->name, base->ret->type, base->ret->etc,
