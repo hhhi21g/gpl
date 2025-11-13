@@ -214,7 +214,7 @@ int size_of_member(int type, STRUCT *sub)
 // 根据变量查找结构体
 static STRUCT *get_struct_var(SYM *var)
 {
-	printf("var: %s\n", var->name);
+	// printf("var: %s\n", var->name);
 	if (!var || var->type != SYM_STRUCT)
 	{
 		error("not a struct");
@@ -344,27 +344,43 @@ LVALUE_PATH *mk_lvalue_path(char *root, PATH *tail)
 // 返回结构体成员地址(非相对于结构体的偏移)
 SYM *make_struct_member_addr(SYM *base, STRUCT_MEMBER *m, TAC **code)
 {
-	SYM *offset = mk_const(m->offset);
-	SYM *addr = mk_tmp();
+	// addr = base + m->offset
+	SYM *t = mk_tmp();
 
-	*code = join_tac(*code, mk_tac(TAC_ADD, addr, base, offset));
-	return addr;
+	// t = base + offset
+	TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
+	TAC *add = mk_tac(TAC_ADD, t, base, mk_const(m->offset));
+	add->prev = decl;
+
+	*code = join_tac(*code, decl);
+	*code = join_tac(*code, add);
+
+	return t;
 }
 
 // 返回数组元素的地址
 SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
 {
-	SYM *esize = mk_const(elem_size);
+	// ensure idx TAC is included
+	*code = join_tac(*code, idx->tac);
+
 	SYM *mul = mk_tmp();
 	SYM *addr = mk_tmp();
 
-	*code = join_tac(*code, idx->tac);
-
 	// mul = idx * elem_size
-	*code = join_tac(*code, mk_tac(TAC_MUL, mul, idx->ret, esize));
+	TAC *decl_mul = mk_tac(TAC_VAR, mul, NULL, NULL);
+	TAC *mul_tac = mk_tac(TAC_MUL, mul, idx->ret, mk_const(elem_size));
+	mul_tac->prev = decl_mul;
 
 	// addr = base + mul
-	*code = join_tac(*code, mk_tac(TAC_ADD, addr, base, mul));
+	TAC *decl_addr = mk_tac(TAC_VAR, addr, NULL, NULL);
+	TAC *add_tac = mk_tac(TAC_ADD, addr, base, mul);
+	add_tac->prev = decl_addr;
+
+	*code = join_tac(*code, decl_mul);
+	*code = join_tac(*code, mul_tac);
+	*code = join_tac(*code, decl_addr);
+	*code = join_tac(*code, add_tac);
 
 	return addr;
 }
@@ -385,8 +401,16 @@ STRUCT_MEMBER *find_member(STRUCT *def, const char *name)
 TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 {
 	SYM *root = get_var(lv->root);
-	SYM *addr = root;
+
 	TAC *code = NULL;
+
+	// STEP 1: addr = &root
+	SYM *addr = mk_tmp();
+	TAC *decl_addr = mk_tac(TAC_VAR, addr, NULL, NULL);
+	TAC *get_addr = mk_tac(TAC_ADDR, addr, root, NULL);
+	get_addr->prev = decl_addr;
+	code = join_tac(code, decl_addr);
+	code = join_tac(code, get_addr);
 
 	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
 
@@ -469,8 +493,17 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 EXP *do_lvalue_load(LVALUE_PATH *lv)
 {
 	SYM *root = get_var(lv->root);
-	SYM *addr = root;
+
 	TAC *code = NULL;
+
+	// STEP 1: addr = &root
+	SYM *addr = mk_tmp();
+	TAC *decl_addr = mk_tac(TAC_VAR, addr, NULL, NULL);
+	TAC *get_addr = mk_tac(TAC_ADDR, addr, root, NULL);
+	get_addr->prev = decl_addr;
+
+	code = join_tac(code, decl_addr);
+	code = join_tac(code, get_addr);
 
 	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
 
@@ -1002,8 +1035,15 @@ SYM *mk_var(char *name)
 static int chain_contains(TAC *x, TAC *target)
 {
 	for (TAC *p = x; p; p = p->prev)
+	{
+		// if (p->next == x)
+		// {
+		// 	printf("ERROR: join_tac loop detected!");
+		// 	exit(1);
+		// }
 		if (p == target)
 			return 1;
+	}
 	return 0;
 }
 
@@ -1983,6 +2023,7 @@ void out_tac(FILE *f, TAC *i)
 		break;
 
 	case TAC_IFZ:
+		printf("if\n");
 		fprintf(f, "ifz %s goto %s", to_str(i->b, sb), i->a->name);
 		break;
 

@@ -1,0 +1,307 @@
+
+# tac list
+
+0x63106b85a0a0	label main
+0x63106b85a0e0	begin
+0x63106b853e50	var i
+0x63106b853f20	var j
+0x63106b853ff0	var a
+0x63106b8540c0	var b
+0x63106b854190	var c1
+0x63106b8543d0	var t0
+0x63106b854410	t0 = &c1
+0x63106b8544c0	var t1
+0x63106b854570	t1 = t0 + 0
+0x63106b8545b0	*t1 = 1
+0x63106b854910	var t2
+0x63106b854950	t2 = &c1
+0x63106b854a00	var t3
+0x63106b854ab0	t3 = t2 + 14
+0x63106b854bd0	var t4
+0x63106b854c80	t4 = 2 * 554
+0x63106b854cc0	var t5
+0x63106b854d00	t5 = t3 + t4
+0x63106b854db0	var t6
+0x63106b854df0	t6 = t5 + 0
+0x63106b854e30	*t6 = 2
+0x63106b8553d0	var t7
+0x63106b855410	t7 = &c1
+0x63106b8554c0	var t8
+0x63106b855500	t8 = t7 + 14
+0x63106b855620	var t9
+0x63106b855660	t9 = 2 * 554
+0x63106b8556a0	var t10
+0x63106b8556e0	t10 = t8 + t9
+0x63106b855790	var t11
+0x63106b8557d0	t11 = t10 + 14
+0x63106b8558f0	var t12
+0x63106b8559a0	t12 = 3 * 54
+0x63106b8559e0	var t13
+0x63106b855a20	t13 = t11 + t12
+0x63106b855ad0	var t14
+0x63106b855b80	t14 = t13 + 4
+0x63106b855ca0	var t15
+0x63106b855ce0	t15 = 1 * 1
+0x63106b855d20	var t16
+0x63106b855d60	t16 = t14 + t15
+0x63106b855da0	*t16 = 'b'
+0x63106b8562d0	var t17
+0x63106b856310	t17 = &c1
+0x63106b8563c0	var t18
+0x63106b856400	t18 = t17 + 14
+0x63106b856520	var t19
+0x63106b856560	t19 = 2 * 554
+0x63106b8565a0	var t20
+0x63106b8565e0	t20 = t18 + t19
+0x63106b856690	var t21
+0x63106b8566d0	t21 = t20 + 14
+0x63106b8567f0	var t22
+0x63106b856830	t22 = 3 * 54
+0x63106b856870	var t23
+0x63106b8568b0	t23 = t21 + t22
+0x63106b856960	var t24
+0x63106b8569a0	t24 = t23 + 4
+0x63106b856ac0	var t25
+0x63106b856b00	t25 = 0 * 1
+0x63106b856b40	var t26
+0x63106b856b80	t26 = t24 + t25
+0x63106b856bc0	*t26 = 'a'
+0x63106b856e10	ifz 0 goto L2
+0x63106b856ce0	output L1
+0x63106b856dd0	label L2
+0x63106b856f90	var t27
+0x63106b856fd0	t27 = &c1
+0x63106b857490	var t28
+0x63106b8574d0	t28 = t27 + 0
+0x63106b857580	var t29
+0x63106b8575c0	t29 = *t28
+0x63106b857630	i = t29
+0x63106b8578f0	var t30
+0x63106b857930	t30 = &c1
+0x63106b8579e0	var t31
+0x63106b857a20	t31 = t30 + 14
+0x63106b857b40	var t32
+0x63106b857b80	t32 = 2 * 554
+0x63106b857bc0	var t33
+0x63106b857c00	t33 = t31 + t32
+0x63106b857cb0	var t34
+0x63106b857cf0	t34 = t33 + 0
+0x63106b857da0	var t35
+0x63106b857de0	t35 = *t34
+0x63106b857e50	j = t35
+0x63106b8582e0	var t36
+0x63106b858320	t36 = &c1
+0x63106b8583d0	var t37
+0x63106b858410	t37 = t36 + 14
+0x63106b858530	var t38
+0x63106b858570	t38 = 2 * 554
+0x63106b8585b0	var t39
+0x63106b8585f0	t39 = t37 + t38
+0x63106b8586a0	var t40
+0x63106b8586e0	t40 = t39 + 14
+0x63106b858800	var t41
+0x63106b858840	t41 = 3 * 54
+0x63106b858880	var t42
+0x63106b8588c0	t42 = t40 + t41
+0x63106b858970	var t43
+0x63106b8589b0	t43 = t42 + 4
+0x63106b858ad0	var t44
+0x63106b858b10	t44 = 0 * 1
+0x63106b858b50	var t45
+0x63106b858b90	t45 = t43 + t44
+0x63106b858c40	var t46
+0x63106b858c80	t46 = *t45
+0x63106b858cf0	a = t46
+0x63106b859180	var t47
+0x63106b8591c0	t47 = &c1
+0x63106b859270	var t48
+0x63106b8592b0	t48 = t47 + 14
+0x63106b8593d0	var t49
+0x63106b859410	t49 = 2 * 554
+0x63106b859450	var t50
+0x63106b859490	t50 = t48 + t49
+0x63106b859540	var t51
+0x63106b859580	t51 = t50 + 14
+0x63106b8596a0	var t52
+0x63106b8596e0	t52 = 3 * 54
+0x63106b859720	var t53
+0x63106b859760	t53 = t51 + t52
+0x63106b859810	var t54
+0x63106b859850	t54 = t53 + 4
+0x63106b859970	var t55
+0x63106b8599b0	t55 = 1 * 1
+0x63106b8599f0	var t56
+0x63106b859a30	t56 = t54 + t55
+0x63106b859ae0	var t57
+0x63106b859b20	t57 = *t56
+0x63106b859b90	b = t57
+0x63106b859d50	ifz 0 goto L3
+0x63106b859c40	output L1
+0x63106b859d10	label L3
+0x63106b859de0	output i
+0x63106b859e70	output j
+0x63106b859f00	output a
+0x63106b859f90	output b
+0x63106b859ff0	output L1
+0x63106b85a120	end
+
+[B0]
+label main
+  succ: B1 
+
+[B1]
+begin
+var i
+var j
+var a
+var b
+var c1
+var t0
+t0 = &c1
+var t1
+t1 = t0 + 0
+*t1 = 1
+var t2
+t2 = &c1
+var t3
+t3 = t2 + 14
+var t4
+t4 = 2 * 554
+var t5
+t5 = t3 + t4
+var t6
+t6 = t5 + 0
+*t6 = 2
+var t7
+t7 = &c1
+var t8
+t8 = t7 + 14
+var t9
+t9 = 2 * 554
+var t10
+t10 = t8 + t9
+var t11
+t11 = t10 + 14
+var t12
+t12 = 3 * 54
+var t13
+t13 = t11 + t12
+var t14
+t14 = t13 + 4
+var t15
+t15 = 1 * 1
+var t16
+t16 = t14 + t15
+*t16 = 'b'
+var t17
+t17 = &c1
+var t18
+t18 = t17 + 14
+var t19
+t19 = 2 * 554
+var t20
+t20 = t18 + t19
+var t21
+t21 = t20 + 14
+var t22
+t22 = 3 * 54
+var t23
+t23 = t21 + t22
+var t24
+t24 = t23 + 4
+var t25
+t25 = 0 * 1
+var t26
+t26 = t24 + t25
+*t26 = 'a'
+ifz 0 goto L2
+  succ: B3 B2 
+
+[B2]
+output L1
+  succ: B3 
+
+[B3]
+label L2
+var t27
+t27 = &c1
+var t28
+t28 = t27 + 0
+var t29
+t29 = *t28
+i = t29
+var t30
+t30 = &c1
+var t31
+t31 = t30 + 14
+var t32
+t32 = 2 * 554
+var t33
+t33 = t31 + t32
+var t34
+t34 = t33 + 0
+var t35
+t35 = *t34
+j = t35
+var t36
+t36 = &c1
+var t37
+t37 = t36 + 14
+var t38
+t38 = 2 * 554
+var t39
+t39 = t37 + t38
+var t40
+t40 = t39 + 14
+var t41
+t41 = 3 * 54
+var t42
+t42 = t40 + t41
+var t43
+t43 = t42 + 4
+var t44
+t44 = 0 * 1
+var t45
+t45 = t43 + t44
+var t46
+t46 = *t45
+a = t46
+var t47
+t47 = &c1
+var t48
+t48 = t47 + 14
+var t49
+t49 = 2 * 554
+var t50
+t50 = t48 + t49
+var t51
+t51 = t50 + 14
+var t52
+t52 = 3 * 54
+var t53
+t53 = t51 + t52
+var t54
+t54 = t53 + 4
+var t55
+t55 = 1 * 1
+var t56
+t56 = t54 + t55
+var t57
+t57 = *t56
+b = t57
+ifz 0 goto L3
+  succ: B5 B4 
+
+[B4]
+output L1
+  succ: B5 
+
+[B5]
+label L3
+output i
+output j
+output a
+output b
+output L1
+end
+  succ: 

@@ -127,7 +127,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 24 "mini.y"
+#line 23 "mini.y"
 
 	char character;
 	char *string;

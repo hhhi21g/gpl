@@ -14,8 +14,7 @@ static SYM *g_switch_end = NULL;
 
 static char *g_cur_struct = NULL;
 
-int next_token();
-int is_path_start();
+PATH *append_path_list(PATH *head, PATH *tail);
 
 
 %}
@@ -319,26 +318,58 @@ statement_list : statement
 }               
 ;
 
-lvalue_path: IDENTIFIER lvalue_tail
+// lvalue_path: IDENTIFIER lvalue_tail
+// {
+// 	$$ = mk_lvalue_path($1,$2);
+// }
+// ;
+
+lvalue_path:
+      IDENTIFIER lvalue_tail
 {
-	$$ = mk_lvalue_path($1,$2);
+    $$ = mk_lvalue_path($1, $2);
+}
+    | IDENTIFIER dims_idx lvalue_tail
+{
+    PATH *p = append_path_index(NULL, $2);
+    $$ = mk_lvalue_path($1, p);
+    $$ = append_path_list($$, $3);   /* 把后续路径追加上去 */
 }
 ;
+
+
+// lvalue_tail:
+// {
+// 	$$ = NULL;
+// }
+// |lvalue_tail '.' IDENTIFIER
+// {
+// 	$$ = append_path_member($1,$3);
+// }
+// | lvalue_tail dims_idx
+// {
+// 	$$ = append_path_index($1,$2);
+// }
+// ;
 
 lvalue_tail:
+      '.' IDENTIFIER
 {
-	$$ = NULL;
+    $$ = append_path_member(NULL, $2);
 }
-|lvalue_tail '.' IDENTIFIER
+    | dims_idx
 {
-	$$ = append_path_member($1,$3);
+    $$ = append_path_index(NULL, $1);
 }
-| lvalue_tail dims_idx
+    | lvalue_tail '.' IDENTIFIER
 {
-	$$ = append_path_index($1,$2);
+    $$ = append_path_member($1, $3);
+}
+    | lvalue_tail dims_idx
+{
+    $$ = append_path_index($1, $2);
 }
 ;
-
 
 assignment_statement : IDENTIFIER '=' expression
 {
@@ -385,8 +416,8 @@ assignment_statement : IDENTIFIER '=' expression
 expression : 
 IDENTIFIER
 {
+	printf("identifier\n");
 	$$ = mk_exp(NULL, get_var($1), NULL);
-	
 }
 | expression '+' expression
 {
@@ -641,17 +672,21 @@ call_expression : IDENTIFIER '(' argument_list ')'
 
 %%
 
-int next_token() {
-    if (yychar >= 0)
-        return yychar;
-    yychar = yylex();
-    return yychar;
+PATH *append_path_list(PATH *head, PATH *tail)
+{
+    if (!head) return tail;
+    PATH *p = head;
+    while (p->next) {
+		p = p->next;
+		// if (p->next == head) {
+        //     printf("ERROR: PATH LOOP created!\n");
+        //     exit(1);
+        // }
+	}
+    p->next = tail;
+    return head;
 }
 
-int is_path_start() {
-    int tok = next_token();
-    return tok == '.' || tok == LBRACK;
-}
 
 void yyerror(char* msg) 
 {

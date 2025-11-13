@@ -40,7 +40,11 @@ void asm_write_back(int r)
 	{
 		if (rdesc[r].var->scope == 1) /* local var */
 		{
-			out_str(file_s, "	STO (R%u+%u),R%u\n", R_BP, rdesc[r].var->offset, r);
+			// out_str(file_s, "	STO (R%u+%u),R%u\n", R_BP, rdesc[r].var->offset, r);
+			if (rdesc[r].var->offset >= 0)
+				out_str(file_s, "    STO (R%u+%d),R%u\n", R_BP, rdesc[r].var->offset, r);
+			else
+				out_str(file_s, "    STO (R%u-%d),R%u\n", R_BP, -rdesc[r].var->offset, r);
 		}
 		else /* global var */
 		{
@@ -136,57 +140,100 @@ int reg_alloc(SYM *s)
 	return random;
 }
 
+// int reg_alloc_temp()
+// {
+// 	int r;
+
+// 	for (r = R_GEN; r < R_NUM; r++)
+// 	{
+// 		if (rdesc[r].var == NULL)
+// 		{
+// 			rdesc[r].var = (SYM *)-1;
+// 			rdesc[r].mod = 0;
+// 			return r;
+// 		}
+// 	}
+
+// 	for (r = R_GEN; r < R_NUM; r++)
+// 	{
+// 		if (!rdesc[r].mod)
+// 		{
+// 			rdesc[r].var = (SYM *)-1;
+// 			rdesc[r].mod = 0;
+// 			return r;
+// 		}
+// 	}
+
+// 	static int seeded = 0;
+// 	if (!seeded)
+// 	{
+// 		srand((unsigned)time(NULL));
+// 		seeded = 1;
+// 	}
+// 	int random = (rand() % (R_NUM - R_GEN)) + R_GEN;
+
+// 	asm_write_back(random);
+// 	rdesc[random].var = (SYM *)-1;
+// 	rdesc[random].mod = 0;
+
+// 	// out_str(file_s, "	# [DEBUG] reg_alloc_temp chose R%u randomly\n", random);
+// 	return random;
+// }
+
 int reg_alloc_temp()
 {
-	int r;
-
-	for (r = R_GEN; r < R_NUM; r++)
-	{
+	for (int r = R_GEN; r < R_NUM; r++)
 		if (rdesc[r].var == NULL)
-		{
-			rdesc[r].var = (SYM *)-1;
-			rdesc[r].mod = 0;
 			return r;
-		}
-	}
 
-	for (r = R_GEN; r < R_NUM; r++)
-	{
-		if (!rdesc[r].mod)
-		{
-			rdesc[r].var = (SYM *)-1;
-			rdesc[r].mod = 0;
-			return r;
-		}
-	}
-
-	static int seeded = 0;
-	if (!seeded)
-	{
-		srand((unsigned)time(NULL));
-		seeded = 1;
-	}
-	int random = (rand() % (R_NUM - R_GEN)) + R_GEN;
-
-	asm_write_back(random);
-	rdesc[random].var = (SYM *)-1;
-	rdesc[random].mod = 0;
-
-	// out_str(file_s, "	# [DEBUG] reg_alloc_temp chose R%u randomly\n", random);
-	return random;
+	// 如果无空位，就随机选一个但不要写入 rdesc
+	return R_GEN;
 }
 
 void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 {
-	int reg_b = -1, reg_c = -1;
+	int reg_b, reg_c;
 
-	while (reg_b == reg_c)
+	/* --- load operand b --- */
+	if (b->type == SYM_INT)
+	{
+		reg_b = reg_alloc_temp();
+		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
+	}
+	else
 	{
 		reg_b = reg_alloc(b);
+	}
+
+	/* --- load operand c --- */
+	if (c->type == SYM_INT)
+	{
+		reg_c = reg_alloc_temp();
+		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
+	}
+	else
+	{
 		reg_c = reg_alloc(c);
 	}
 
-	out_str(file_s, "	%s R%u,R%u\n", op, reg_b, reg_c);
+	/* --- ensure reg_b != reg_c --- */
+	if (reg_b == reg_c)
+	{
+		/* 分配一个新的临时寄存器来装载 c */
+		int new_reg_c = reg_alloc_temp();
+
+		if (c->type == SYM_INT)
+			out_str(file_s, "    LOD R%u,%d\n", new_reg_c, c->value);
+		else
+			out_str(file_s, "    LOD R%u,R%u\n", new_reg_c, reg_c);
+
+		reg_c = new_reg_c;
+	}
+
+	/* --- emit operation --- */
+	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
+
+	/* --- result lives in reg_b --- */
 	rdesc_fill(reg_b, a, MODIFIED);
 }
 
@@ -418,7 +465,11 @@ static void asm_load_addr(int r, SYM *s) // offset+BP
 	case SYM_ARRAY:
 		if (s->scope == 1)
 		{
-			out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_BP, s->offset);
+			// out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_BP, s->offset);
+			if (s->offset >= 0)
+				out_str(file_s, "    LOD R15,(R%u+%d)\n", R_BP, s->offset);
+			else
+				out_str(file_s, "    LOD R15,(R%u-%d)\n", R_BP, -s->offset);
 		}
 		else
 		{
@@ -479,7 +530,11 @@ void asm_code(TAC *c)
 			if (c->a->scope == 1)
 			{
 				// 局部变量
-				out_str(file_s, "	STO (R%u+%d),R%u\n", R_BP, c->a->offset, rb);
+				// out_str(file_s, "	STO (R%u+%d),R%u\n", R_BP, c->a->offset, rb);
+				if (c->a->offset >= 0)
+					out_str(file_s, "   STO (R%u+%d),R%u\n", R_BP, c->a->offset, rb);
+				else
+					out_str(file_s, "   STO (R%u-%d),R%u\n", R_BP, -c->a->offset, rb);
 			}
 			else
 			{
@@ -528,7 +583,11 @@ void asm_code(TAC *c)
 			if (c->a->scope == 1)
 			{
 				// 局部变量
-				out_str(file_s, "	LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
+				// out_str(file_s, "	LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
+				if (c->a->offset >= 0)
+					out_str(file_s, "    LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
+				else
+					out_str(file_s, "    LOD R15,(R%u-%d)\n", R_BP, -c->a->offset);
 			}
 			else
 			{
@@ -616,7 +675,12 @@ void asm_code(TAC *c)
 		// a = &b
 		int r = reg_alloc(c->a);
 		if (c->b->scope == 1)
-			out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, c->b->offset);
+			// out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, c->b->offset);
+			if (c->b->offset >= 0)
+				out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, c->b->offset);
+			else
+				out_str(file_s, "    LOD R%u,R%u-%d\n", r, R_BP, -c->b->offset);
+
 		else
 			out_str(file_s, "    LOD R%u,STATIC+%d\n", r, c->b->offset);
 		rdesc_fill(r, c->a, MODIFIED);
@@ -638,8 +702,13 @@ void asm_code(TAC *c)
 		// *a = b
 		int ra = reg_alloc(c->a);
 		int rb = reg_alloc(c->b);
-		out_str(file_s, "    LOD R%u,(R%u+%d)\n", ra, R_BP, c->a->offset);
+		// out_str(file_s, "    LOD R%u,(R%u+%d)\n", ra, R_BP, c->a->offset);
 		// out_str(file_s, "    LOD1111 R%u,%d\n", rb, c->b->value);
+		if (c->a->offset >= 0)
+			out_str(file_s, "    LOD R%u,(R%u+%d)\n", ra, R_BP, c->a->offset);
+		else
+			out_str(file_s, "    LOD R%u,(R%u-%d)\n", ra, R_BP, -c->a->offset);
+
 		out_str(file_s, "    STO (R%u),R%u\n", ra, rb);
 		return;
 	}
