@@ -77,6 +77,7 @@ static SYM *mk_bool_const(int v)
 {
 	return mk_const(v ? 1 : 0);
 }
+
 // 结构体定义中,还未添加成员
 STRUCT *begin_struct(const char *name)
 {
@@ -103,61 +104,70 @@ TAC *declare_struct(const char *var_name, const char *struct_name)
 	return mk_tac(TAC_VAR, sym, NULL, NULL);
 }
 
-void add_struct_member(STRUCT *unused, int member_type, const char *mname, int size)
+void add_struct_member_base(int type, const char *mname, int array_len, STRUCT *sub)
 {
 	if (!cur_structs)
-		error("no struct member");
+	{
+		error("no declaring struct\n");
+	}
 
 	STRUCT_MEMBER *m = (STRUCT_MEMBER *)malloc(sizeof(STRUCT_MEMBER));
 	m->name = strdup(mname);
-	m->type = SYM_VAR;
+	m->type = type;
+	m->array_len = array_len;
+	m->sub = sub;
+
+	// 计算大小
+	int elem_size = size_of_member(type, sub);
+	int cnt = (array_len > 0) ? array_len : 1;
 	m->offset = cur_structs->size;
-	m->etc = member_type;
-	m->next = cur_structs->members;
-	cur_structs->members = m; // 倒序
+	cur_structs->size += elem_size * cnt;
+	m->elem_size = elem_size;
 
-	cur_structs->size += size;
-}
-
-// 结构体成员类型：数组
-void add_struct_array_member(SYM *cur, int base_type, char *name, int cnt)
-{
-	int elem_size = (base_type == SYM_CHAR) ? 1 : 4;
-	for (int i = 0; i < cnt; i++)
-	{
-		char buf[32];
-		sprintf(buf, "%s[%d]", name, i);
-		add_struct_member(cur, base_type, strdup(buf), elem_size);
-	}
-}
-
-// 结构体成员类型：结构体(数组)
-void add_struct_struct_member(SYM *cur, SYM *struct_type, char *name, int cnt)
-{
-	STRUCT *def = (STRUCT *)struct_type->etc;
-	int struct_size = def->size;
-	for (int i = 0; i < cnt; i++)
-	{
-		STRUCT_MEMBER *m = malloc(sizeof(STRUCT_MEMBER));
-		char buf[32];
-		if (cnt > 1)
-		{
-			sprintf(buf, "%s[%d]", name, i);
-		}
-		else
-		{
-			strcpy(buf, name);
-		}
-		// add_struct_member(cur, SYM_STRUCT, strdup(buf), struct_size);
-		m->name = strdup(buf);
-		m->type = SYM_STRUCT;
-		m->offset = cur_structs->size;
-		m->etc = def;
-		m->next = cur_structs->members;
+	m->next = NULL;
+	if (!cur_structs->members)
 		cur_structs->members = m;
-
-		cur_structs->size += struct_size;
+	else
+	{
+		STRUCT_MEMBER *p = cur_structs->members;
+		while (p->next)
+			p = p->next;
+		p->next = m;
 	}
+}
+
+// INT,CHAR
+void add_struct_member(STRUCT *unused, int member_type, const char *mname)
+{
+	add_struct_member_base(member_type, mname, 0, NULL);
+}
+
+// 数组
+void add_struct_member_array(STRUCT *unused, int member_type, const char *mname, int array_len)
+{
+	add_struct_member_base(member_type, mname, array_len, NULL);
+}
+
+// 单个结构体
+void add_struct_member_struct(const char *struct_name, const char *mname)
+{
+	STRUCT *sub = find_struct(struct_name);
+	if (!sub)
+	{
+		error("unknown struct\n");
+	}
+	add_struct_member_base(SYM_STRUCT, mname, 0, sub);
+}
+
+// struct数组
+void add_struct_member_struct_array(const char *struct_name, const char *mname, int array_len)
+{
+	STRUCT *sub = find_struct(struct_name);
+	if (!sub)
+	{
+		error("unknown struct\n");
+	}
+	add_struct_member_base(SYM_STRUCT, mname, array_len, sub);
 }
 
 // 结束定义：成员添加完毕
@@ -169,7 +179,7 @@ void end_struct(STRUCT *def)
 }
 
 // 查找结构体
-STRUCT *find_struct(const char *name)
+static STRUCT *find_struct(const char *name)
 {
 	for (STRUCT *d = structs; d; d = d->next)
 	{
@@ -179,53 +189,45 @@ STRUCT *find_struct(const char *name)
 	return NULL;
 }
 
+// 计算1个成员的大小
+int size_of_member(int type, STRUCT *sub)
+{
+	switch (type)
+	{
+	case SYM_INT:
+		return 4;
+	case SYM_CHAR:
+		return 1;
+	case SYM_STRUCT:
+		if (!sub)
+		{
+			error("STRUCT member with sub\n");
+			return 0;
+		}
+		return sub->size;
+	default:
+		error("unknown member type\n");
+		return 0;
+	}
+}
+
 // 根据变量查找结构体
 static STRUCT *get_struct_var(SYM *var)
 {
 	if (!var || var->type != SYM_STRUCT)
 	{
-		printf("[DEBUG] get_struct_var: %s type=%d\n",
-			   var ? var->name : "(null)",
-			   var ? var->type : -1);
-		printf("%d\n", yylineno);
-
 		error("not a struct");
 	}
 	return (STRUCT *)var->etc;
-}
-
-// 返回成员
-STRUCT_MEMBER *get_struct_member(SYM *struct_var, const char *name)
-{
-	STRUCT *def = get_struct_var(struct_var);
-	// printf("%s\n", name);
-	// printf("[DEBUG] lookup member '%s' in struct '%s'\n", name, def->name);
-
-	for (STRUCT_MEMBER *m = def->members; m; m = m->next)
-	{
-		// printf("-%s\n", m->name);
-		if (strcmp(m->name, name) == 0)
-			return m;
-		if (strncmp(m->name, name, strlen(name)) == 0 && m->name[strlen(name)] == '[') // 数组类型匹配名称即可
-			return m;
-	}
-	error("struct member not found");
-	return NULL;
 }
 
 // 得到成员偏移量
 int get_struct_offset(SYM *struct_var, const char *name)
 {
 	STRUCT *def = get_struct_var(struct_var);
-	// printf("%s\n", name);
-	// printf("[DEBUG] lookup member '%s' in struct '%s'\n", name, def->name);
-
 	for (STRUCT_MEMBER *m = def->members; m; m = m->next)
 	{
-		printf("-%s\n", m->name);
 		if (strcmp(m->name, name) == 0)
-			return m->offset;
-		if (strncmp(m->name, name, strlen(name)) == 0 && m->name[strlen(name)] == '[') // 数组类型匹配名称即可
 			return m->offset;
 	}
 	error("struct member not found");
@@ -285,184 +287,179 @@ EXP *make_struct_load_exp(SYM *base, int offset)
 	return exp;
 }
 
-// 获得结构体成员地址(所在结构体地址+偏移)
-EXP *make_struct_field_addr(EXP *base, int offset)
+// 新增一次访问，对结构体成员或数组元素
+PATH *new_path_node(PATH_KIND kind)
 {
-	SYM *tmp = mk_tmp();
-	TAC *decl = mk_tac(TAC_VAR, tmp, NULL, NULL);
-
-	SYM *off = mk_const(offset);
-	TAC *add = mk_tac(TAC_ADD, tmp, base->ret, off);
-	add->prev = join_tac(decl, base->tac);
-
-	tmp->type = SYM_STRUCT;
-	tmp->etc = base->ret->etc;
-
-	return mk_exp(NULL, tmp, add);
+	PATH *p = (PATH *)malloc(sizeof(PATH));
+	p->kind = kind;
+	p->member = NULL;
+	p->index = NULL;
+	p->next = NULL;
+	return p;
 }
 
-// // 计算数组元素的地址(struct,int,char)
-// EXP *make_array_elem_addr(EXP *base, EXP *index)
-// {
-// 	int elem_size = 0;
-// 	int elem_type = 0;
-// 	void *elem_etc = NULL;
-
-// 	printf("%d\n", base->ret->type);
-// 	if (base->ret)
-// 	{
-// 		switch (base->ret->type)
-// 		{
-// 		case SYM_STRUCT:
-// 		{
-// 			// 结构体数组
-// 			STRUCT *sdef = (STRUCT *)base->ret->etc;
-// 			elem_size = sdef->size;
-// 			elem_type = SYM_STRUCT;
-// 			elem_etc = sdef; // 保留结构体定义
-// 			break;
-// 		}
-
-// 		case SYM_ARRAY:
-// 		{
-// 			// 普通数组 (etc里是元素类型)
-// 			int t = *((int *)base->ret->etc);
-// 			elem_size = (t == SYM_CHAR) ? 1 : 4;
-// 			elem_type = SYM_ARRAY;
-// 			// 为元素保存基础类型指针（int*）
-// 			elem_etc = malloc(sizeof(int *));
-// 			*((int *)elem_etc) = t;
-// 			break;
-// 		}
-
-// 		case SYM_VAR:
-// 		{
-// 			printf("SYM_VAR\n");
-// 			printf("%d\n", yylineno);
-// 			int t = *((int *)base->ret->etc);
-// 			printf("%d\n", t);
-// 			elem_size = (t == SYM_CHAR) ? 1 : 4;
-// 			elem_type = SYM_VAR;
-// 			elem_etc = malloc(sizeof(int *));
-// 			*((int *)elem_etc) = t;
-// 			break;
-// 		}
-
-// 		default:
-// 			printf("line:%d\n", yylineno);
-// 			error("invalid array base type");
-// 		}
-// 	}
-
-// 	SYM *t_mul = mk_tmp();
-// 	TAC *decl1 = mk_tac(TAC_VAR, t_mul, NULL, NULL);
-
-// 	// index * elem_size
-// 	TAC *mul = mk_tac(TAC_MUL, t_mul, index->ret, mk_const(elem_size));
-// 	mul->prev = join_tac(decl1, join_tac(base->tac, index->tac));
-
-// 	// base + t_mul
-// 	SYM *addr = mk_tmp();
-// 	TAC *decl2 = mk_tac(TAC_VAR, addr, NULL, NULL);
-// 	TAC *add = mk_tac(TAC_ADD, addr, base->ret, t_mul);
-// 	add->prev = join_tac(decl2, mul);
-// 	// addr->type = base->ret->type;
-
-// 	addr->type = elem_type;
-// 	addr->etc = elem_etc;
-
-// 	printf("[DEBUG] make_array_elem_addr: base=%s type=%d etc=%p -> addr=%s type=%d etc=%p\n",
-// 		   base->ret->name, base->ret->type, base->ret->etc,
-// 		   addr->name, addr->type, addr->etc);
-
-// 	return mk_exp(NULL, addr, add);
-// }
-
-// 计算数组元素的地址(struct,int,char)
-EXP *make_array_elem_addr(EXP *base, EXP *index)
+// 访问路径中添加一次对结构体成员的访问
+PATH *append_path_member(PATH *p, char *name)
 {
-	int elem_size = 0;
-	int elem_type = SYM_UNDEF;
-	void *elem_etc = NULL;
+	PATH *node = new_path_node(PATH_MEMBER);
+	node->member = strdup(name);
+	if (!p)
+		return node;
 
-	if (base && base->ret)
+	PATH *cur = p;
+	while (cur->next)
 	{
-		// 结构体数组
-		if (base->ret->type == SYM_STRUCT && base->ret->etc)
-		{
-			STRUCT *sdef = (STRUCT *)base->ret->etc;
-			elem_size = sdef->size;
-			elem_type = SYM_STRUCT;
-			elem_etc = sdef;
-		}
-		// 普通数组（如 int a[10]; char b[20];）
-		else if (base->ret->type == SYM_ARRAY && base->ret->etc)
-		{
-			int t = *((int *)base->ret->etc);
-			elem_size = (t == SYM_CHAR) ? 1 : 4;
-			elem_type = SYM_VAR; // 元素是变量地址
-			elem_etc = malloc(sizeof(int));
-			*((int *)elem_etc) = t;
-		}
-		// 一般变量的数组成员（如 stu[3].name[2]）
-		else if (base->ret->type == SYM_VAR && base->ret->etc)
-		{
-			int t = *((int *)base->ret->etc);
-			elem_size = (t == SYM_CHAR) ? 1 : 4;
-			elem_type = SYM_VAR;
-			elem_etc = malloc(sizeof(int));
-			*((int *)elem_etc) = t;
-		}
-		// 最后保险：未知情况
-		else
-		{
-			elem_size = 1;
-			elem_type = SYM_VAR;
-			elem_etc = malloc(sizeof(int));
-			*((int *)elem_etc) = SYM_CHAR;
-		}
+		cur = cur->next;
 	}
+	cur->next = node;
+	return p;
+}
 
-	// index * elem_size
-	SYM *t_mul = mk_tmp();
-	TAC *decl1 = mk_tac(TAC_VAR, t_mul, NULL, NULL);
-	TAC *mul = mk_tac(TAC_MUL, t_mul, index->ret, mk_const(elem_size));
-	mul->prev = join_tac(decl1, join_tac(base->tac, index->tac));
+// 访问路径中添加一次对数组元素的访问
+PATH *append_path_index(PATH *p, EXP *idx)
+{
+	PATH *node = new_path_node(PATH_INDEX);
+	node->index = idx;
+	if (!p)
+		return node;
+	PATH *cur = p;
+	while (cur->next)
+	{
+		cur = cur->next;
+	}
+	cur->next = node;
+	return p;
+}
 
-	// base + t_mul
+// 形成LVALUE_PATH
+LVALUE_PATH *mk_lvalue_path(char *root, PATH *tail)
+{
+	LVALUE_PATH *lv = (LVALUE_PATH *)malloc(sizeof(LVALUE_PATH));
+	lv->root = strdup(root);
+	lv->path = tail;
+	return lv;
+}
+
+// 返回结构体成员地址(非相对于结构体的偏移)
+SYM *make_struct_member_addr(SYM *base, STRUCT_MEMBER *m, TAC **code)
+{
+	SYM *offset = mk_const(m->offset);
 	SYM *addr = mk_tmp();
-	TAC *decl2 = mk_tac(TAC_VAR, addr, NULL, NULL);
-	TAC *add = mk_tac(TAC_ADD, addr, base->ret, t_mul);
-	add->prev = join_tac(decl2, mul);
 
-	// ✅ 修正类型语义
-	addr->type = elem_type;
-	addr->etc = elem_etc;
-
-	printf("[DEBUG] make_array_elem_addr: base=%s type=%d etc=%p -> addr=%s type=%d etc=%p\n",
-		   base->ret->name, base->ret->type, base->ret->etc,
-		   addr->name, addr->type, addr->etc);
-
-	return mk_exp(NULL, addr, add);
+	*code = join_tac(*code, mk_tac(TAC_ADD, addr, base, offset));
+	return addr;
 }
 
-// 对 lvalue 赋值
-TAC *do_assign_lvalue(EXP *lv, EXP *rhs)
+// 返回数组元素的地址
+SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
 {
-	// 生成 *addr = value
-	TAC *store = mk_tac(TAC_STORE, lv->ret, rhs->ret, NULL);
-	store->prev = join_tac(lv->tac, rhs->tac);
-	return store;
+	SYM *esize = mk_const(elem_size);
+	SYM *mul = mk_tmp();
+	SYM *addr = mk_tmp();
+
+	*code = join_tac(*code, idx->tac);
+
+	// mul = idx * elem_size
+	*code = join_tac(*code, mk_tac(TAC_MUL, mul, idx->ret, esize));
+
+	// addr = base + mul
+	*code = join_tac(*code, mk_tac(TAC_ADD, addr, base, mul));
+
+	return addr;
 }
 
-// 从 lvalue 加载值
-EXP *do_load_lvalue(EXP *lv)
+STRUCT_MEMBER *find_member(STRUCT *def, const char *name)
 {
-	SYM *tmp = mk_tmp();
-	TAC *decl = mk_tac(TAC_VAR, tmp, NULL, NULL);
-	TAC *load = mk_tac(TAC_LOAD, tmp, lv->ret, NULL);
-	load->prev = join_tac(decl, lv->tac);
-	return mk_exp(NULL, tmp, load);
+	if (!def)
+		return NULL;
+	for (STRUCT_MEMBER *m = def->members; m; m = m->next)
+	{
+		if (strcmp(m->name, name) == 0)
+			return m;
+	}
+	return NULL;
+}
+
+// 根据路径逐步取地址并赋值
+TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
+{
+	SYM *root = get_var(lv->root);
+	SYM *addr = root;
+	TAC *code = NULL;
+
+	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
+
+	// 记录信息：当前是结构体成员，下一步是数组情况使用
+	int pending_elem_size = 0;			// 数组元素大小
+	int pending_elem_is_struct = 0;		// 元素是不是struct
+	STRUCT *pending_elem_struct = NULL; // 记录元素对应的struct
+
+	PATH *p = lv->path;
+
+	while (p)
+	{
+		if (p->kind == PATH_MEMBER)
+		{
+			STRUCT_MEMBER *m = find_member(cur_struct, p->member);
+
+			if (!m)
+				error("unknown struct member\n");
+
+			addr = make_struct_member_addr(addr, m, &code);
+
+			pending_elem_size = 0;
+			pending_elem_is_struct = 0;
+			pending_elem_struct = NULL;
+
+			if (m->array_len > 0) // 需要更新pending信息，供下一步PATH_INDEX使用
+			{
+				// 数组成员
+				pending_elem_size = m->elem_size;
+				if (m->type == SYM_STRUCT)
+				{
+					pending_elem_is_struct = 1;
+					pending_elem_struct = m->sub;
+				}
+				cur_struct = NULL;
+			}
+			else
+			{
+				// 普通成员：int/char 或 struct
+				if (m->type == SYM_STRUCT)
+				{
+					cur_struct = m->sub; // 进入子 struct
+				}
+				else
+				{
+					cur_struct = NULL;
+				}
+			}
+		}
+		else if (p->kind == PATH_INDEX)
+		{
+			addr = make_array_elem_addr(addr, p->index, pending_elem_size, &code);
+			if (pending_elem_is_struct)
+			{
+				cur_struct = pending_elem_struct;
+			}
+			else
+			{
+				cur_struct = NULL;
+			}
+
+			pending_elem_size = 0;
+			pending_elem_is_struct = 0;
+			pending_elem_struct = NULL;
+		}
+
+		p = p->next;
+	}
+	code = join_tac(code, rhs->tac);
+
+	TAC *st = mk_tac(TAC_STORE, addr, rhs->ret, NULL);
+	code = join_tac(code, st);
+
+	return code;
 }
 
 static SYM *eval_bin(int op, SYM *b, SYM *c)

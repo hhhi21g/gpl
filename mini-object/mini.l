@@ -37,16 +37,14 @@
 "default"  { return DEFAULT; }
 
 "struct" { return STRUCT_TOK; }
-";" { return ';'; }
-
-
+"." { return '.'; }
 "->" { return PTR_OP; }
 "{" { return '{'; }
 "}" { return '}'; }
 
 "[" { return LBRACK; }
 "]" { return RBRACK; }
-"."   { return DOT; }
+
 [A-Za-z]([A-Za-z]|[0-9])*  {  
 	yylval.string = strdup(yytext); 
 	return IDENTIFIER;
@@ -57,11 +55,6 @@
 	return INTEGER;
 }
 
-"="             { return '='; }
-","             { return ','; }
-"("             { return '('; }
-")"             { return ')'; }
-
 \'([^'\\]|\\.)\' {
     yylval.string = strdup(yytext);
     return CHAR_CONST;
@@ -71,6 +64,7 @@
 	yylval.string = strdup(yytext); 
 	return TEXT;
 }
+
 
 "=="  {  return EQ;  }
 
@@ -86,7 +80,7 @@
 
 [ \t\r\n]|#.*
 
-. 	{	 printf("[LEX] unknown '%s'\n", yytext); return *yytext; }
+. 	{	return *yytext; }
 
 %%
 

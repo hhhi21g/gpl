@@ -102,9 +102,13 @@ typedef struct basic_block
 typedef struct STRUCT_MEMBER
 {
 	char *name;
-	int offset;
-	int type;
-	void *etc;
+
+	int type;	   // INT,CHAR,STRUCT
+	int array_len; // 0表示非数组
+
+	struct STRUCT *sub; // 存储STRUCT类型对应的结构体
+	int offset;			// 相对于结构体起始处的偏移
+	int elem_size;
 	struct STRUCT_MEMBER *next;
 } STRUCT_MEMBER;
 
@@ -115,6 +119,26 @@ typedef struct STRUCT
 	int size;
 	struct STRUCT *next;
 } STRUCT;
+
+typedef enum
+{
+	PATH_MEMBER,
+	PATH_INDEX
+} PATH_KIND;
+
+typedef struct path
+{
+	PATH_KIND kind;
+	char *member;
+	EXP *index;
+	struct path *next;
+} PATH;
+
+typedef struct
+{
+	char *root;
+	PATH *path;
+} LVALUE_PATH;
 
 /* global var */
 extern FILE *file_x, *file_s;
@@ -138,7 +162,6 @@ SYM *mk_char(int c);
 SYM *mk_text(char *text);
 TAC *mk_tac(int op, SYM *a, SYM *b, SYM *c);
 EXP *mk_exp(EXP *next, SYM *ret, TAC *code);
-SYM *mk_sym(void);
 char *mk_lstr(int i);
 SYM *get_var(char *name);
 SYM *declare_func(char *name);
@@ -177,19 +200,28 @@ EXP *do_call_ret(char *name, EXP *arglist);
 
 STRUCT *begin_struct(const char *name);
 TAC *declare_struct(const char *var_name, const char *struct_name);
-void add_struct_member(STRUCT *unused, int member_type, const char *mname, int size);
-void add_struct_struct_member(SYM *cur, SYM *struct_type, char *name, int cnt);
-void add_struct_array_member(SYM *cur, int base_type, char *name, int cnt);
+void add_struct_member(STRUCT *unused, int member_type, const char *mname);
 void end_struct(STRUCT *def);
+static STRUCT *find_struct(const char *name);
 static STRUCT *get_struct_var(SYM *var);
 int get_struct_offset(SYM *struct_var, const char *name);
 TAC *make_struct_store_tac(SYM *base, int offset, EXP *exp);
 EXP *make_struct_load_exp(SYM *base, int offset);
-STRUCT *find_struct(const char *name);
-EXP *make_struct_field_addr(EXP *base, int offset);
-EXP *make_array_elem_addr(EXP *base, EXP *index);
-TAC *do_assign_lvalue(EXP *lv, EXP *rhs);
-EXP *do_load_lvalue(EXP *lv);
-STRUCT_MEMBER *get_struct_member(SYM *struct_var, const char *name);
+
+void add_struct_member_base(int type, const char *mname, int array_len, STRUCT *sub);
+void add_struct_member(STRUCT *unused, int member_type, const char *mname);
+void add_struct_member_array(STRUCT *unused, int member_type, const char *mname, int array_len);
+void add_struct_member_struct(const char *struct_name, const char *mname);
+void add_struct_member_struct_array(const char *struct_name, const char *mname, int array_len);
+int size_of_member(int type, STRUCT *sub);
+
+PATH *new_path_node(PATH_KIND kind);
+PATH *append_path_member(PATH *p, char *name);
+PATH *append_path_index(PATH *p, EXP *idx);
+LVALUE_PATH *mk_lvalue_path(char *root, PATH *tail);
+SYM *make_struct_member_addr(SYM *base, STRUCT_MEMBER *m, TAC **code);
+SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code);
+STRUCT_MEMBER *find_member(STRUCT *def, const char *name);
+TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs);
 
 void error(const char *format, ...);

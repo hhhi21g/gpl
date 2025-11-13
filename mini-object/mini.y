@@ -16,7 +16,6 @@ static char *g_cur_struct = NULL;
 
 %}
 
-
 %union
 {
 	char character;
@@ -24,9 +23,10 @@ static char *g_cur_struct = NULL;
 	SYM *sym;
 	TAC *tac;
 	EXP	*exp;
+	PATH *path;
 }
 
-%token INT EQ NE LT LE GT GE UMINUS STRUCT_TOK DOT PTR_OP IF ELSE SWITCH CASE DEFAULT WHILE FOR BREAK CONTINUE FUNC INPUT OUTPUT RETURN
+%token INT EQ NE LT LE GT GE UMINUS STRUCT_TOK PTR_OP IF ELSE SWITCH CASE DEFAULT WHILE FOR BREAK CONTINUE FUNC INPUT OUTPUT RETURN
 %token <string> INTEGER IDENTIFIER TEXT CHAR CHAR_CONST LBRACK RBRACK 
 
 %left EQ NE LT LE GT GE
@@ -36,8 +36,9 @@ static char *g_cur_struct = NULL;
 
 %type <tac> program function_declaration_list function_declaration function parameter_list variable_list statement assignment_statement return_statement if_statement switch_statement case_list case_item default_list while_statement for_statement break_statement continue_statement opt_statement call_statement block declaration_list declaration statement_list input_statement output_statement 
 %type <tac> variable_list_char decl_item_char decl_item_int struct_definition struct_member_list struct_member_line struct_var_list
-%type <exp> argument_list expression_list expression call_expression  opt_expression dims_decl dims_idx lvalue postfix_lvalue primary postfix_expression
+%type <exp> argument_list expression_list expression call_expression  opt_expression dims_decl dims_idx
 %type <sym> function_head
+%type <path> lvalue_path lvalue_tail
 
 %%
 
@@ -134,89 +135,35 @@ struct_member_list:
 
 struct_member_line:INT IDENTIFIER ';'
 {
-	add_struct_member(NULL,SYM_INT,$2,4);
+	add_struct_member(NULL,SYM_INT,$2);
 	$$ = NULL;
 }
 | CHAR IDENTIFIER ';'
 { 
-	add_struct_member(NULL, SYM_CHAR, $2,1); 
+	add_struct_member(NULL, SYM_CHAR, $2); 
 	$$ = NULL; 
 }
 | INT IDENTIFIER LBRACK INTEGER RBRACK ';'
 {
-	add_struct_array_member(NULL,SYM_INT,$2,atoi($4));
+	add_struct_member_array(NULL,SYM_INT,$2,atoi($4));
 	$$ = NULL;
 }
 | CHAR IDENTIFIER LBRACK INTEGER RBRACK ';'
 {
-	add_struct_array_member(NULL,SYM_CHAR,$2,atoi($4));
-	$$=NULL;
+	add_struct_member_array(NULL,SYM_CHAR,$2,atoi($4));
+	$$ = NULL;
 }
 | STRUCT_TOK IDENTIFIER IDENTIFIER ';'
 {
-	STRUCT* stype = find_struct($2);
-	if(!stype)
-		error("not defined struct");
-	SYM*s = mk_sym();
-	s->type = SYM_STRUCT;
-	s->etc = stype;
-	add_struct_struct_member(NULL,s,$3,1);
-	$$=NULL;
+	add_struct_member_struct($2,$3);
+	$$ = NULL;
 }
 | STRUCT_TOK IDENTIFIER IDENTIFIER LBRACK INTEGER RBRACK ';'
 {
-	STRUCT* stype = find_struct($2);
-	if(!stype)
-		error("not defined struct");
-	SYM*s = mk_sym();
-	s->type = SYM_STRUCT;
-	s->etc = stype;
-	add_struct_struct_member(NULL,s,$3,atoi($5));
+	add_struct_member_struct_array($2,$3,atoi($5));
 	$$ = NULL;
 }
 ;
-
-// 结构体内部数组，'.'，标识符的递归访问，地址(为什么是地址不是值？)
-postfix_lvalue: IDENTIFIER  
-{
-	SYM *var = get_var($1);
-	SYM*addr = mk_tmp();
-	TAC*decl = mk_tac(TAC_VAR,addr,NULL,NULL);
-	TAC*addr_tac = mk_tac(TAC_ADDR,addr,var,NULL);
-	addr_tac->prev = decl;
-
-	addr->type = var->type;
-	addr->etc = var->etc;
-	$$ = mk_exp(NULL,addr,addr_tac);
-}
-| postfix_lvalue DOT IDENTIFIER 
-{
-	// printf("[DEBUG] . access: %s\n", $3);
-    // if (!$1 || !$1->ret)
-    //     printf("[DEBUG] $1 or $1->ret is NULL!\n");
-    // else
-    //     printf("[DEBUG] base type=%d name=%s\n", $1->ret->type, $1->ret->name);
-	// int offset = get_struct_offset($1->ret,$3);
-	STRUCT_MEMBER *mem = get_struct_member($1->ret,$3);
-	$$ = make_struct_field_addr($1,mem->offset);
-	if (mem->type == SYM_STRUCT) {
-		$$->ret->type = SYM_STRUCT;
-		$$->ret->etc  = mem->etc;                 // STRUCT*
-	} else {
-		// 标量成员（int/char）作为“数组基址”的元素类型
-		$$->ret->type = SYM_VAR;                  // 地址里是一个标量
-		$$->ret->etc  = malloc(sizeof(int));
-		*((int*)$$->ret->etc) = mem->type;        // 存 SYM_INT 或 SYM_CHAR
-	}
-}
-| postfix_lvalue LBRACK expression RBRACK 
-{
-	// printf("come in\n");
-	$$ = make_array_elem_addr($1,$3);
-}
-;
-
-lvalue:postfix_lvalue;
 
 variable_list: decl_item_int
 | variable_list ',' decl_item_int
@@ -368,10 +315,29 @@ statement_list : statement
 }               
 ;
 
-assignment_statement : lvalue '=' expression
+lvalue_path: IDENTIFIER lvalue_tail
 {
-	printf("lvalue assign\n");
-	$$=do_assign_lvalue($1, $3);
+	$$ = mk_lvalue_path($1,$2);
+}
+;
+
+lvalue_tail:
+{
+	$$ = NULL;
+}
+| lvalue_tail '.' IDENTIFIER
+{
+	$$ = append_path_member($1,$3);
+}
+| lvalue_tail dims_idx
+{
+	$$ = append_path_index($1,$2);
+}
+;
+
+assignment_statement : IDENTIFIER '=' expression
+{
+	$$=do_assign(get_var($1), $3);
 }
 | IDENTIFIER dims_idx '=' expression  // 存入数组
 {
@@ -404,241 +370,92 @@ assignment_statement : lvalue '=' expression
 // 	int offset = get_struct_offset(base,$3);
 // 	$$ = make_struct_store_tac(base,offset,$5);
 // }
-;
-
-/* ---------- postfix_expression：在 primary 上挂 . 和 [ ] ---------- */
-postfix_expression
-    : primary
+| lvalue_path '=' expression
 {
-    $$ = $1;
-}
-    | postfix_expression DOT IDENTIFIER
-{
-    /* 结构体成员读值：base.member */
-    int offset = get_struct_offset($1->ret, $3);
-    $$ = make_struct_load_exp($1->ret, offset);
-    $$->tac = join_tac($1->tac, $$->tac);
-}
-    | postfix_expression LBRACK expression RBRACK
-{
-    /* 继续在任意 postfix_expression 后面加 [exp]，支持多维 / 嵌套 */
-    $$ = do_array_load($1->ret, $3);
-    $$->tac = join_tac(join_tac($1->tac, $3->tac), $$->tac);
+	$$ = do_lvalue_store($1,$3);
 }
 ;
 
-/* ---------- primary：基础值 ---------- */
-primary
-    : IDENTIFIER
+expression : expression '+' expression
 {
-    /* 普通变量作为右值 */
-    SYM *v = get_var($1);
-    $$ = mk_exp(NULL, v, NULL);
+	$$=do_bin(TAC_ADD, $1, $3);
 }
-    | INTEGER
+| expression '-' expression
 {
-    $$ = mk_exp(NULL, mk_const(atoi($1)), NULL);
+	$$=do_bin(TAC_SUB, $1, $3);
 }
-    | CHAR_CONST
+| expression '*' expression
 {
-    $$ = mk_exp(NULL, mk_char($1[1]), NULL);
+	$$=do_bin(TAC_MUL, $1, $3);
 }
-    | IDENTIFIER dims_idx
+| expression '/' expression
 {
-    /* 形如 a[ i ][ j ]，用原来的 do_array_load */
-    $$ = do_array_load(get_var($1), $2);
+	$$=do_bin(TAC_DIV, $1, $3);
 }
-    | '(' expression ')'
+| '-' expression  %prec UMINUS
 {
-    $$ = $2;
+	$$=do_un(TAC_NEG, $2);
 }
-    | call_expression
+| expression EQ expression
 {
-    $$ = $1;
+	$$=do_cmp(TAC_EQ, $1, $3);
 }
-;
-
-
-/* ---------- 表达式：二元运算 + 一元负号 ---------- */
-expression
-    : expression '+' expression
+| expression NE expression
 {
-    $$ = do_bin(TAC_ADD, $1, $3);
+	$$=do_cmp(TAC_NE, $1, $3);
 }
-    | expression '-' expression
+| expression LT expression
 {
-    $$ = do_bin(TAC_SUB, $1, $3);
+	$$=do_cmp(TAC_LT, $1, $3);
 }
-    | expression '*' expression
+| expression LE expression
 {
-    $$ = do_bin(TAC_MUL, $1, $3);
+	$$=do_cmp(TAC_LE, $1, $3);
 }
-    | expression '/' expression
+| expression GT expression
 {
-    $$ = do_bin(TAC_DIV, $1, $3);
+	$$=do_cmp(TAC_GT, $1, $3);
 }
-    | '-' expression  %prec UMINUS
+| expression GE expression
 {
-    $$ = do_un(TAC_NEG, $2);
+	$$=do_cmp(TAC_GE, $1, $3);
 }
-    | expression EQ expression
+| '(' expression ')'
 {
-    $$ = do_cmp(TAC_EQ, $1, $3);
+	$$=$2;
+}               
+| INTEGER
+{
+	$$=mk_exp(NULL, mk_const(atoi($1)), NULL);
 }
-    | expression NE expression
+| IDENTIFIER
 {
-    $$ = do_cmp(TAC_NE, $1, $3);
+	$$=mk_exp(NULL, get_var($1), NULL);
 }
-    | expression LT expression
+| CHAR_CONST
 {
-    $$ = do_cmp(TAC_LT, $1, $3);
+	$$=mk_exp(NULL,mk_char($1[1]),NULL);
 }
-    | expression LE expression
+| IDENTIFIER dims_idx
 {
-    $$ = do_cmp(TAC_LE, $1, $3);
+	$$ = do_array_load(get_var($1),$2);  // 加载数组值
 }
-    | expression GT expression
+| call_expression
 {
-    $$ = do_cmp(TAC_GT, $1, $3);
+	$$=$1;
 }
-    | expression GE expression
+| IDENTIFIER '.' IDENTIFIER  // 结构体读值a.b
 {
-    $$ = do_cmp(TAC_GE, $1, $3);
+	SYM *base = get_var($1);
+	int offset = get_struct_offset(base,$3);
+	$$ = make_struct_load_exp(base,offset);
 }
-    | '(' expression ')'
+| error
 {
-    $$ = $2;
-}
-    | INTEGER
-{
-    $$ = mk_exp(NULL, mk_const(atoi($1)), NULL);
-}
-    | CHAR_CONST
-{
-    $$ = mk_exp(NULL, mk_char($1[1]), NULL);
-}
-    | IDENTIFIER dims_idx
-{
-    /* 纯数组访问（a[i][j]这种），你原来的实现 */
-    $$ = do_array_load(get_var($1), $2);
-}
-    | lvalue
-{
-    /* 统一右值加载：c1.num, c1.grp[2].stu[3].name[0] 全部走这里 */
-    $$ = do_load_lvalue($1);
-}
-    | call_expression
-{
-    $$ = $1;
-}
-    | error
-{
-    error("Bad expression syntax");
-    $$ = mk_exp(NULL, NULL, NULL);
+	error("Bad expression syntax");
+	$$=mk_exp(NULL, NULL, NULL);
 }
 ;
-
-
-
-// expression : IDENTIFIER
-// {
-//     SYM *v = get_var($1);
-//     $$ = mk_exp(NULL, v, NULL);
-// }
-// | expression '+' expression
-// {
-// 	$$=do_bin(TAC_ADD, $1, $3);
-// }
-// | expression '-' expression
-// {
-// 	$$=do_bin(TAC_SUB, $1, $3);
-// }
-// | expression '*' expression
-// {
-// 	$$=do_bin(TAC_MUL, $1, $3);
-// }
-// | expression '/' expression
-// {
-// 	$$=do_bin(TAC_DIV, $1, $3);
-// }
-// | '-' expression  %prec UMINUS
-// {
-// 	$$=do_un(TAC_NEG, $2);
-// }
-// | expression EQ expression
-// {
-// 	$$=do_cmp(TAC_EQ, $1, $3);
-// }
-// | expression NE expression
-// {
-// 	$$=do_cmp(TAC_NE, $1, $3);
-// }
-// | expression LT expression
-// {
-// 	$$=do_cmp(TAC_LT, $1, $3);
-// }
-// | expression LE expression
-// {
-// 	$$=do_cmp(TAC_LE, $1, $3);
-// }
-// | expression GT expression
-// {
-// 	$$=do_cmp(TAC_GT, $1, $3);
-// }
-// | expression GE expression
-// {
-// 	$$=do_cmp(TAC_GE, $1, $3);
-// }
-// | '(' expression ')'
-// {
-// 	$$=$2;
-// }               
-// | INTEGER
-// {
-// 	$$=mk_exp(NULL, mk_const(atoi($1)), NULL);
-// }
-// // | lvalue
-// // {
-// // 	$$ = do_load_lvalue($1);
-// // }
-// | CHAR_CONST
-// {
-// 	$$=mk_exp(NULL,mk_char($1[1]),NULL);
-// }
-// | IDENTIFIER dims_idx
-// {
-// 	$$ = do_array_load(get_var($1),$2);  // 加载数组值
-// }
-// | expression DOT IDENTIFIER
-// {
-//     // rvalue 结构体成员访问
-//     int offset = get_struct_offset($1->ret, $3);
-//     $$ = make_struct_load_exp($1->ret, offset);
-//     $$->tac = join_tac($1->tac, $$->tac);
-// }
-// | expression LBRACK expression RBRACK
-// {
-//     // rvalue 数组访问
-//     $$ = do_array_load($1->ret, $3);
-//     $$->tac = join_tac(join_tac($1->tac, $3->tac), $$->tac);
-// }
-
-// | call_expression
-// {
-// 	$$=$1;
-// }
-// // | IDENTIFIER '.' IDENTIFIER  // 结构体读值a.b
-// // {
-// // 	SYM *base = get_var($1);
-// // 	int offset = get_struct_offset(base,$3);
-// // 	$$ = make_struct_load_exp(base,offset);
-// // }
-// | error
-// {
-// 	error("Bad expression syntax");
-// 	$$=mk_exp(NULL, NULL, NULL);
-// }
-// ;
 
 argument_list           :
 {
@@ -661,8 +478,7 @@ input_statement : INPUT IDENTIFIER
 }
 ;
 
-output_statement :
- OUTPUT IDENTIFIER
+output_statement : OUTPUT IDENTIFIER
 {
 	$$=do_output(get_var($2));
 }
@@ -818,4 +634,3 @@ void yyerror(char* msg)
 	fprintf(stderr, "%s: line %d\n", msg, yylineno);
 	exit(0);
 }
-

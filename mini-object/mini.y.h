@@ -63,28 +63,27 @@ extern int yydebug;
     GE = 264,                      /* GE  */
     UMINUS = 265,                  /* UMINUS  */
     STRUCT_TOK = 266,              /* STRUCT_TOK  */
-    DOT = 267,                     /* DOT  */
-    PTR_OP = 268,                  /* PTR_OP  */
-    IF = 269,                      /* IF  */
-    ELSE = 270,                    /* ELSE  */
-    SWITCH = 271,                  /* SWITCH  */
-    CASE = 272,                    /* CASE  */
-    DEFAULT = 273,                 /* DEFAULT  */
-    WHILE = 274,                   /* WHILE  */
-    FOR = 275,                     /* FOR  */
-    BREAK = 276,                   /* BREAK  */
-    CONTINUE = 277,                /* CONTINUE  */
-    FUNC = 278,                    /* FUNC  */
-    INPUT = 279,                   /* INPUT  */
-    OUTPUT = 280,                  /* OUTPUT  */
-    RETURN = 281,                  /* RETURN  */
-    INTEGER = 282,                 /* INTEGER  */
-    IDENTIFIER = 283,              /* IDENTIFIER  */
-    TEXT = 284,                    /* TEXT  */
-    CHAR = 285,                    /* CHAR  */
-    CHAR_CONST = 286,              /* CHAR_CONST  */
-    LBRACK = 287,                  /* LBRACK  */
-    RBRACK = 288                   /* RBRACK  */
+    PTR_OP = 267,                  /* PTR_OP  */
+    IF = 268,                      /* IF  */
+    ELSE = 269,                    /* ELSE  */
+    SWITCH = 270,                  /* SWITCH  */
+    CASE = 271,                    /* CASE  */
+    DEFAULT = 272,                 /* DEFAULT  */
+    WHILE = 273,                   /* WHILE  */
+    FOR = 274,                     /* FOR  */
+    BREAK = 275,                   /* BREAK  */
+    CONTINUE = 276,                /* CONTINUE  */
+    FUNC = 277,                    /* FUNC  */
+    INPUT = 278,                   /* INPUT  */
+    OUTPUT = 279,                  /* OUTPUT  */
+    RETURN = 280,                  /* RETURN  */
+    INTEGER = 281,                 /* INTEGER  */
+    IDENTIFIER = 282,              /* IDENTIFIER  */
+    TEXT = 283,                    /* TEXT  */
+    CHAR = 284,                    /* CHAR  */
+    CHAR_CONST = 285,              /* CHAR_CONST  */
+    LBRACK = 286,                  /* LBRACK  */
+    RBRACK = 287                   /* RBRACK  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -102,42 +101,42 @@ extern int yydebug;
 #define GE 264
 #define UMINUS 265
 #define STRUCT_TOK 266
-#define DOT 267
-#define PTR_OP 268
-#define IF 269
-#define ELSE 270
-#define SWITCH 271
-#define CASE 272
-#define DEFAULT 273
-#define WHILE 274
-#define FOR 275
-#define BREAK 276
-#define CONTINUE 277
-#define FUNC 278
-#define INPUT 279
-#define OUTPUT 280
-#define RETURN 281
-#define INTEGER 282
-#define IDENTIFIER 283
-#define TEXT 284
-#define CHAR 285
-#define CHAR_CONST 286
-#define LBRACK 287
-#define RBRACK 288
+#define PTR_OP 267
+#define IF 268
+#define ELSE 269
+#define SWITCH 270
+#define CASE 271
+#define DEFAULT 272
+#define WHILE 273
+#define FOR 274
+#define BREAK 275
+#define CONTINUE 276
+#define FUNC 277
+#define INPUT 278
+#define OUTPUT 279
+#define RETURN 280
+#define INTEGER 281
+#define IDENTIFIER 282
+#define TEXT 283
+#define CHAR 284
+#define CHAR_CONST 285
+#define LBRACK 286
+#define RBRACK 287
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 21 "mini.y"
+#line 20 "mini.y"
 
 	char character;
 	char *string;
 	SYM *sym;
 	TAC *tac;
 	EXP	*exp;
+	PATH *path;
 
-#line 141 "mini.y.h"
+#line 140 "mini.y.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
