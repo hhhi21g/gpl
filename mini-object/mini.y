@@ -461,11 +461,7 @@ primary
 
 /* ---------- 表达式：二元运算 + 一元负号 ---------- */
 expression
-    : postfix_expression
-{
-    $$ = $1;
-}
-    | expression '+' expression
+    : expression '+' expression
 {
     $$ = do_bin(TAC_ADD, $1, $3);
 }
@@ -509,12 +505,39 @@ expression
 {
     $$ = do_cmp(TAC_GE, $1, $3);
 }
+    | '(' expression ')'
+{
+    $$ = $2;
+}
+    | INTEGER
+{
+    $$ = mk_exp(NULL, mk_const(atoi($1)), NULL);
+}
+    | CHAR_CONST
+{
+    $$ = mk_exp(NULL, mk_char($1[1]), NULL);
+}
+    | IDENTIFIER dims_idx
+{
+    /* 纯数组访问（a[i][j]这种），你原来的实现 */
+    $$ = do_array_load(get_var($1), $2);
+}
+    | lvalue
+{
+    /* 统一右值加载：c1.num, c1.grp[2].stu[3].name[0] 全部走这里 */
+    $$ = do_load_lvalue($1);
+}
+    | call_expression
+{
+    $$ = $1;
+}
     | error
 {
     error("Bad expression syntax");
     $$ = mk_exp(NULL, NULL, NULL);
 }
 ;
+
 
 
 // expression : IDENTIFIER
