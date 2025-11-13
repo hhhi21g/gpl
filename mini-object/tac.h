@@ -9,6 +9,7 @@
 #define SYM_PTR 7
 #define SYM_ARRAY 8
 #define SYM_STRUCT 9
+#define SYM_TMP 666
 
 /* type of tac */
 #define TAC_UNDEF 0		 /* undefine */
@@ -223,5 +224,6 @@ SYM *make_struct_member_addr(SYM *base, STRUCT_MEMBER *m, TAC **code);
 SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code);
 STRUCT_MEMBER *find_member(STRUCT *def, const char *name);
 TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs);
+EXP *do_lvalue_load(LVALUE_PATH *lv);
 
 void error(const char *format, ...);

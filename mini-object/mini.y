@@ -14,6 +14,10 @@ static SYM *g_switch_end = NULL;
 
 static char *g_cur_struct = NULL;
 
+int next_token();
+int is_path_start();
+
+
 %}
 
 %union
@@ -325,7 +329,7 @@ lvalue_tail:
 {
 	$$ = NULL;
 }
-| lvalue_tail '.' IDENTIFIER
+|lvalue_tail '.' IDENTIFIER
 {
 	$$ = append_path_member($1,$3);
 }
@@ -334,6 +338,7 @@ lvalue_tail:
 	$$ = append_path_index($1,$2);
 }
 ;
+
 
 assignment_statement : IDENTIFIER '=' expression
 {
@@ -376,7 +381,14 @@ assignment_statement : IDENTIFIER '=' expression
 }
 ;
 
-expression : expression '+' expression
+
+expression : 
+IDENTIFIER
+{
+	$$ = mk_exp(NULL, get_var($1), NULL);
+	
+}
+| expression '+' expression
 {
 	$$=do_bin(TAC_ADD, $1, $3);
 }
@@ -428,9 +440,9 @@ expression : expression '+' expression
 {
 	$$=mk_exp(NULL, mk_const(atoi($1)), NULL);
 }
-| IDENTIFIER
+| lvalue_path
 {
-	$$=mk_exp(NULL, get_var($1), NULL);
+	$$ = do_lvalue_load($1);
 }
 | CHAR_CONST
 {
@@ -444,12 +456,12 @@ expression : expression '+' expression
 {
 	$$=$1;
 }
-| IDENTIFIER '.' IDENTIFIER  // 结构体读值a.b
-{
-	SYM *base = get_var($1);
-	int offset = get_struct_offset(base,$3);
-	$$ = make_struct_load_exp(base,offset);
-}
+// | IDENTIFIER '.' IDENTIFIER  // 结构体读值a.b
+// {
+// 	SYM *base = get_var($1);
+// 	int offset = get_struct_offset(base,$3);
+// 	$$ = make_struct_load_exp(base,offset);
+// }
 | error
 {
 	error("Bad expression syntax");
@@ -628,6 +640,18 @@ call_expression : IDENTIFIER '(' argument_list ')'
 ;
 
 %%
+
+int next_token() {
+    if (yychar >= 0)
+        return yychar;
+    yychar = yylex();
+    return yychar;
+}
+
+int is_path_start() {
+    int tok = next_token();
+    return tok == '.' || tok == LBRACK;
+}
 
 void yyerror(char* msg) 
 {

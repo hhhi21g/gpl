@@ -214,6 +214,7 @@ int size_of_member(int type, STRUCT *sub)
 // 根据变量查找结构体
 static STRUCT *get_struct_var(SYM *var)
 {
+	printf("var: %s\n", var->name);
 	if (!var || var->type != SYM_STRUCT)
 	{
 		error("not a struct");
@@ -400,10 +401,12 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 	{
 		if (p->kind == PATH_MEMBER)
 		{
+			// printf("%s\n", cur_struct->name);
+			// printf("%s\n", p->member);
 			STRUCT_MEMBER *m = find_member(cur_struct, p->member);
 
 			if (!m)
-				error("unknown struct member\n");
+				error("unknown struct member2\n");
 
 			addr = make_struct_member_addr(addr, m, &code);
 
@@ -460,6 +463,96 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 	code = join_tac(code, st);
 
 	return code;
+}
+
+// 根据路径逐步取地址并从中取值
+EXP *do_lvalue_load(LVALUE_PATH *lv)
+{
+	SYM *root = get_var(lv->root);
+	SYM *addr = root;
+	TAC *code = NULL;
+
+	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
+
+	// 记录信息：当前是结构体成员，下一步是数组情况使用
+	int pending_elem_size = 0;			// 数组元素大小
+	int pending_elem_is_struct = 0;		// 元素是不是struct
+	STRUCT *pending_elem_struct = NULL; // 记录元素对应的struct
+
+	PATH *p = lv->path;
+	// printf("come in load\n");
+
+	while (p)
+	{
+		// printf("come in while\n");
+
+		if (p->kind == PATH_MEMBER)
+		{
+			printf("%s\n", cur_struct->name);
+			printf("%s\n", p->member);
+			STRUCT_MEMBER *m = find_member(cur_struct, p->member);
+
+			if (!m)
+				error("unknown struct member1\n");
+
+			addr = make_struct_member_addr(addr, m, &code);
+
+			pending_elem_size = 0;
+			pending_elem_is_struct = 0;
+			pending_elem_struct = NULL;
+
+			if (m->array_len > 0) // 需要更新pending信息，供下一步PATH_INDEX使用
+			{
+				// 数组成员
+				pending_elem_size = m->elem_size;
+				if (m->type == SYM_STRUCT)
+				{
+					pending_elem_is_struct = 1;
+					pending_elem_struct = m->sub;
+				}
+				cur_struct = NULL;
+			}
+			else
+			{
+				// 普通成员：int/char 或 struct
+				if (m->type == SYM_STRUCT)
+				{
+					cur_struct = m->sub; // 进入子 struct
+				}
+				else
+				{
+					cur_struct = NULL;
+				}
+			}
+		}
+		else if (p->kind == PATH_INDEX)
+		{
+			// printf("come in index1\n");
+			addr = make_array_elem_addr(addr, p->index, pending_elem_size, &code);
+			if (pending_elem_is_struct)
+			{
+				cur_struct = pending_elem_struct;
+			}
+			else
+			{
+				cur_struct = NULL;
+			}
+
+			pending_elem_size = 0;
+			pending_elem_is_struct = 0;
+			pending_elem_struct = NULL;
+		}
+
+		p = p->next;
+	}
+	SYM *t = mk_tmp();
+	TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
+	TAC *load = mk_tac(TAC_LOAD, t, addr, NULL);
+	load->prev = decl;
+
+	code = join_tac(code, join_tac(decl, load));
+
+	return mk_exp(NULL, t, code);
 }
 
 static SYM *eval_bin(int op, SYM *b, SYM *c)
@@ -1142,10 +1235,11 @@ SYM *mk_tmp(void)
 {
 	SYM *sym;
 	char *name;
-
+	// sym->type = SYM_TMP;
 	name = malloc(12);
 	sprintf(name, "t%d", next_tmp++); /* Set up text */
 	return mk_var(name);
+	// return sym;
 }
 
 TAC *declare_para(char *name)
@@ -1758,6 +1852,7 @@ char *to_str(SYM *s, char *str)
 
 	switch (s->type)
 	{
+	case SYM_TMP:
 	case SYM_FUNC:
 	case SYM_VAR:
 	case SYM_ARRAY:
