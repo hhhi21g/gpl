@@ -779,8 +779,26 @@ void asm_code(TAC *c)
 		// a = *b
 		int rb = reg_alloc(c->b);
 		int ra = reg_alloc(c->a);
-		out_str(file_s, "    LOD R%u,(R%u)\n", ra, rb);
+		// out_str(file_s, "    LOD R%u,(R%u)\n", ra, rb);
+
+		int elem_type = SYM_INT;
+		if (c->a->etc)
+			elem_type = *((int *)c->a->etc);
+
+		if (elem_type == SYM_CHAR)
+			out_str(file_s, "    LDC R%u,(R%u)\n", ra, rb);
+		else
+			out_str(file_s, "    LOD R%u,(R%u)\n", ra, rb);
+
 		rdesc_fill(ra, c->a, MODIFIED);
+		return;
+	}
+
+	case TAC_LOADC:
+	{
+		int ra = reg_alloc(c->a);
+		int rb = reg_alloc(c->b);
+		out_str(file_s, "    LDC R%u,(R%u)\n", ra, rb);
 		return;
 	}
 
@@ -796,7 +814,33 @@ void asm_code(TAC *c)
 		else
 			out_str(file_s, "    LOD R%u,(R%u-%d)\n", ra, R_BP, -c->a->offset);
 
-		out_str(file_s, "    STO (R%u),R%u\n", ra, rb);
+		// out_str(file_s, "    STO (R%u),R%u\n", ra, rb);
+		int elem_type = SYM_INT;
+		if (c->a->etc)
+			elem_type = *((int *)c->a->etc);
+
+		if (elem_type == SYM_CHAR)
+			out_str(file_s, "    STC (R%u),R%u\n", ra, rb);
+		else
+			out_str(file_s, "    STO (R%u),R%u\n", ra, rb);
+
+		return;
+	}
+
+	case TAC_STOREC:
+	{
+		int ra = reg_alloc(c->a);
+		int rb = reg_alloc(c->b);
+
+		// a 是地址，先 load 地址：
+		if (c->a->offset >= 0)
+			out_str(file_s, "    LOD R%u,(R%u+%d)\n", ra, R_BP, c->a->offset);
+		else
+			out_str(file_s, "    LOD R%u,(R%u-%d)\n", ra, R_BP, -c->a->offset);
+
+		// 使用 STC（写 1 字节）
+		out_str(file_s, "    STC (R%u),R%u\n", ra, rb);
+
 		return;
 	}
 

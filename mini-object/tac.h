@@ -40,6 +40,8 @@
 #define TAC_ADDR 25		 /* t = &a */
 #define TAC_LOAD 26		 /* t = *a */
 #define TAC_STORE 27	 /* *t = a */
+#define TAC_STOREC 32
+#define TAC_LOADC 33
 #define TAC_CASE 28
 #define TAC_VARARRAY 29
 #define TAC_LOADIDX 30
@@ -157,6 +159,7 @@ void out_sym(FILE *f, SYM *s);
 void out_tac(FILE *f, TAC *i);
 SYM *mk_var(char *name);
 SYM *mk_label(char *name);
+SYM *mk_sym(void);
 SYM *mk_tmp(void);
 SYM *mk_const(int n);
 SYM *mk_char(int c);
@@ -226,5 +229,6 @@ STRUCT_MEMBER *find_member(STRUCT *def, const char *name);
 TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs);
 EXP *do_lvalue_load(LVALUE_PATH *lv);
 static TAC *clone_tac_chain(TAC *t);
+SYM *mk_const_no_cache(int n);
 
 void error(const char *format, ...);

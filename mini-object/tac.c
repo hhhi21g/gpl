@@ -107,6 +107,7 @@ TAC *declare_struct(const char *var_name, const char *struct_name)
 
 void add_struct_member_base(int type, const char *mname, int array_len, STRUCT *sub)
 {
+
 	if (!cur_structs)
 	{
 		error("no declaring struct\n");
@@ -124,6 +125,9 @@ void add_struct_member_base(int type, const char *mname, int array_len, STRUCT *
 	m->offset = cur_structs->size;
 	cur_structs->size += elem_size * cnt;
 	m->elem_size = elem_size;
+
+	// printf("[DEBUG] struct=%s add member %s, offset=%d, elem_size=%d, array_len=%d, new_size=%d\n",
+	// 	   cur_structs->name, mname, m->offset, elem_size, array_len, cur_structs->size);
 
 	m->next = NULL;
 	if (!cur_structs->members)
@@ -353,11 +357,12 @@ SYM *make_struct_member_addr(SYM *base, STRUCT_MEMBER *m, TAC **code)
 	TAC *add = mk_tac(TAC_ADD, t, base, mk_const(m->offset));
 	add->prev = decl;
 
-	*code = join_tac(*code, clone_tac_chain(decl));
-	*code = join_tac(*code, clone_tac_chain(add));
+	// *code = join_tac(*code, clone_tac_chain(decl));
+	// *code = join_tac(*code, clone_tac_chain(add));
 
-	// *code = join_tac(*code, decl);
-	// *code = join_tac(*code, add);
+	*code = join_tac(*code, decl);
+	*code = join_tac(*code, add);
+	// printf("[DEBUG] base = %s, member offset = %d\n", base->name, m->offset);
 
 	return t;
 }
@@ -390,8 +395,24 @@ SYM *make_struct_member_addr(SYM *base, STRUCT_MEMBER *m, TAC **code)
 // 	return addr;
 // }
 
+// SYM *mk_const_no_cache(int n)
+// {
+// 	SYM *sym = mk_sym();
+// 	sym->type = SYM_INT;
+// 	sym->value = n;
+// 	char name[12];
+// 	sprintf(name, "%d", n);
+// 	sym->name = strdup(name);
+// 	return sym;
+// }
+
 SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
 {
+	printf("[DEBUG] INDEX idx->ret->value = %d, type = %d, elem_size = %d\n",
+		   idx->ret->value,
+		   idx->ret->type,
+		   elem_size);
+
 	/* 情况 1：下标是纯常量，并且没有 TAC（比如 grp[2]、stu[3]） */
 	if ((!idx->tac || idx->tac == NULL) &&
 		(idx->ret->type == SYM_INT || idx->ret->type == SYM_CHAR))
@@ -411,7 +432,8 @@ SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
 
 	/* 情况 2：正常情况（索引是变量或复杂表达式），保持你原来的逻辑 */
 
-	*code = join_tac(*code, clone_tac_chain(idx->tac));
+	// *code = join_tac(*code, clone_tac_chain(idx->tac));
+	*code = join_tac(*code, idx->tac);
 
 	SYM *mul = mk_tmp();
 	SYM *addr = mk_tmp();
@@ -430,6 +452,9 @@ SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
 	*code = join_tac(*code, mul_tac);
 	*code = join_tac(*code, decl_addr);
 	*code = join_tac(*code, add_tac);
+
+	// printf("[DEBUG] array base = %s, index = %s, elem_size = %d\n",
+	// 	   base->name, idx->ret->name, elem_size);
 
 	return addr;
 }
@@ -497,6 +522,7 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 					pending_elem_struct = m->sub;
 				}
 				cur_struct = NULL;
+				// printf("[LV] ARRAY member=%s, type=%d, elem_size=%d\n", m->name, m->type, m->elem_size);
 			}
 			else
 			{
@@ -532,7 +558,16 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 	}
 	code = join_tac(code, rhs->tac);
 
-	TAC *st = mk_tac(TAC_STORE, addr, rhs->ret, NULL);
+	// TAC *st = mk_tac(TAC_STORE, addr, rhs->ret, NULL);
+
+	int is_char = (rhs->ret->type == SYM_CHAR);
+
+	TAC *st;
+	if (is_char)
+		st = mk_tac(TAC_STOREC, addr, rhs->ret, NULL); // new opcode
+	else
+		st = mk_tac(TAC_STORE, addr, rhs->ret, NULL);
+
 	code = join_tac(code, st);
 
 	return code;
@@ -563,6 +598,7 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 
 	PATH *p = lv->path;
 	// printf("come in load\n");
+	int is_char = 0;
 
 	while (p)
 	{
@@ -576,6 +612,11 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 
 			if (!m)
 				error("unknown struct member1\n");
+
+			if (m->type == SYM_CHAR)
+				is_char = 1;
+			else
+				is_char = 0;
 
 			addr = make_struct_member_addr(addr, m, &code);
 
@@ -592,6 +633,8 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 					pending_elem_is_struct = 1;
 					pending_elem_struct = m->sub;
 				}
+				// printf("[LV] ARRAY member=%s, type=%d, elem_size=%d\n", m->name, m->type, m->elem_size);
+
 				cur_struct = NULL;
 			}
 			else
@@ -627,12 +670,20 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 
 		p = p->next;
 	}
+
 	SYM *t = mk_tmp();
 	TAC *decl = mk_tac(TAC_VAR, t, NULL, NULL);
-	TAC *load = mk_tac(TAC_LOAD, t, addr, NULL);
+	// TAC *load = mk_tac(TAC_LOAD, t, addr, NULL);
+	TAC *load;
+	if (is_char)
+		load = mk_tac(TAC_LOADC, t, addr, NULL);
+	else
+		load = mk_tac(TAC_LOAD, t, addr, NULL);
 	load->prev = decl;
 
 	code = join_tac(code, join_tac(decl, load));
+
+	// printf("[LVALUE LOAD FINAL]: %s.%s offset chain done\n", root->name, lv->path->member);
 
 	return mk_exp(NULL, t, code);
 }
@@ -1499,9 +1550,9 @@ EXP *do_bin(int binop, EXP *exp1, EXP *exp2)
 			}
 			// 0 - 变量
 			TAC *tmp = mk_tac(TAC_VAR, mk_tmp(), NULL, NULL);
-			// tmp->prev = join_tac(exp1->tac, exp2->tac);
-			temp->prev = join_tac(clone_tac_chain(exp1->tac),
-								  clone_tac_chain(exp2->tac));
+			tmp->prev = join_tac(exp1->tac, exp2->tac);
+			// temp->prev = join_tac(clone_tac_chain(exp1->tac),
+			// 					  clone_tac_chain(exp2->tac));
 
 			TAC *neg = mk_tac(TAC_NEG, tmp->a, y, NULL);
 			neg->prev = tmp;
@@ -1603,9 +1654,9 @@ EXP *do_cmp(int binop, EXP *exp1, EXP *exp2)
 	TAC *ret;  /* TAC code for result */
 
 	temp = mk_tac(TAC_VAR, mk_tmp(), NULL, NULL);
-	// temp->prev = join_tac(exp1->tac, exp2->tac);
-	temp->prev = join_tac(clone_tac_chain(exp1->tac),
-						  clone_tac_chain(exp2->tac));
+	temp->prev = join_tac(exp1->tac, exp2->tac);
+	// temp->prev = join_tac(clone_tac_chain(exp1->tac),
+	// 					  clone_tac_chain(exp2->tac));
 
 	ret = mk_tac(binop, temp->a, exp1->ret, exp2->ret);
 	ret->prev = temp;
@@ -2101,6 +2152,14 @@ void out_tac(FILE *f, TAC *i)
 
 	case TAC_STORE:
 		fprintf(f, "*%s = %s", to_str(i->a, sa), to_str(i->b, sb));
+		break;
+
+	case TAC_LOADC:
+		fprintf(f, "%s = c*%s", to_str(i->a, sa), to_str(i->b, sb));
+		break;
+
+	case TAC_STOREC:
+		fprintf(f, "c*%s = %s", to_str(i->a, sa), to_str(i->b, sb));
 		break;
 
 	case TAC_VARARRAY:
