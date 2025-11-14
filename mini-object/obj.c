@@ -102,6 +102,12 @@ void asm_load(int r, SYM *s)
 	// rdesc_fill(r, s, UNMODIFIED);
 }
 
+#define R_FIRST_NORMAL R_GEN // 比如 3
+#define R_LAST_NORMAL 9		 // <- reg_alloc 的上限
+
+#define R_FIRST_TEMP 10 // <- reg_alloc_temp 的开始
+#define R_LAST_TEMP 14
+
 int reg_alloc(SYM *s)
 {
 	int r; /* already in a register */
@@ -140,43 +146,50 @@ int reg_alloc(SYM *s)
 	return random;
 }
 
-// int reg_alloc_temp()
+// int reg_alloc(SYM *s)
 // {
 // 	int r;
 
-// 	for (r = R_GEN; r < R_NUM; r++)
+// 	/* Already in register */
+// 	for (r = R_FIRST_NORMAL; r <= R_LAST_NORMAL; r++)
+// 	{
+// 		if (rdesc[r].var == s)
+// 		{
+// 			if (rdesc[r].mod)
+// 				asm_write_back(r);
+// 			return r;
+// 		}
+// 	}
+
+// 	/* empty register */
+// 	for (r = R_FIRST_NORMAL; r <= R_LAST_NORMAL; r++)
 // 	{
 // 		if (rdesc[r].var == NULL)
 // 		{
-// 			rdesc[r].var = (SYM *)-1;
-// 			rdesc[r].mod = 0;
+// 			asm_load(r, s);
+// 			rdesc_fill(r, s, UNMODIFIED);
 // 			return r;
 // 		}
 // 	}
 
-// 	for (r = R_GEN; r < R_NUM; r++)
+// 	/* unmodified register */
+// 	for (r = R_FIRST_NORMAL; r <= R_LAST_NORMAL; r++)
 // 	{
 // 		if (!rdesc[r].mod)
 // 		{
-// 			rdesc[r].var = (SYM *)-1;
-// 			rdesc[r].mod = 0;
+// 			asm_load(r, s);
+// 			rdesc_fill(r, s, UNMODIFIED);
 // 			return r;
 // 		}
 // 	}
 
-// 	static int seeded = 0;
-// 	if (!seeded)
-// 	{
-// 		srand((unsigned)time(NULL));
-// 		seeded = 1;
-// 	}
-// 	int random = (rand() % (R_NUM - R_GEN)) + R_GEN;
+// 	/* random spill */
+// 	srand(time(NULL));
+// 	int random = (rand() % (R_LAST_NORMAL - R_FIRST_NORMAL + 1)) + R_FIRST_NORMAL;
 
 // 	asm_write_back(random);
-// 	rdesc[random].var = (SYM *)-1;
-// 	rdesc[random].mod = 0;
-
-// 	// out_str(file_s, "	# [DEBUG] reg_alloc_temp chose R%u randomly\n", random);
+// 	asm_load(random, s);
+// 	rdesc_fill(random, s, UNMODIFIED);
 // 	return random;
 // }
 
@@ -189,6 +202,16 @@ int reg_alloc_temp()
 	// 如果无空位，就随机选一个但不要写入 rdesc
 	return R_GEN;
 }
+
+// int reg_alloc_temp()
+// {
+// 	static int cur = R_FIRST_TEMP;
+// 	int r = cur;
+// 	cur++;
+// 	if (cur > R_LAST_TEMP)
+// 		cur = R_FIRST_TEMP;
+// 	return r;
+// }
 
 void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 {

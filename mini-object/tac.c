@@ -637,8 +637,8 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 
 		if (p->kind == PATH_MEMBER)
 		{
-			printf("%s\n", cur_struct->name);
-			printf("%s\n", p->member);
+			// printf("%s\n", cur_struct->name);
+			// printf("%s\n", p->member);
 			STRUCT_MEMBER *m = find_member(cur_struct, p->member);
 
 			// if (!m)

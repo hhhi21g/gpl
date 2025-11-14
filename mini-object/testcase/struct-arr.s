@@ -29,8 +29,8 @@ main:
 
 	# t1 = t0 + 0
     STO (R2+28),R5
-    LOD R6,0
-    ADD R5,R6
+    LOD R10,0
+    ADD R5,R10
 
 	# *t1 = 1
     STO (R2+32),R5
@@ -48,22 +48,22 @@ main:
 
 	# t3 = t2 + 14
     STO (R2+36),R7
-    LOD R8,14
-    ADD R7,R8
+    LOD R11,14
+    ADD R7,R11
 
 	# var t4
 
 	# t4 = t3 + 1108
     STO (R2+40),R7
-    LOD R8,1108
-    ADD R7,R8
+    LOD R12,1108
+    ADD R7,R12
 
 	# var t5
 
 	# t5 = t4 + 0
     STO (R2+44),R7
-    LOD R8,0
-    ADD R7,R8
+    LOD R13,0
+    ADD R7,R13
 
 	# *t5 = 2
     STO (R2+48),R7
@@ -81,8 +81,8 @@ main:
 
 	# t7 = t6 + 14
     STO (R2+52),R9
-    LOD R10,14
-    ADD R9,R10
+    LOD R14,14
+    ADD R9,R14
 
 	# var t8
 
@@ -95,98 +95,98 @@ main:
 
 	# t9 = t8 + 14
     STO (R2+60),R9
-    LOD R10,14
-    ADD R9,R10
+    LOD R11,14
+    ADD R9,R11
 
 	# var t10
 
 	# t10 = t9 + 162
     STO (R2+64),R9
-    LOD R10,162
-    ADD R9,R10
+    LOD R12,162
+    ADD R9,R12
 
 	# var t11
 
 	# t11 = t10 + 4
     STO (R2+68),R9
-    LOD R10,4
-    ADD R9,R10
+    LOD R13,4
+    ADD R9,R13
 
 	# var t12
 
 	# t12 = t11 + 1
     STO (R2+72),R9
-    LOD R10,1
-    ADD R9,R10
+    LOD R14,1
+    ADD R9,R14
 
 	# c*t12 = 'b'
     STO (R2+76),R9
-	LOD R10,98
+	LOD R5,98
     LOD R9,(R2+76)
-    STC (R9),R10
+    STC (R9),R5
 
 	# var t13
 
 	# t13 = &c1
-	LOD R11,(R2+80)
-    LOD R11,R2+24
+	LOD R5,(R2+80)
+    LOD R5,R2+24
 
 	# var t14
 
 	# t14 = t13 + 14
-    STO (R2+80),R11
-    LOD R12,14
-    ADD R11,R12
+    STO (R2+80),R5
+    LOD R10,14
+    ADD R5,R10
 
 	# var t15
 
 	# t15 = t14 + 1108
-    STO (R2+84),R11
-    LOD R12,1108
-    ADD R11,R12
+    STO (R2+84),R5
+    LOD R11,1108
+    ADD R5,R11
 
 	# var t16
 
 	# t16 = t15 + 14
-    STO (R2+88),R11
+    STO (R2+88),R5
     LOD R12,14
-    ADD R11,R12
+    ADD R5,R12
 
 	# var t17
 
 	# t17 = t16 + 162
-    STO (R2+92),R11
-    LOD R12,162
-    ADD R11,R12
+    STO (R2+92),R5
+    LOD R13,162
+    ADD R5,R13
 
 	# var t18
 
 	# t18 = t17 + 4
-    STO (R2+96),R11
-    LOD R12,4
-    ADD R11,R12
+    STO (R2+96),R5
+    LOD R14,4
+    ADD R5,R14
 
 	# var t19
 
 	# t19 = t18 + 0
-    STO (R2+100),R11
-    LOD R12,0
-    ADD R11,R12
+    STO (R2+100),R5
+    LOD R10,0
+    ADD R5,R10
 
 	# c*t19 = 'a'
-    STO (R2+104),R11
-	LOD R12,97
-    LOD R11,(R2+104)
-    STC (R11),R12
+    STO (R2+104),R5
+	LOD R5,97
+    LOD R5,(R2+104)
+    STC (R5),R5
 
 	# ifz 0 goto L2
-	LOD R13,0
-	TST R13
+	LOD R5,0
+	TST R5
 	JEZ L2
 
 	# output L1
-	LOD R14,L1
-	LOD R15,R14
+	LOD R5,L1
+	LOD R15,R5
 	OTS
 
 	# label L2
@@ -202,8 +202,8 @@ L2:
 
 	# t21 = t20 + 0
     STO (R2+108),R5
-    LOD R6,0
-    ADD R5,R6
+    LOD R11,0
+    ADD R5,R11
 
 	# var t22
 
@@ -226,22 +226,22 @@ L2:
 
 	# t24 = t23 + 14
     STO (R2+120),R7
-    LOD R8,14
-    ADD R7,R8
+    LOD R12,14
+    ADD R7,R12
 
 	# var t25
 
 	# t25 = t24 + 1108
     STO (R2+124),R7
-    LOD R8,1108
-    ADD R7,R8
+    LOD R13,1108
+    ADD R7,R13
 
 	# var t26
 
 	# t26 = t25 + 0
     STO (R2+128),R7
-    LOD R8,0
-    ADD R7,R8
+    LOD R14,0
+    ADD R7,R14
 
 	# var t27
 
@@ -271,29 +271,29 @@ L2:
 
 	# t30 = t29 + 1108
     STO (R2+144),R9
-    LOD R10,1108
-    ADD R9,R10
+    LOD R11,1108
+    ADD R9,R11
 
 	# var t31
 
 	# t31 = t30 + 14
     STO (R2+148),R9
-    LOD R10,14
-    ADD R9,R10
+    LOD R12,14
+    ADD R9,R12
 
 	# var t32
 
 	# t32 = t31 + 162
     STO (R2+152),R9
-    LOD R10,162
-    ADD R9,R10
+    LOD R13,162
+    ADD R9,R13
 
 	# var t33
 
 	# t33 = t32 + 4
     STO (R2+156),R9
-    LOD R10,4
-    ADD R9,R10
+    LOD R14,4
+    ADD R9,R14
 
 	# var t34
 
@@ -305,79 +305,79 @@ L2:
 	# var t35
 
 	# t35 = c*t34
-	LOD R10,(R2+168)
+	LOD R5,(R2+168)
     STO (R2+164),R9
-    LDC R10,(R9)
+    LDC R5,(R9)
 
 	# a = t35
-   STO (R2+16),R10
+   STO (R2+16),R5
 
 	# var t36
 
 	# t36 = &c1
-	LOD R11,(R2+172)
-    LOD R11,R2+24
+	LOD R5,(R2+172)
+    LOD R5,R2+24
 
 	# var t37
 
 	# t37 = t36 + 14
-    STO (R2+172),R11
-    LOD R12,14
-    ADD R11,R12
+    STO (R2+172),R5
+    LOD R11,14
+    ADD R5,R11
 
 	# var t38
 
 	# t38 = t37 + 1108
-    STO (R2+176),R11
+    STO (R2+176),R5
     LOD R12,1108
-    ADD R11,R12
+    ADD R5,R12
 
 	# var t39
 
 	# t39 = t38 + 14
-    STO (R2+180),R11
-    LOD R12,14
-    ADD R11,R12
+    STO (R2+180),R5
+    LOD R13,14
+    ADD R5,R13
 
 	# var t40
 
 	# t40 = t39 + 162
-    STO (R2+184),R11
-    LOD R12,162
-    ADD R11,R12
+    STO (R2+184),R5
+    LOD R14,162
+    ADD R5,R14
 
 	# var t41
 
 	# t41 = t40 + 4
-    STO (R2+188),R11
-    LOD R12,4
-    ADD R11,R12
+    STO (R2+188),R5
+    LOD R10,4
+    ADD R5,R10
 
 	# var t42
 
 	# t42 = t41 + 1
-    STO (R2+192),R11
-    LOD R12,1
-    ADD R11,R12
+    STO (R2+192),R5
+    LOD R11,1
+    ADD R5,R11
 
 	# var t43
 
 	# t43 = c*t42
-	LOD R12,(R2+200)
-    STO (R2+196),R11
-    LDC R12,(R11)
+	LOD R6,(R2+200)
+    STO (R2+196),R5
+    LDC R6,(R5)
 
 	# b = t43
-   STO (R2+20),R12
+   STO (R2+20),R6
 
 	# ifz 0 goto L3
-	LOD R13,0
-	TST R13
+	LOD R5,0
+	TST R5
 	JEZ L3
 
 	# output L1
-	LOD R14,L1
-	LOD R15,R14
+	LOD R5,L1
+	LOD R15,R5
 	OTS
 
 	# label L3
