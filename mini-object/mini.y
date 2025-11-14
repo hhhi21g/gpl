@@ -318,54 +318,31 @@ statement_list : statement
 }               
 ;
 
-// lvalue_path: IDENTIFIER lvalue_tail
-// {
-// 	$$ = mk_lvalue_path($1,$2);
-// }
-// ;
-
-lvalue_path:
-      IDENTIFIER lvalue_tail
+lvalue_path:IDENTIFIER lvalue_tail
 {
     $$ = mk_lvalue_path($1, $2);
 }
-    | IDENTIFIER dims_idx lvalue_tail
+| IDENTIFIER dims_idx lvalue_tail
 {
     PATH *p = append_path_index(NULL, $2);
     $$ = mk_lvalue_path($1, p);
-    $$ = append_path_list($$, $3);   /* 把后续路径追加上去 */
+    $$ = append_path_list($$, $3);  
 }
 ;
 
-
-// lvalue_tail:
-// {
-// 	$$ = NULL;
-// }
-// |lvalue_tail '.' IDENTIFIER
-// {
-// 	$$ = append_path_member($1,$3);
-// }
-// | lvalue_tail dims_idx
-// {
-// 	$$ = append_path_index($1,$2);
-// }
-// ;
-
-lvalue_tail:
-      '.' IDENTIFIER
+lvalue_tail:'.' IDENTIFIER
 {
     $$ = append_path_member(NULL, $2);
 }
-    | dims_idx
+| dims_idx
 {
     $$ = append_path_index(NULL, $1);
 }
-    | lvalue_tail '.' IDENTIFIER
+| lvalue_tail '.' IDENTIFIER
 {
     $$ = append_path_member($1, $3);
 }
-    | lvalue_tail dims_idx
+| lvalue_tail dims_idx
 {
     $$ = append_path_index($1, $2);
 }
@@ -413,10 +390,9 @@ assignment_statement : IDENTIFIER '=' expression
 ;
 
 
-expression : 
-IDENTIFIER
+expression : IDENTIFIER
 {
-	printf("identifier\n");
+	// printf("identifier\n");
 	$$ = mk_exp(NULL, get_var($1), NULL);
 }
 | expression '+' expression
@@ -678,10 +654,6 @@ PATH *append_path_list(PATH *head, PATH *tail)
     PATH *p = head;
     while (p->next) {
 		p = p->next;
-		// if (p->next == head) {
-        //     printf("ERROR: PATH LOOP created!\n");
-        //     exit(1);
-        // }
 	}
     p->next = tail;
     return head;

@@ -357,9 +357,6 @@ SYM *make_struct_member_addr(SYM *base, STRUCT_MEMBER *m, TAC **code)
 	TAC *add = mk_tac(TAC_ADD, t, base, mk_const(m->offset));
 	add->prev = decl;
 
-	// *code = join_tac(*code, clone_tac_chain(decl));
-	// *code = join_tac(*code, clone_tac_chain(add));
-
 	*code = join_tac(*code, decl);
 	*code = join_tac(*code, add);
 	// printf("[DEBUG] base = %s, member offset = %d\n", base->name, m->offset);
@@ -367,58 +364,19 @@ SYM *make_struct_member_addr(SYM *base, STRUCT_MEMBER *m, TAC **code)
 	return t;
 }
 
-// 返回数组元素的地址
-// SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
-// {
-// 	// ensure idx TAC is included
-// 	// *code = join_tac(*code, idx->tac);
-// 	*code = join_tac(*code, clone_tac_chain(idx->tac));
-
-// 	SYM *mul = mk_tmp();
-// 	SYM *addr = mk_tmp();
-
-// 	// mul = idx * elem_size
-// 	TAC *decl_mul = mk_tac(TAC_VAR, mul, NULL, NULL);
-// 	TAC *mul_tac = mk_tac(TAC_MUL, mul, idx->ret, mk_const(elem_size));
-// 	mul_tac->prev = decl_mul;
-
-// 	// addr = base + mul
-// 	TAC *decl_addr = mk_tac(TAC_VAR, addr, NULL, NULL);
-// 	TAC *add_tac = mk_tac(TAC_ADD, addr, base, mul);
-// 	add_tac->prev = decl_addr;
-
-// 	*code = join_tac(*code, decl_mul);
-// 	*code = join_tac(*code, mul_tac);
-// 	*code = join_tac(*code, decl_addr);
-// 	*code = join_tac(*code, add_tac);
-
-// 	return addr;
-// }
-
-// SYM *mk_const_no_cache(int n)
-// {
-// 	SYM *sym = mk_sym();
-// 	sym->type = SYM_INT;
-// 	sym->value = n;
-// 	char name[12];
-// 	sprintf(name, "%d", n);
-// 	sym->name = strdup(name);
-// 	return sym;
-// }
-
 SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
 {
-	printf("[DEBUG] INDEX idx->ret->value = %d, type = %d, elem_size = %d\n",
-		   idx->ret->value,
-		   idx->ret->type,
-		   elem_size);
+	// printf("[DEBUG] INDEX idx->ret->value = %d, type = %d, elem_size = %d\n",
+	// 	   idx->ret->value,
+	// 	   idx->ret->type,
+	// 	   elem_size);
 
-	/* 情况 1：下标是纯常量，并且没有 TAC（比如 grp[2]、stu[3]） */
 	if ((!idx->tac || idx->tac == NULL) &&
 		(idx->ret->type == SYM_INT || idx->ret->type == SYM_CHAR))
 	{
-		int off = idx->ret->value * elem_size; // 直接算出偏移量（字节）
+		int off = idx->ret->value * elem_size;
 
+		// addr = base + offset
 		SYM *addr = mk_tmp();
 		TAC *decl = mk_tac(TAC_VAR, addr, NULL, NULL);
 		TAC *add = mk_tac(TAC_ADD, addr, base, mk_const(off));
@@ -430,9 +388,6 @@ SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
 		return addr;
 	}
 
-	/* 情况 2：正常情况（索引是变量或复杂表达式），保持你原来的逻辑 */
-
-	// *code = join_tac(*code, clone_tac_chain(idx->tac));
 	*code = join_tac(*code, idx->tac);
 
 	SYM *mul = mk_tmp();
@@ -564,7 +519,7 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 
 	TAC *st;
 	if (is_char)
-		st = mk_tac(TAC_STOREC, addr, rhs->ret, NULL); // new opcode
+		st = mk_tac(TAC_STOREC, addr, rhs->ret, NULL);
 	else
 		st = mk_tac(TAC_STORE, addr, rhs->ret, NULL);
 
@@ -580,7 +535,7 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 
 	TAC *code = NULL;
 
-	// STEP 1: addr = &root
+	// addr = &root
 	SYM *addr = mk_tmp();
 	TAC *decl_addr = mk_tac(TAC_VAR, addr, NULL, NULL);
 	TAC *get_addr = mk_tac(TAC_ADDR, addr, root, NULL);
@@ -1113,77 +1068,6 @@ SYM *mk_var(char *name)
 	return sym;
 }
 
-// TAC *join_tac(TAC *c1, TAC *c2)
-// {
-// 	TAC *t;
-
-// 	if (c1 == NULL)
-// 		return c2;
-// 	if (c2 == NULL)
-// 		return c1;
-
-// 	/* Run down c2, until we get to the beginning and then add c1 */
-// 	t = c2;
-// 	while (t->prev != NULL)
-// 		t = t->prev;
-
-// 	t->prev = c1;
-// 	return c2;
-// }
-
-// TAC *join_tac(TAC *a, TAC *b)
-// {
-// 	if (!a)
-// 		return b;
-// 	TAC *t = a;
-// 	while (t->next)
-// 		t = t->next;
-// 	t->next = b;
-// 	if (b)
-// 		b->prev = t;
-// 	return a;
-// }
-
-// 判断 x 链（沿 prev 走）里是否包含某节点 target
-static int chain_contains(TAC *x, TAC *target)
-{
-	for (TAC *p = x; p; p = p->prev)
-	{
-		// if (p->next == x)
-		// {
-		// 	printf("ERROR: join_tac loop detected!");
-		// 	exit(1);
-		// }
-		if (p == target)
-			return 1;
-	}
-	return 0;
-}
-
-// TAC *join_tac(TAC *c1, TAC *c2)
-// {
-// 	if (!c1)
-// 		return c2;
-// 	if (!c2)
-// 		return c1;
-
-// 	// 保险：避免把同一条链 join 到自身造成环
-// 	if (chain_contains(c1, c2) || chain_contains(c2, c1))
-// 	{
-// 		// 这里不直接报错，用更保守的策略：认为已经连接好，返回 c2
-// 		// 也可以改成 error("join_tac: attempt to join overlapping chains");
-// 		return c2;
-// 	}
-
-// 	// 找到 c2 的“头”（最早的指令）
-// 	TAC *head2 = c2;
-// 	while (head2->prev)
-// 		head2 = head2->prev;
-
-// 	head2->prev = c1;
-// 	return c2;
-// }
-
 TAC *join_tac(TAC *c1, TAC *c2)
 {
 	if (!c1)
@@ -1191,34 +1075,16 @@ TAC *join_tac(TAC *c1, TAC *c2)
 	if (!c2)
 		return c1;
 
-	// 找到 c2 的链头（最前面的指令）
 	TAC *head2 = c2;
 	while (head2->prev)
 		head2 = head2->prev;
 
-	// 图安全检测：不要把链 join 到自身
 	for (TAC *p = c1; p; p = p->prev)
 		if (p == head2)
 			return c2;
 
 	head2->prev = c1;
 	return c2;
-}
-
-// 克隆 TAC 链，prev 构建同样倒链
-static TAC *clone_tac_chain(TAC *t)
-{
-	if (!t)
-		return NULL;
-
-	TAC *new_head = NULL;
-	for (TAC *p = t; p; p = p->prev)
-	{
-		TAC *n = mk_tac(p->op, p->a, p->b, p->c);
-		n->prev = new_head;
-		new_head = n;
-	}
-	return new_head;
 }
 
 TAC *declare_var(char *name)
@@ -1551,8 +1417,6 @@ EXP *do_bin(int binop, EXP *exp1, EXP *exp2)
 			// 0 - 变量
 			TAC *tmp = mk_tac(TAC_VAR, mk_tmp(), NULL, NULL);
 			tmp->prev = join_tac(exp1->tac, exp2->tac);
-			// temp->prev = join_tac(clone_tac_chain(exp1->tac),
-			// 					  clone_tac_chain(exp2->tac));
 
 			TAC *neg = mk_tac(TAC_NEG, tmp->a, y, NULL);
 			neg->prev = tmp;
@@ -1655,8 +1519,6 @@ EXP *do_cmp(int binop, EXP *exp1, EXP *exp2)
 
 	temp = mk_tac(TAC_VAR, mk_tmp(), NULL, NULL);
 	temp->prev = join_tac(exp1->tac, exp2->tac);
-	// temp->prev = join_tac(clone_tac_chain(exp1->tac),
-	// 					  clone_tac_chain(exp2->tac));
 
 	ret = mk_tac(binop, temp->a, exp1->ret, exp2->ret);
 	ret->prev = temp;

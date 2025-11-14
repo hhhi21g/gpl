@@ -111,7 +111,7 @@ typedef struct STRUCT_MEMBER
 
 	struct STRUCT *sub; // 存储STRUCT类型对应的结构体
 	int offset;			// 相对于结构体起始处的偏移
-	int elem_size;
+	int elem_size;		// 元素大小
 	struct STRUCT_MEMBER *next;
 } STRUCT_MEMBER;
 
