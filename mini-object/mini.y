@@ -108,9 +108,20 @@ struct_var_list: IDENTIFIER
 { 
 	$$ = declare_struct($1, g_cur_struct); 
 }
+| IDENTIFIER dims_decl
+{
+	$$ = declare_array_typed($1,SYM_STRUCT,$2);
+	SYM*sym = get_var($1);
+	sym->etc = find_struct(g_cur_struct);
+}
 | struct_var_list ',' IDENTIFIER
 { 
 	$$ = join_tac($1, declare_struct($3, g_cur_struct)); 
+}
+| struct_var_list ',' IDENTIFIER dims_decl{
+	$$ = declare_array_typed($3,SYM_STRUCT,$4);
+	SYM*sym = get_var($3);
+	sym->etc = find_struct(g_cur_struct);
 }
 ;
 

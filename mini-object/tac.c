@@ -184,7 +184,7 @@ void end_struct(STRUCT *def)
 }
 
 // 查找结构体
-static STRUCT *find_struct(const char *name)
+STRUCT *find_struct(const char *name)
 {
 	for (STRUCT *d = structs; d; d = d->next)
 	{
@@ -494,7 +494,23 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 		}
 		else if (p->kind == PATH_INDEX)
 		{
+
+			int elem_size = pending_elem_size;
+
+			if (elem_size == 0)
+			{
+				if (!cur_struct)
+				{
+					error("index on non-array\n");
+				}
+				elem_size = cur_struct->size;
+
+				pending_elem_is_struct = 1;
+				pending_elem_struct = cur_struct;
+			}
+
 			addr = make_array_elem_addr(addr, p->index, pending_elem_size, &code);
+
 			if (pending_elem_is_struct)
 			{
 				cur_struct = pending_elem_struct;
@@ -607,6 +623,21 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 		}
 		else if (p->kind == PATH_INDEX)
 		{
+
+			int elem_size = pending_elem_size;
+
+			if (elem_size == 0)
+			{
+				if (!cur_struct)
+				{
+					error("index on non-array\n");
+				}
+				elem_size = cur_struct->size;
+
+				pending_elem_is_struct = 1;
+				pending_elem_struct = cur_struct;
+			}
+
 			// printf("come in index1\n");
 			addr = make_array_elem_addr(addr, p->index, pending_elem_size, &code);
 			if (pending_elem_is_struct)

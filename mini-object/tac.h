@@ -206,7 +206,7 @@ STRUCT *begin_struct(const char *name);
 TAC *declare_struct(const char *var_name, const char *struct_name);
 void add_struct_member(STRUCT *unused, int member_type, const char *mname);
 void end_struct(STRUCT *def);
-static STRUCT *find_struct(const char *name);
+
 static STRUCT *get_struct_var(SYM *var);
 int get_struct_offset(SYM *struct_var, const char *name);
 TAC *make_struct_store_tac(SYM *base, int offset, EXP *exp);
@@ -228,7 +228,7 @@ SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code);
 STRUCT_MEMBER *find_member(STRUCT *def, const char *name);
 TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs);
 EXP *do_lvalue_load(LVALUE_PATH *lv);
-static TAC *clone_tac_chain(TAC *t);
-SYM *mk_const_no_cache(int n);
+
+STRUCT *find_struct(const char *name);
 
 void error(const char *format, ...);

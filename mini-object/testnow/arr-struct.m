@@ -21,23 +21,20 @@ struct class
 
 main()
 {
-    int c;
     int i,j;    
     char a,b;
-    struct class c1;
-    c = 1 * 10;
-    c1.num = 1;
-    c1.grp[2].num = 2;
-    c1.grp[2].stu[3].name[1] = 'b';
-    c1.grp[2].stu[3].name[0] = 'a';
+    struct class cls[10];
+    cls[5].num = 1;
+    cls[5].grp[2].num = 2;
+    cls[5].grp[2].stu[3].name[1] = 'b';
+    cls[5].grp[2].stu[3].name[0] = 'a';
 
     if(0) { output "\n"; }
-    
-    i = c1.num;
-    
-    j = c1.grp[2].num;
-    a = c1.grp[2].stu[3].name[0];
-    b = c1.grp[2].stu[3].name[1];
+
+    i = cls[5].num;
+    j = cls[5].grp[2].num;
+    a = cls[5].grp[2].stu[3].name[0];
+    b = cls[5].grp[2].stu[3].name[1];
 
     if(0) { output "\n"; }
 
