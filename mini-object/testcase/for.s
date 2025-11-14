@@ -57,8 +57,8 @@ L2:
 
 	# t1 = i + 1
 	LOD R5,(R2+8)
-    LOD R10,1
-    ADD R5,R10
+    LOD R6,1
+    ADD R5,R6
 
 	# i = t1
     STO (R2+20),R5

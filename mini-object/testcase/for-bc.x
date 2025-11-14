@@ -1,50 +1,50 @@
 
 # tac list
 
-0x64adca87a8c0	label main
-0x64adca87a900	begin
-0x64adca878830	var i
-0x64adca878910	var j
-0x64adca878970	input j
-0x64adca878aa0	i = 0
-0x64adca8799e0	label L1
-0x64adca879010	var t0
-0x64adca879050	t0 = (i < j)
-0x64adca879aa0	ifz t0 goto L3
-0x64adca879690	var t2
-0x64adca8796d0	t2 = (i > 10)
-0x64adca879910	ifz t2 goto L5
-0x64adca8797b0	output L4
-0x64adca8797f0	goto L3
-0x64adca8798d0	label L5
-0x64adca8799a0	output i
-0x64adca879a20	label L2
-0x64adca879250	var t1
-0x64adca879290	t1 = i + 1
-0x64adca8792d0	i = t1
-0x64adca879ae0	goto L1
-0x64adca879a60	label L3
-0x64adca879bc0	output L6
-0x64adca879c70	i = 0
-0x64adca87a6a0	label L7
-0x64adca879dd0	var t3
-0x64adca879e10	t3 = (i < j)
-0x64adca87a760	ifz t3 goto L9
-0x64adca87a350	var t5
-0x64adca87a390	t5 = (i == 10)
-0x64adca87a5d0	ifz t5 goto L11
-0x64adca87a470	output L10
-0x64adca87a4b0	goto L8
-0x64adca87a590	label L11
-0x64adca87a660	output i
-0x64adca87a6e0	label L8
-0x64adca879f90	var t4
-0x64adca879fd0	t4 = i + 1
-0x64adca87a010	i = t4
-0x64adca87a7a0	goto L7
-0x64adca87a720	label L9
-0x64adca87a800	output L6
-0x64adca87a940	end
+0x5c2dc96cf8c0	label main
+0x5c2dc96cf900	begin
+0x5c2dc96cd830	var i
+0x5c2dc96cd910	var j
+0x5c2dc96cd970	input j
+0x5c2dc96cdaa0	i = 0
+0x5c2dc96ce9e0	label L1
+0x5c2dc96ce010	var t0
+0x5c2dc96ce050	t0 = (i < j)
+0x5c2dc96ceaa0	ifz t0 goto L3
+0x5c2dc96ce690	var t2
+0x5c2dc96ce6d0	t2 = (i > 10)
+0x5c2dc96ce910	ifz t2 goto L5
+0x5c2dc96ce7b0	output L4
+0x5c2dc96ce7f0	goto L3
+0x5c2dc96ce8d0	label L5
+0x5c2dc96ce9a0	output i
+0x5c2dc96cea20	label L2
+0x5c2dc96ce250	var t1
+0x5c2dc96ce290	t1 = i + 1
+0x5c2dc96ce2d0	i = t1
+0x5c2dc96ceae0	goto L1
+0x5c2dc96cea60	label L3
+0x5c2dc96cebc0	output L6
+0x5c2dc96cec70	i = 0
+0x5c2dc96cf6a0	label L7
+0x5c2dc96cedd0	var t3
+0x5c2dc96cee10	t3 = (i < j)
+0x5c2dc96cf760	ifz t3 goto L9
+0x5c2dc96cf350	var t5
+0x5c2dc96cf390	t5 = (i == 10)
+0x5c2dc96cf5d0	ifz t5 goto L11
+0x5c2dc96cf470	output L10
+0x5c2dc96cf4b0	goto L8
+0x5c2dc96cf590	label L11
+0x5c2dc96cf660	output i
+0x5c2dc96cf6e0	label L8
+0x5c2dc96cef90	var t4
+0x5c2dc96cefd0	t4 = i + 1
+0x5c2dc96cf010	i = t4
+0x5c2dc96cf7a0	goto L7
+0x5c2dc96cf720	label L9
+0x5c2dc96cf800	output L6
+0x5c2dc96cf940	end
 
 [B0]
 label main

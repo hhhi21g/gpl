@@ -65,8 +65,8 @@ L1000:
 	# t1 = i + 1
 	LOD R4,STATIC
 	LOD R7,(R4+0)
-    LOD R10,1
-    ADD R7,R10
+    LOD R8,1
+    ADD R7,R8
 
 	# i = t1
     STO (R2+24),R7

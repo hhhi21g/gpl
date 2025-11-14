@@ -30,62 +30,64 @@ main:
 	# arr1[24] = i
 	LOD R6,24
     STO (R2+8),R5
-    LOD R10,R2+16
-	ADD R10,R6
-	STO (R10),R5
+    LOD R6,R2+16
+	ADD R6,R6
+	STO (R6),R5
 
 	# var t0
 
 	# t0 = arr1[24]
+	LOD R6,24
 	LOD R7,(R2+24856)
-    LOD R11,R2+16
-	ADD R11,R6
-	LOD R7,(R11)
+    LOD R6,R2+16
+	ADD R6,R6
+	LOD R7,(R6)
 
 	# var t1
 
 	# t1 = t0 + 6
     STO (R2+24856),R7
-    LOD R12,6
-    ADD R7,R12
+    LOD R6,6
+    ADD R7,R6
 
 	# arr2[504] = t1
-	LOD R8,504
+	LOD R6,504
     STO (R2+24860),R7
-    LOD R13,R2+56
-	ADD R13,R8
-	STO (R13),R7
+    LOD R6,R2+56
+	ADD R6,R6
+	STO (R6),R7
 
 	# var t2
 
 	# t2 = arr2[504]
-	LOD R9,(R2+24864)
-    LOD R14,R2+56
-	ADD R14,R8
-	LOD R9,(R14)
+	LOD R6,504
+	LOD R8,(R2+24864)
+    LOD R6,R2+56
+	ADD R6,R6
+	LOD R8,(R6)
 
 	# var t3
 
 	# t3 = t2 + 6
-    STO (R2+24864),R9
-    LOD R10,6
-    ADD R9,R10
+    STO (R2+24864),R8
+    LOD R6,6
+    ADD R8,R6
 
 	# arr3[15144] = t3
-	LOD R10,15144
-    STO (R2+24868),R9
-    LOD R11,R2+856
-	ADD R11,R10
-	STO (R11),R9
+	LOD R6,15144
+    STO (R2+24868),R8
+    LOD R6,R2+856
+	ADD R6,R6
+	STO (R6),R8
 
 	# ifz 0 goto L2
-	LOD R11,0
-	TST R11
+	LOD R6,0
+	TST R6
 	JEZ L2
 
 	# output L1
-	LOD R12,L1
-	LOD R15,R12
+	LOD R9,L1
+	LOD R15,R9
 	OTS
 
 	# label L2
@@ -96,9 +98,9 @@ L2:
 	# t4 = arr3[15144]
 	LOD R5,15144
 	LOD R6,(R2+24872)
-    LOD R12,R2+856
-	ADD R12,R5
-	LOD R6,(R12)
+    LOD R5,R2+856
+	ADD R5,R5
+	LOD R6,(R5)
 
 	# j = t4
     STO (R2+24872),R6
@@ -109,8 +111,8 @@ L2:
 	OTI
 
 	# output L1
-	LOD R7,L1
-	LOD R15,R7
+	LOD R5,L1
+	LOD R15,R5
 	OTS
 
 	# end

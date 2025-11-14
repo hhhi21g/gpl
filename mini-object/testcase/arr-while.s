@@ -52,21 +52,22 @@ L1:
 
 	# t1 = j * 4
 	LOD R7,(R2+12)
-    LOD R10,4
-    MUL R7,R10
+    LOD R8,4
+    MUL R7,R8
 
 	# arr1[t1] = i
     STO (R2+60),R7
 	LOD R8,(R2+8)
-    LOD R11,R2+16
-	ADD R11,R7
-	STO (R11),R8
+    LOD R8,R2+16
+	ADD R8,R7
+	STO (R8),R8
 
 	# var t2
 
 	# t2 = i + 1
-    LOD R12,1
-    ADD R8,R12
+	LOD R8,(R2+8)
+    LOD R9,1
+    ADD R8,R9
 
 	# i = t2
     STO (R2+64),R8
@@ -76,8 +77,8 @@ L1:
 
 	# t3 = j + 1
 	LOD R9,(R2+12)
-    LOD R13,1
-    ADD R9,R13
+    LOD R10,1
+    ADD R9,R10
 
 	# j = t3
     STO (R2+68),R9
@@ -131,8 +132,8 @@ L6:
 
 	# t5 = j - 1
 	LOD R7,(R2+12)
-    LOD R14,1
-    SUB R7,R14
+    LOD R8,1
+    SUB R7,R8
 
 	# j = t5
     STO (R2+76),R7
@@ -141,20 +142,20 @@ L6:
 	# var t6
 
 	# t6 = j * 4
-    LOD R10,4
-    MUL R7,R10
+    LOD R8,4
+    MUL R7,R8
 
 	# var t7
 
 	# t7 = arr1[t6]
     STO (R2+80),R7
 	LOD R8,(R2+84)
-    LOD R11,R2+16
-	ADD R11,R7
-	LOD R8,(R11)
+    LOD R8,R2+16
+	ADD R8,R7
+	LOD R8,(R8)
 
 	# i = t7
-    STO (R2+84),R8
+	LOD R8,(R2+84)
    STO (R2+8),R8
 
 	# output i

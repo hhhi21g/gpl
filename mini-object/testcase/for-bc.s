@@ -87,8 +87,8 @@ L2:
 
 	# t1 = i + 1
 	LOD R5,(R2+8)
-    LOD R10,1
-    ADD R5,R10
+    LOD R6,1
+    ADD R5,R6
 
 	# i = t1
     STO (R2+24),R5
@@ -173,8 +173,8 @@ L8:
 
 	# t4 = i + 1
 	LOD R5,(R2+8)
-    LOD R11,1
-    ADD R5,R11
+    LOD R6,1
+    ADD R5,R6
 
 	# i = t4
     STO (R2+36),R5
