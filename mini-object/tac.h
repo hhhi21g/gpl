@@ -231,5 +231,6 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs);
 EXP *do_lvalue_load(LVALUE_PATH *lv);
 
 STRUCT *find_struct(const char *name);
+EXP *do_lvalue_addr(LVALUE_PATH *lv);
 
 void error(const char *format, ...);

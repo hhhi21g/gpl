@@ -203,6 +203,8 @@ int size_of_member(int type, STRUCT *sub)
 		return 4;
 	case SYM_CHAR:
 		return 1;
+	case SYM_PTR:
+		return 4;
 	case SYM_STRUCT:
 		if (!sub)
 		{
@@ -488,8 +490,8 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 			// printf("%s\n", p->member);
 			STRUCT_MEMBER *m = find_member(cur_struct, p->member);
 
-			if (!m)
-				error("unknown struct member2\n");
+			// if (!m)
+			// 	error("unknown struct member2\n");
 
 			addr = make_struct_member_addr(addr, m, &code);
 
@@ -515,6 +517,14 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 				if (m->type == SYM_STRUCT)
 				{
 					cur_struct = m->sub; // 进入子 struct
+				}
+				else if (m->type == SYM_PTR)
+				{
+					cur_struct = NULL;
+					// 不能后续访问
+					pending_elem_size = 0;
+					pending_elem_is_struct = 0;
+					pending_elem_struct = NULL;
 				}
 				else
 				{
@@ -629,8 +639,8 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 			printf("%s\n", p->member);
 			STRUCT_MEMBER *m = find_member(cur_struct, p->member);
 
-			if (!m)
-				error("unknown struct member1\n");
+			// if (!m)
+			// 	error("unknown struct member1\n");
 
 			if (m->type == SYM_CHAR)
 				is_char = 1;
@@ -662,6 +672,14 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 				if (m->type == SYM_STRUCT)
 				{
 					cur_struct = m->sub; // 进入子 struct
+				}
+				else if (m->type == SYM_PTR)
+				{
+					cur_struct = NULL;
+					// 不能后续访问
+					pending_elem_size = 0;
+					pending_elem_is_struct = 0;
+					pending_elem_struct = NULL;
 				}
 				else
 				{
@@ -720,6 +738,149 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 	// printf("[LVALUE LOAD FINAL]: %s.%s offset chain done\n", root->name, lv->path->member);
 
 	return mk_exp(NULL, t, code);
+}
+
+// 获得逐步访问形式的最终地址
+EXP *do_lvalue_addr(LVALUE_PATH *lv)
+{
+	SYM *root = get_var(lv->root);
+
+	TAC *code = NULL;
+
+	// addr = &root
+	SYM *addr = mk_tmp();
+	addr->type = SYM_PTR;
+	TAC *decl_addr = mk_tac(TAC_VAR, addr, NULL, NULL);
+	TAC *get_addr = mk_tac(TAC_ADDR, addr, root, NULL);
+	get_addr->prev = decl_addr;
+
+	code = join_tac(code, decl_addr);
+	code = join_tac(code, get_addr);
+
+	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
+
+	// 如果是结构体变量
+	if (root->type == SYM_STRUCT)
+		cur_struct = (STRUCT *)root->etc;
+
+	// 如果是结构体数组
+	else if (root->type == SYM_ARRAY)
+	{
+		int elem = *((int *)root->etc);
+		if (elem == SYM_STRUCT)
+			cur_struct = (STRUCT *)root->etc2;
+		else
+			cur_struct = NULL; // 普通数组
+	}
+
+	// 普通数组 / int 变量 root 时不需要结构体处理
+	else
+		cur_struct = NULL;
+
+	// 记录信息：当前是结构体成员，下一步是数组情况使用
+	int pending_elem_size = 0;			// 数组元素大小
+	int pending_elem_is_struct = 0;		// 元素是不是struct
+	STRUCT *pending_elem_struct = NULL; // 记录元素对应的struct
+
+	PATH *p = lv->path;
+	// printf("come in load\n");
+	int is_char = 0;
+
+	while (p)
+	{
+		// printf("come in while\n");
+
+		if (p->kind == PATH_MEMBER)
+		{
+			printf("%s\n", cur_struct->name);
+			printf("%s\n", p->member);
+			STRUCT_MEMBER *m = find_member(cur_struct, p->member);
+
+			// if (!m)
+			// 	error("unknown struct member1\n");
+
+			if (m->type == SYM_CHAR)
+				is_char = 1;
+			else
+				is_char = 0;
+
+			addr = make_struct_member_addr(addr, m, &code);
+
+			pending_elem_size = 0;
+			pending_elem_is_struct = 0;
+			pending_elem_struct = NULL;
+
+			if (m->array_len > 0) // 需要更新pending信息，供下一步PATH_INDEX使用
+			{
+				// 数组成员
+				pending_elem_size = m->elem_size;
+				if (m->type == SYM_STRUCT)
+				{
+					pending_elem_is_struct = 1;
+					pending_elem_struct = m->sub;
+				}
+				// printf("[LV] ARRAY member=%s, type=%d, elem_size=%d\n", m->name, m->type, m->elem_size);
+
+				cur_struct = NULL;
+			}
+			else
+			{
+				// 普通成员：int/char 或 struct
+				if (m->type == SYM_STRUCT)
+				{
+					cur_struct = m->sub; // 进入子 struct
+				}
+				else if (m->type == SYM_PTR)
+				{
+					cur_struct = NULL;
+					// 不能后续访问
+					pending_elem_size = 0;
+					pending_elem_is_struct = 0;
+					pending_elem_struct = NULL;
+				}
+				else
+				{
+					cur_struct = NULL;
+				}
+			}
+		}
+		else if (p->kind == PATH_INDEX)
+		{
+
+			int elem_size = pending_elem_size;
+
+			if (elem_size == 0)
+			{
+				if (!cur_struct)
+				{
+					error("index on non-array\n");
+				}
+				elem_size = cur_struct->size;
+
+				pending_elem_is_struct = 1;
+				pending_elem_struct = cur_struct;
+			}
+
+			// printf("come in index1\n");
+			addr = make_array_elem_addr(addr, p->index, pending_elem_size, &code);
+			if (pending_elem_is_struct)
+			{
+				cur_struct = pending_elem_struct;
+			}
+			else
+			{
+				cur_struct = NULL;
+			}
+
+			pending_elem_size = 0;
+			pending_elem_is_struct = 0;
+			pending_elem_struct = NULL;
+		}
+
+		p = p->next;
+	}
+
+	return mk_exp(NULL, addr, code);
 }
 
 static SYM *eval_bin(int op, SYM *b, SYM *c)
@@ -1994,6 +2155,7 @@ char *to_str(SYM *s, char *str)
 	case SYM_VAR:
 	case SYM_ARRAY:
 	case SYM_STRUCT:
+	case SYM_PTR:
 		/* Just return the name */
 		return s->name;
 

@@ -158,6 +158,14 @@ struct_member_line:INT IDENTIFIER ';'
 	add_struct_member(NULL, SYM_CHAR, $2); 
 	$$ = NULL; 
 }
+| INT '*' IDENTIFIER ';'
+{
+	add_struct_member(NULL,SYM_PTR,$3);
+}
+| CHAR '*' IDENTIFIER ';'
+{
+	add_struct_member(NULL,SYM_PTR,$3);
+}
 | INT IDENTIFIER LBRACK INTEGER RBRACK ';'
 {
 	add_struct_member_array(NULL,SYM_INT,$2,atoi($4));
@@ -405,7 +413,7 @@ assignment_statement : IDENTIFIER '=' expression
 
 expression : IDENTIFIER
 {
-	// printf("identifier\n");
+	printf("identifier %s\n",$1);
 	$$ = mk_exp(NULL, get_var($1), NULL);
 }
 | expression '+' expression
@@ -475,6 +483,18 @@ expression : IDENTIFIER
 | call_expression
 {
 	$$=$1;
+}
+| '&' IDENTIFIER
+{
+	SYM*tmp = mk_tmp();
+	TAC*decl = mk_tac(TAC_VAR,tmp,NULL,NULL);
+	TAC*addr = mk_tac(TAC_ADDR,tmp,get_var($2),NULL);
+	addr->prev = decl;
+	$$ = mk_exp(NULL,tmp,addr);
+} 
+|'&' lvalue_path
+{
+	$$ = do_lvalue_addr($2);
 }
 // | IDENTIFIER '.' IDENTIFIER  // 结构体读值a.b
 // {
