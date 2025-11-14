@@ -457,7 +457,8 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 	code = join_tac(code, decl_addr);
 	code = join_tac(code, get_addr);
 
-	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
+	// STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
+	STRUCT *cur_struct = NULL;
 
 	// 如果是结构体变量
 	if (root->type == SYM_STRUCT)
@@ -600,7 +601,8 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 	code = join_tac(code, decl_addr);
 	code = join_tac(code, get_addr);
 
-	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
+	// STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
+	STRUCT *cur_struct = NULL;
 
 	// 如果是结构体变量
 	if (root->type == SYM_STRUCT)

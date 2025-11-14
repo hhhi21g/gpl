@@ -42,7 +42,7 @@ PATH *append_path_list(PATH *head, PATH *tail);
 %type <tac> variable_list_char decl_item_char decl_item_int struct_definition struct_member_list struct_member_line struct_var_list
 %type <exp> argument_list expression_list expression call_expression  opt_expression dims_decl dims_idx
 %type <sym> function_head
-%type <lvalue_path> lvalue_path lvalue_tail
+%type <lvalue_path> lvalue_path lvalue_tail lvalue_tail_opt
 
 %%
 
@@ -338,16 +338,31 @@ statement_list : statement
 }               
 ;
 
-lvalue_path:IDENTIFIER lvalue_tail
+lvalue_path:IDENTIFIER '.' IDENTIFIER lvalue_tail_opt
 {
-    $$ = mk_lvalue_path($1, $2);
-}
-| IDENTIFIER dims_idx lvalue_tail
-{
-    PATH *p = append_path_index(NULL, $2);
-	p = append_path_list(p,$3);
+
+    PATH *p = append_path_member(NULL, $3);
+	p = append_path_list(p,$4);
 
 	$$ = mk_lvalue_path($1,p);
+}
+| IDENTIFIER dims_idx '.' IDENTIFIER lvalue_tail_opt
+{
+    PATH *p = append_path_index(NULL, $2);
+	p = append_path_index(p,append_path_member(NULL,$4));
+	p = append_path_list(p,$5);
+
+	$$ = mk_lvalue_path($1,p);
+}
+;
+
+lvalue_tail_opt:
+{
+	$$ = NULL;
+}
+| lvalue_tail
+{
+	$$ = $1;
 }
 ;
 
