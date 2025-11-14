@@ -338,33 +338,43 @@ statement_list : statement
 }               
 ;
 
-lvalue_path:IDENTIFIER '.' IDENTIFIER lvalue_tail_opt
+// lvalue_path:IDENTIFIER lvalue_tail
+// {
+//     $$ = mk_lvalue_path($1, $2);
+// }
+// | IDENTIFIER dims_idx lvalue_tail
+// {
+//     PATH *p = append_path_index(NULL, $2);
+// 	p = append_path_list(p,$3);
+
+// 	$$ = mk_lvalue_path($1,p);
+// }
+// ;
+
+lvalue_path:
+      IDENTIFIER '.' IDENTIFIER lvalue_tail_opt
 {
-
+    /* base = IDENTIFIER, first member = IDENTIFIER */
     PATH *p = append_path_member(NULL, $3);
-	p = append_path_list(p,$4);
-
-	$$ = mk_lvalue_path($1,p);
+    p = append_path_list(p, $4);
+    $$ = mk_lvalue_path($1, p);
 }
 | IDENTIFIER dims_idx '.' IDENTIFIER lvalue_tail_opt
 {
-    PATH *p = append_path_index(NULL, $2);
-	p = append_path_index(p,append_path_member(NULL,$4));
-	p = append_path_list(p,$5);
+    /* base = IDENTIFIER[i][j]..., then .member */
+    PATH *p = append_path_index(NULL, $2); /* build index chain */
+    p = append_path_list(p, append_path_member(NULL, $4));
+    p = append_path_list(p, $5);
 
-	$$ = mk_lvalue_path($1,p);
+    $$ = mk_lvalue_path($1, p);
 }
 ;
 
 lvalue_tail_opt:
-{
-	$$ = NULL;
-}
-| lvalue_tail
-{
-	$$ = $1;
-}
+    { $$ = NULL; }
+    | lvalue_tail     { $$ = $1;   }
 ;
+
 
 lvalue_tail:'.' IDENTIFIER
 {

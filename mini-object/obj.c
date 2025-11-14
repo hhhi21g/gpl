@@ -498,7 +498,7 @@ static void asm_load_addr(int r, SYM *s) // offset+BP
 	switch (s->type)
 	{
 	case SYM_VAR:
-		// case SYM_ARRAY:
+	case SYM_ARRAY:
 		if (s->scope == 1)
 		{
 			// out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_BP, s->offset);
@@ -511,20 +511,6 @@ static void asm_load_addr(int r, SYM *s) // offset+BP
 		{
 			out_str(file_s, "	LOD R%u,STATIC\n", R_TP);
 			out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_TP, s->offset);
-		}
-		break;
-	case SYM_ARRAY:
-		if (s->scope == 1)
-		{
-			if (s->offset >= 0)
-				out_str(file_s, "    LOD R%d,R%u+%d\n", r, R_BP, s->offset);
-			else
-				out_str(file_s, "    LOD R%d,R%u-%d\n", r, R_BP, -s->offset);
-		}
-		else
-		{
-			out_str(file_s, "    LOD R%u,STATIC\n", R_TP);
-			out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_TP, s->offset);
 		}
 		break;
 	default:

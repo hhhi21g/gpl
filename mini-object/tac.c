@@ -457,8 +457,7 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 	code = join_tac(code, decl_addr);
 	code = join_tac(code, get_addr);
 
-	// STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
-	STRUCT *cur_struct = NULL;
+	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
 
 	// 如果是结构体变量
 	if (root->type == SYM_STRUCT)
@@ -602,7 +601,25 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 	code = join_tac(code, get_addr);
 
 	// STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
-	STRUCT *cur_struct = NULL;
+
+	STRUCT *cur_struct = NULL; // 初始为空
+
+	// 结构体变量
+	if (root->type == SYM_STRUCT)
+		cur_struct = (STRUCT *)root->etc;
+
+	else if (root->type == SYM_ARRAY)
+	{
+		int elem = *((int *)root->etc);
+		if (elem == SYM_STRUCT)
+			cur_struct = (STRUCT *)root->etc2;
+		else
+			cur_struct = NULL; // 普通数组
+	}
+
+	// 普通数组 / int 不需要结构体处理
+	else
+		cur_struct = NULL;
 
 	// 如果是结构体变量
 	if (root->type == SYM_STRUCT)
@@ -759,7 +776,24 @@ EXP *do_lvalue_addr(LVALUE_PATH *lv)
 	code = join_tac(code, decl_addr);
 	code = join_tac(code, get_addr);
 
-	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
+	// STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
+
+	STRUCT *cur_struct = NULL; // 初始为空
+
+	if (root->type == SYM_STRUCT)
+		cur_struct = (STRUCT *)root->etc;
+
+	else if (root->type == SYM_ARRAY)
+	{
+		int elem = *((int *)root->etc);
+		if (elem == SYM_STRUCT)
+			cur_struct = (STRUCT *)root->etc2;
+		else
+			cur_struct = NULL;
+	}
+
+	else
+		cur_struct = NULL;
 
 	// 如果是结构体变量
 	if (root->type == SYM_STRUCT)
