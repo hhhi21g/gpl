@@ -217,14 +217,28 @@ int size_of_member(int type, STRUCT *sub)
 }
 
 // 根据变量查找结构体
-static STRUCT *get_struct_var(SYM *var)
+STRUCT *get_struct_var(SYM *var)
 {
-	// printf("var: %s\n", var->name);
-	if (!var || var->type != SYM_STRUCT)
+	if (!var)
+		error("null struct var");
+
+	if (var->type == SYM_STRUCT)
 	{
-		error("not a struct");
+		return (STRUCT *)var->etc; // 普通结构体变量
 	}
-	return (STRUCT *)var->etc;
+
+	// 结构体数组：SYM_ARRAY 且 etc=SYM_STRUCT
+	if (var->type == SYM_ARRAY)
+	{
+		int elem_type = *((int *)var->etc);
+		if (elem_type == SYM_STRUCT)
+		{
+			return (STRUCT *)var->etc2;
+		}
+	}
+
+	error("not a struct");
+	return NULL;
 }
 
 // 得到成员偏移量
@@ -443,6 +457,22 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 
 	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
 
+	// 如果是结构体变量
+	if (root->type == SYM_STRUCT)
+		cur_struct = (STRUCT *)root->etc;
+
+	// 如果是结构体数组
+	else if (root->type == SYM_ARRAY)
+	{
+		int elem = *((int *)root->etc);
+		if (elem == SYM_STRUCT)
+			cur_struct = (STRUCT *)root->etc2;
+		else
+			cur_struct = NULL; // 普通数组
+	}
+	else
+		cur_struct = NULL;
+
 	// 记录信息：当前是结构体成员，下一步是数组情况使用
 	int pending_elem_size = 0;			// 数组元素大小
 	int pending_elem_is_struct = 0;		// 元素是不是struct
@@ -561,6 +591,24 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 	code = join_tac(code, get_addr);
 
 	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
+
+	// 如果是结构体变量
+	if (root->type == SYM_STRUCT)
+		cur_struct = (STRUCT *)root->etc;
+
+	// 如果是结构体数组
+	else if (root->type == SYM_ARRAY)
+	{
+		int elem = *((int *)root->etc);
+		if (elem == SYM_STRUCT)
+			cur_struct = (STRUCT *)root->etc2;
+		else
+			cur_struct = NULL; // 普通数组
+	}
+
+	// 普通数组 / int 变量 root 时不需要结构体处理
+	else
+		cur_struct = NULL;
 
 	// 记录信息：当前是结构体成员，下一步是数组情况使用
 	int pending_elem_size = 0;			// 数组元素大小

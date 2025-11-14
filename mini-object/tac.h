@@ -68,6 +68,7 @@ typedef struct sym
 	int ndim;  // 数组维度数
 	int *dims; // 每个维度的长度
 	void *etc;
+	void *etc2; // 指向结构体数组对应的结构体
 } SYM;
 
 typedef struct tac
@@ -207,7 +208,7 @@ TAC *declare_struct(const char *var_name, const char *struct_name);
 void add_struct_member(STRUCT *unused, int member_type, const char *mname);
 void end_struct(STRUCT *def);
 
-static STRUCT *get_struct_var(SYM *var);
+STRUCT *get_struct_var(SYM *var);
 int get_struct_offset(SYM *struct_var, const char *name);
 TAC *make_struct_store_tac(SYM *base, int offset, EXP *exp);
 EXP *make_struct_load_exp(SYM *base, int offset);

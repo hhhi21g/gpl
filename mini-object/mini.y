@@ -26,7 +26,8 @@ PATH *append_path_list(PATH *head, PATH *tail);
 	SYM *sym;
 	TAC *tac;
 	EXP	*exp;
-	PATH *path;
+	// PATH *path;
+	LVALUE_PATH *lvalue_path;
 }
 
 %token INT EQ NE LT LE GT GE UMINUS STRUCT_TOK PTR_OP IF ELSE SWITCH CASE DEFAULT WHILE FOR BREAK CONTINUE FUNC INPUT OUTPUT RETURN
@@ -41,7 +42,7 @@ PATH *append_path_list(PATH *head, PATH *tail);
 %type <tac> variable_list_char decl_item_char decl_item_int struct_definition struct_member_list struct_member_line struct_var_list
 %type <exp> argument_list expression_list expression call_expression  opt_expression dims_decl dims_idx
 %type <sym> function_head
-%type <path> lvalue_path lvalue_tail
+%type <lvalue_path> lvalue_path lvalue_tail
 
 %%
 
@@ -112,7 +113,7 @@ struct_var_list: IDENTIFIER
 {
 	$$ = declare_array_typed($1,SYM_STRUCT,$2);
 	SYM*sym = get_var($1);
-	sym->etc = find_struct(g_cur_struct);
+	sym->etc2 = find_struct(g_cur_struct);
 }
 | struct_var_list ',' IDENTIFIER
 { 
@@ -121,7 +122,7 @@ struct_var_list: IDENTIFIER
 | struct_var_list ',' IDENTIFIER dims_decl{
 	$$ = declare_array_typed($3,SYM_STRUCT,$4);
 	SYM*sym = get_var($3);
-	sym->etc = find_struct(g_cur_struct);
+	sym->etc2 = find_struct(g_cur_struct);
 }
 ;
 
@@ -336,8 +337,9 @@ lvalue_path:IDENTIFIER lvalue_tail
 | IDENTIFIER dims_idx lvalue_tail
 {
     PATH *p = append_path_index(NULL, $2);
-    $$ = mk_lvalue_path($1, p);
-    $$ = append_path_list($$, $3);  
+	p = append_path_list(p,$3);
+
+	$$ = mk_lvalue_path($1,p);
 }
 ;
 

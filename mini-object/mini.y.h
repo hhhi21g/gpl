@@ -134,9 +134,10 @@ union YYSTYPE
 	SYM *sym;
 	TAC *tac;
 	EXP	*exp;
-	PATH *path;
+	// PATH *path;
+	LVALUE_PATH *lvalue_path;
 
-#line 140 "mini.y.h"
+#line 141 "mini.y.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
