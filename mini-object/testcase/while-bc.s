@@ -15,6 +15,7 @@ main:
 
 	# i = 0
 	LOD R5,0
+   STO (R2+8),R5
 
 	# input j
 	LOD R6,(R2+12)
@@ -22,8 +23,7 @@ main:
 	LOD R6,R15
 
 	# label L1
-	STO (R2+8),R5
-	STO (R2+12),R6
+    STO (R2+12),R6
 L1:
 
 	# var t0
@@ -41,30 +41,30 @@ L1:
 	LOD R5,1
 
 	# ifz t0 goto L3
-	STO (R2+16),R5
+    STO (R2+16),R5
 	TST R5
 	JEZ L3
 
 	# output i
 	LOD R7,(R2+8)
-	LOD R15,(R2+8)
+    LOD R15,(R2+8)
 	OTI
 
 	# var t1
 
 	# t1 = i + 1
-	LOD R8,1
-	ADD R7,R8
+    LOD R8,1
+    ADD R7,R8
 
 	# i = t1
-	STO (R2+20),R7
+    STO (R2+20),R7
+   STO (R2+8),R7
 
 	# var t2
 
 	# t2 = (i > 10)
-	STO (R2+8),R7
-	LOD R9,10
-	SUB R7,R9
+	LOD R8,10
+	SUB R7,R8
 	TST R7
 	LOD R3,R1+40
 	JGZ R3
@@ -74,13 +74,13 @@ L1:
 	LOD R7,1
 
 	# ifz t2 goto L5
-	STO (R2+24),R7
+    STO (R2+24),R7
 	TST R7
 	JEZ L5
 
 	# output L4
-	LOD R10,L4
-	LOD R15,R10
+	LOD R9,L4
+	LOD R15,R9
 	OTS
 
 	# goto L3
@@ -121,30 +121,30 @@ L7:
 	LOD R5,1
 
 	# ifz t3 goto L9
-	STO (R2+28),R5
+    STO (R2+28),R5
 	TST R5
 	JEZ L9
 
 	# output i
 	LOD R7,(R2+8)
-	LOD R15,(R2+8)
+    LOD R15,(R2+8)
 	OTI
 
 	# var t4
 
 	# t4 = i + 1
-	LOD R8,1
-	ADD R7,R8
+    LOD R8,1
+    ADD R7,R8
 
 	# i = t4
-	STO (R2+32),R7
+    STO (R2+32),R7
+   STO (R2+8),R7
 
 	# var t5
 
 	# t5 = (i == 10)
-	STO (R2+8),R7
-	LOD R9,10
-	SUB R7,R9
+	LOD R8,10
+	SUB R7,R8
 	TST R7
 	LOD R3,R1+40
 	JEZ R3
@@ -154,13 +154,13 @@ L7:
 	LOD R7,1
 
 	# ifz t5 goto L11
-	STO (R2+36),R7
+    STO (R2+36),R7
 	TST R7
 	JEZ L11
 
 	# output L10
-	LOD R10,L10
-	LOD R15,R10
+	LOD R9,L10
+	LOD R15,R9
 	OTS
 
 	# goto L8

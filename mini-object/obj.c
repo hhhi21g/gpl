@@ -674,17 +674,24 @@ void asm_code(TAC *c)
 		int offset_load = reg_alloc(c->c);
 		int ra = reg_alloc(c->a);
 
-		while (base_load == offset_load)
+		if (base_load == offset_load)
 		{
 			int new_off = reg_alloc_temp();
-			out_str(" LOD R%u, R%u\n", new_off, offset_load);
+			out_str(file_s, "	LOD R%u, R%u\n", new_off, offset_load);
 			offset_load = new_off;
 		}
 
-		while (base_load == ra)
+		if (base_load == ra)
 		{
 			int new_val = reg_alloc_temp();
-			out_str(" LOD R%u, R%u\n", new_val, ra);
+			out_str(file_s, "	LOD R%u, R%u\n", new_val, ra);
+			ra = new_val;
+		}
+
+		if (offset_load == ra)
+		{
+			int new_val = reg_alloc_temp();
+			out_str(file_s, "	LOD R%u,R%u\n", new_val, ra);
 			ra = new_val;
 		}
 		asm_load_addr(base_load, c->b);
@@ -701,17 +708,24 @@ void asm_code(TAC *c)
 		int offset_store = reg_alloc(c->b);
 		int rval = reg_alloc(c->c);
 
-		while (base_store == offset_store)
+		if (base_store == offset_store)
 		{
 			int new_off = reg_alloc_temp();
-			out_str(" LOD R%u, R%u\n", new_off, offset_store);
+			out_str(file_s, "	LOD R%u, R%u\n", new_off, offset_store);
 			offset_store = new_off;
 		}
 
-		while (base_store == rval)
+		if (base_store == rval)
 		{
 			int new_val = reg_alloc_temp();
-			out_str(" LOD R%u, R%u\n", new_val, rval);
+			out_str(file_s, "	LOD R%u, R%u\n", new_val, rval);
+			rval = new_val;
+		}
+
+		if (offset_store == rval)
+		{
+			int new_val = reg_alloc_temp();
+			out_str(file_s, "	LOD R%u,R%u\n", new_val, rval);
 			rval = new_val;
 		}
 

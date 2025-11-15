@@ -16,17 +16,15 @@ main:
 	# vararray arr1[1D]
 	# declare array arr1 [10] elem=int(4B) size=40 bytes
 
-	# input i
-	LOD R5,(R2+8)
-	ITI
-	LOD R5,R15
+	# i = 42
+	LOD R5,42
+   STO (R2+8),R5
 
 	# j = 0
 	LOD R6,0
    STO (R2+12),R6
 
 	# label L1
-    STO (R2+8),R5
 L1:
 
 	# var t0
@@ -58,7 +56,6 @@ L1:
 	# arr1[t1] = i
     STO (R2+60),R7
 	LOD R8,(R2+8)
-	LOD R9, R8
     LOD R8,R2+16
 	ADD R8,R7
 	STO (R8),R9
@@ -94,21 +91,8 @@ L2:
 	# label L3
 L3:
 
-	# ifz 0 goto L5
-	LOD R5,0
-	TST R5
-	JEZ L5
-
-	# output L4
-	LOD R6,L4
-	LOD R15,R6
-	OTS
-
-	# label L5
-L5:
-
-	# label L6
-L6:
+	# label L4
+L4:
 
 	# var t4
 
@@ -124,10 +108,10 @@ L6:
 	JMP R3
 	LOD R5,1
 
-	# ifz t4 goto L8
+	# ifz t4 goto L6
     STO (R2+72),R5
 	TST R5
-	JEZ L8
+	JEZ L6
 
 	# var t5
 
@@ -151,7 +135,6 @@ L6:
 	# t7 = arr1[t6]
     STO (R2+80),R7
 	LOD R8,(R2+84)
-	LOD R9, R8
     LOD R8,R2+16
 	ADD R8,R7
 	LOD R9,(R8)
@@ -164,17 +147,17 @@ L6:
     LOD R15,(R2+8)
 	OTI
 
-	# label L7
-L7:
+	# label L5
+L5:
 
-	# goto L6
-	JMP L6
+	# goto L4
+	JMP L4
 
-	# label L8
-L8:
+	# label L6
+L6:
 
-	# output L4
-	LOD R5,L4
+	# output L7
+	LOD R5,L7
 	LOD R15,R5
 	OTS
 
@@ -186,7 +169,7 @@ L8:
 	# tail
 EXIT:
 	END
-L4:
+L7:
 	DBS 10,0
 STATIC:
 	DBN 0,0
