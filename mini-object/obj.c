@@ -12,6 +12,7 @@ int tof; /* top of frame */
 int oof; /* offset of formal */
 int oon; /* offset of next frame */
 struct rdesc rdesc[R_NUM];
+// int tmpoff;
 
 void rdesc_clear(int r)
 {
@@ -139,46 +140,6 @@ int reg_alloc(SYM *s)
 	rdesc_fill(random, s, UNMODIFIED);
 	return random;
 }
-
-// int reg_alloc_temp()
-// {
-// 	int r;
-
-// 	for (r = R_GEN; r < R_NUM; r++)
-// 	{
-// 		if (rdesc[r].var == NULL)
-// 		{
-// 			rdesc[r].var = (SYM *)-1;
-// 			rdesc[r].mod = 0;
-// 			return r;
-// 		}
-// 	}
-
-// 	for (r = R_GEN; r < R_NUM; r++)
-// 	{
-// 		if (!rdesc[r].mod)
-// 		{
-// 			rdesc[r].var = (SYM *)-1;
-// 			rdesc[r].mod = 0;
-// 			return r;
-// 		}
-// 	}
-
-// 	static int seeded = 0;
-// 	if (!seeded)
-// 	{
-// 		srand((unsigned)time(NULL));
-// 		seeded = 1;
-// 	}
-// 	int random = (rand() % (R_NUM - R_GEN)) + R_GEN;
-
-// 	asm_write_back(random);
-// 	rdesc[random].var = (SYM *)-1;
-// 	rdesc[random].mod = 0;
-
-// 	// out_str(file_s, "	# [DEBUG] reg_alloc_temp chose R%u randomly\n", random);
-// 	return random;
-// }
 
 int reg_alloc_temp()
 {
@@ -493,7 +454,32 @@ void asm_static(void)
 	out_str(file_s, "STACK:\n");
 }
 
-static void asm_load_addr(int r, SYM *s) // offset+BP
+// static void asm_load_addr(int r, SYM *s) // offset+BP
+// {
+// 	switch (s->type)
+// 	{
+// 	case SYM_VAR:
+// 	case SYM_ARRAY:
+// 		if (s->scope == 1)
+// 		{
+// 			// out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_BP, s->offset);
+// 			if (s->offset >= 0)
+// 				out_str(file_s, "    LOD R15,(R%u+%d)\n", R_BP, s->offset);
+// 			else
+// 				out_str(file_s, "    LOD R15,(R%u-%d)\n", R_BP, -s->offset);
+// 		}
+// 		else
+// 		{
+// 			out_str(file_s, "	LOD R%u,STATIC\n", R_TP);
+// 			out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_TP, s->offset);
+// 		}
+// 		break;
+// 	default:
+// 		break;
+// 	}
+// }
+
+static void asm_load_addr(int r, SYM *s) // 把 &s 放到寄存器 r
 {
 	switch (s->type)
 	{
@@ -501,22 +487,25 @@ static void asm_load_addr(int r, SYM *s) // offset+BP
 	case SYM_ARRAY:
 		if (s->scope == 1)
 		{
-			// out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_BP, s->offset);
+			// 局部变量：地址 = R_BP + offset
 			if (s->offset >= 0)
-				out_str(file_s, "    LOD R15,(R%u+%d)\n", R_BP, s->offset);
+				out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, s->offset);
 			else
-				out_str(file_s, "    LOD R15,(R%u-%d)\n", R_BP, -s->offset);
+				out_str(file_s, "    LOD R%u,R%u-%d\n", r, R_BP, -s->offset);
 		}
 		else
 		{
-			out_str(file_s, "	LOD R%u,STATIC\n", R_TP);
-			out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_TP, s->offset);
+			// 全局变量：地址 = STATIC + offset
+			out_str(file_s, "    LOD R4,STATIC\n");
+			out_str(file_s, "    LOD R%u,R4+%d\n", r, s->offset);
 		}
 		break;
+
 	default:
 		break;
 	}
 }
+
 void asm_code(TAC *c)
 {
 	int r;
@@ -685,6 +674,19 @@ void asm_code(TAC *c)
 		int offset_load = reg_alloc(c->c);
 		int ra = reg_alloc(c->a);
 
+		while (base_load == offset_load)
+		{
+			int new_off = reg_alloc_temp();
+			out_str(" LOD R%u, R%u\n", new_off, offset_load);
+			offset_load = new_off;
+		}
+
+		while (base_load == ra)
+		{
+			int new_val = reg_alloc_temp();
+			out_str(" LOD R%u, R%u\n", new_val, ra);
+			ra = new_val;
+		}
 		asm_load_addr(base_load, c->b);
 
 		out_str(file_s, "	ADD R%u,R%u\n", base_load, offset_load);
@@ -698,6 +700,20 @@ void asm_code(TAC *c)
 		int base_store = reg_alloc_temp();
 		int offset_store = reg_alloc(c->b);
 		int rval = reg_alloc(c->c);
+
+		while (base_store == offset_store)
+		{
+			int new_off = reg_alloc_temp();
+			out_str(" LOD R%u, R%u\n", new_off, offset_store);
+			offset_store = new_off;
+		}
+
+		while (base_store == rval)
+		{
+			int new_val = reg_alloc_temp();
+			out_str(" LOD R%u, R%u\n", new_val, rval);
+			rval = new_val;
+		}
 
 		asm_load_addr(base_store, c->a);
 
@@ -811,6 +827,7 @@ void asm_code(TAC *c)
 		tof = LOCAL_OFF;
 		oof = FORMAL_OFF;
 		oon = 0;
+		// tmpoff = -4;
 		return;
 
 	case TAC_FORMAL:
@@ -820,6 +837,13 @@ void asm_code(TAC *c)
 		return;
 
 	case TAC_VAR:
+		// if (c->a->name[0] == 't')
+		// {
+		// 	c->a->scope = 1;
+		// 	c->a->offset = tmpoff;
+		// 	tmpoff -= 4;
+		// 	return;
+		// }
 		if (scope)
 		{
 			c->a->scope = 1; /* local var */

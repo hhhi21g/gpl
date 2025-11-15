@@ -30,7 +30,7 @@ main:
 	# arr1[24] = i
 	LOD R6,24
     STO (R2+8),R5
-    LOD R15,(R2+16)
+    LOD R6,R2+16
 	ADD R6,R6
 	STO (R6),R5
 
@@ -39,7 +39,7 @@ main:
 	# t0 = arr1[24]
 	LOD R6,24
 	LOD R7,(R2+24856)
-    LOD R15,(R2+16)
+    LOD R6,R2+16
 	ADD R6,R6
 	LOD R7,(R6)
 
@@ -53,7 +53,7 @@ main:
 	# arr2[504] = t1
 	LOD R6,504
     STO (R2+24860),R7
-    LOD R15,(R2+56)
+    LOD R6,R2+56
 	ADD R6,R6
 	STO (R6),R7
 
@@ -62,7 +62,7 @@ main:
 	# t2 = arr2[504]
 	LOD R6,504
 	LOD R8,(R2+24864)
-    LOD R15,(R2+56)
+    LOD R6,R2+56
 	ADD R6,R6
 	LOD R8,(R6)
 
@@ -76,7 +76,7 @@ main:
 	# arr3[15144] = t3
 	LOD R6,15144
     STO (R2+24868),R8
-    LOD R15,(R2+856)
+    LOD R6,R2+856
 	ADD R6,R6
 	STO (R6),R8
 
@@ -98,7 +98,7 @@ L2:
 	# t4 = arr3[15144]
 	LOD R5,15144
 	LOD R6,(R2+24872)
-    LOD R15,(R2+856)
+    LOD R5,R2+856
 	ADD R5,R5
 	LOD R6,(R5)
 

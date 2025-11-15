@@ -1,34 +1,34 @@
 
 # tac list
 
-0x60c87c990b60	label main
-0x60c87c990ba0	begin
-0x60c87c98e830	var i
-0x60c87c98e910	var j
-0x60c87c98eb60	vararray arr1[1D]
-0x60c87c98ee00	vararray arr2[2D]
-0x60c87c98f0f0	vararray arr3[3D]
-0x60c87c98f150	input i
-0x60c87c98f7c0	arr1[24] = i
-0x60c87c98fa70	var t0
-0x60c87c98fab0	t0 = arr1[24]
-0x60c87c98fbf0	var t1
-0x60c87c98fc30	t1 = t0 + 6
-0x60c87c98fd20	arr2[504] = t1
-0x60c87c9900d0	var t2
-0x60c87c990110	t2 = arr2[504]
-0x60c87c990250	var t3
-0x60c87c990290	t3 = t2 + 6
-0x60c87c990380	arr3[15144] = t3
-0x60c87c990670	ifz 0 goto L2
-0x60c87c990530	output L1
-0x60c87c990630	label L2
-0x60c87c990900	var t4
-0x60c87c990940	t4 = arr3[15144]
-0x60c87c9909b0	j = t4
-0x60c87c990a40	output j
-0x60c87c990aa0	output L1
-0x60c87c990be0	end
+0x6399e0380b60	label main
+0x6399e0380ba0	begin
+0x6399e037e830	var i
+0x6399e037e910	var j
+0x6399e037eb60	vararray arr1[1D]
+0x6399e037ee00	vararray arr2[2D]
+0x6399e037f0f0	vararray arr3[3D]
+0x6399e037f150	input i
+0x6399e037f7c0	arr1[24] = i
+0x6399e037fa70	var t0
+0x6399e037fab0	t0 = arr1[24]
+0x6399e037fbf0	var t1
+0x6399e037fc30	t1 = t0 + 6
+0x6399e037fd20	arr2[504] = t1
+0x6399e03800d0	var t2
+0x6399e0380110	t2 = arr2[504]
+0x6399e0380250	var t3
+0x6399e0380290	t3 = t2 + 6
+0x6399e0380380	arr3[15144] = t3
+0x6399e0380670	ifz 0 goto L2
+0x6399e0380530	output L1
+0x6399e0380630	label L2
+0x6399e0380900	var t4
+0x6399e0380940	t4 = arr3[15144]
+0x6399e03809b0	j = t4
+0x6399e0380a40	output j
+0x6399e0380aa0	output L1
+0x6399e0380be0	end
 
 [B0]
 label main

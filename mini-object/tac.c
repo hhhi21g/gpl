@@ -429,6 +429,31 @@ SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
 
 	return addr;
 }
+// SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
+// {
+// 	int base_off = base->offset; // ★关键修复点：取真正偏移
+
+// 	// 1. 把数组基址 = R2 + base_offset
+// 	SYM *base_addr = mk_tmp();
+// 	*code = join_tac(*code, mk_tac(TAC_VAR, base_addr, NULL, NULL));
+// 	*code = join_tac(*code, mk_tac(TAC_ADD, base_addr,
+// 								   R2, mk_const(base_off)));
+// 	// 假设 REG_SP = R2
+
+// 	// 2. 处理 index * elem_size
+// 	*code = join_tac(*code, idx->tac);
+// 	SYM *mul = mk_tmp();
+// 	*code = join_tac(*code, mk_tac(TAC_VAR, mul, NULL, NULL));
+// 	*code = join_tac(*code,
+// 					 mk_tac(TAC_MUL, mul, idx->ret, mk_const(elem_size)));
+
+// 	// 3. 最终地址 = base_addr + mul
+// 	SYM *addr = mk_tmp();
+// 	*code = join_tac(*code, mk_tac(TAC_VAR, addr, NULL, NULL));
+// 	*code = join_tac(*code, mk_tac(TAC_ADD, addr, base_addr, mul));
+
+// 	return addr;
+// }
 
 STRUCT_MEMBER *find_member(STRUCT *def, const char *name)
 {
@@ -457,21 +482,22 @@ TAC *do_lvalue_store(LVALUE_PATH *lv, EXP *rhs)
 	code = join_tac(code, decl_addr);
 	code = join_tac(code, get_addr);
 
-	STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
+	// STRUCT *cur_struct = get_struct_var(root); // 获得当前结构体
 
-	// 如果是结构体变量
+	STRUCT *cur_struct = NULL; // 初始为空
+
 	if (root->type == SYM_STRUCT)
 		cur_struct = (STRUCT *)root->etc;
 
-	// 如果是结构体数组
 	else if (root->type == SYM_ARRAY)
 	{
 		int elem = *((int *)root->etc);
 		if (elem == SYM_STRUCT)
 			cur_struct = (STRUCT *)root->etc2;
 		else
-			cur_struct = NULL; // 普通数组
+			cur_struct = NULL;
 	}
+
 	else
 		cur_struct = NULL;
 
@@ -654,8 +680,8 @@ EXP *do_lvalue_load(LVALUE_PATH *lv)
 
 		if (p->kind == PATH_MEMBER)
 		{
-			printf("%s\n", cur_struct->name);
-			printf("%s\n", p->member);
+			// printf("%s\n", cur_struct->name);
+			// printf("%s\n", p->member);
 			STRUCT_MEMBER *m = find_member(cur_struct, p->member);
 
 			// if (!m)
@@ -828,8 +854,8 @@ EXP *do_lvalue_addr(LVALUE_PATH *lv)
 
 		if (p->kind == PATH_MEMBER)
 		{
-			printf("%s\n", cur_struct->name);
-			printf("%s\n", p->member);
+			// printf("%s\n", cur_struct->name);
+			// printf("%s\n", p->member);
 			STRUCT_MEMBER *m = find_member(cur_struct, p->member);
 
 			// if (!m)
