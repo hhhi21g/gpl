@@ -14,6 +14,14 @@ static SYM *g_switch_end = NULL;
 
 static char *g_cur_struct = NULL;
 
+#define LOOP_MAX_DEPTH 100
+
+static SYM *g_for_start_stack[LOOP_MAX_DEPTH];
+static SYM *g_for_cont_stack[LOOP_MAX_DEPTH];
+static SYM *g_for_end_stack[LOOP_MAX_DEPTH];
+static int g_for_depth = 0;
+
+
 PATH *append_path_list(PATH *head, PATH *tail);
 
 
@@ -296,7 +304,8 @@ parameter_list : IDENTIFIER
 }
 ;
 
-statement : assignment_statement ';'
+statement : block
+| assignment_statement ';'
 | input_statement ';'
 | output_statement ';'
 | call_statement ';'
@@ -307,7 +316,6 @@ statement : assignment_statement ';'
 | for_statement
 | break_statement ';'
 | continue_statement ';'
-| block
 | error
 {
 	error("Bad statement syntax");
@@ -422,7 +430,7 @@ assignment_statement : IDENTIFIER '=' expression
 
 expression : IDENTIFIER
 {
-	printf("identifier %s\n",$1);
+	// printf("identifier %s\n",$1);
 	$$ = mk_exp(NULL, get_var($1), NULL);
 }
 | expression '+' expression
@@ -612,17 +620,43 @@ default_list:
 
 while_statement : WHILE '(' expression ')' 
 {
-	g_for_start = mk_label(mk_lstr(next_label++));
-    g_for_cont  = mk_label(mk_lstr(next_label++));
-    g_for_end   = mk_label(mk_lstr(next_label++));
+    g_for_start_stack[g_for_depth] = mk_label(mk_lstr(next_label++));
+    g_for_cont_stack[g_for_depth]  = mk_label(mk_lstr(next_label++));
+    g_for_end_stack[g_for_depth]   = mk_label(mk_lstr(next_label++));
+
+    g_for_start = g_for_start_stack[g_for_depth];
+    g_for_cont  = g_for_cont_stack[g_for_depth];
+    g_for_end   = g_for_end_stack[g_for_depth];
+
+    g_for_depth++;
+
     push_loop_labels(g_for_cont, g_for_end);
 }
 block
 {
-	$$=do_while($3, $6,g_for_start,g_for_cont,g_for_end);
-	pop_loop_labels();
-	g_for_start = g_for_cont = g_for_end = NULL;
-}               
+    SYM *start = g_for_start_stack[g_for_depth - 1];
+    SYM *cont  = g_for_cont_stack[g_for_depth - 1];
+    SYM *end   = g_for_end_stack[g_for_depth - 1];
+
+    if (start != NULL)
+        printf("g_for_start\n");
+    else
+        printf("start null\n");
+
+    $$ = do_while($3, $6, start, cont, end);
+
+    g_for_depth--;
+
+    if (g_for_depth > 0) {
+        g_for_start = g_for_start_stack[g_for_depth - 1];
+        g_for_cont  = g_for_cont_stack[g_for_depth - 1];
+        g_for_end   = g_for_end_stack[g_for_depth - 1];
+    } else {
+        g_for_start = g_for_cont = g_for_end = NULL;
+    }
+
+    pop_loop_labels();
+}
 ;
 
 

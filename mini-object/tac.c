@@ -2034,6 +2034,12 @@ TAC *do_test(EXP *exp, TAC *stmt1, TAC *stmt2)
 
 TAC *do_while(EXP *cond, TAC *body, SYM *start_sym, SYM *cont_sym, SYM *end_sym)
 {
+	if (!start_sym)
+		error("do_while: start_sym is NULL");
+	if (!cont_sym)
+		error("do_while: cont_sym is NULL");
+	if (!end_sym)
+		error("do_while: end_sym is NULL");
 	TAC *t_start = mk_tac(TAC_LABEL, start_sym, NULL, NULL);
 	TAC *t_cont = mk_tac(TAC_LABEL, cont_sym, NULL, NULL);
 	TAC *t_end = mk_tac(TAC_LABEL, end_sym, NULL, NULL);
