@@ -1775,7 +1775,8 @@ EXP *do_bin(int binop, EXP *exp1, EXP *exp2)
 		}
 	}
 
-	if ((exp1->ret->type == SYM_INT || exp1->ret->type == SYM_CHAR) && (exp2->ret->type == SYM_INT || exp1->ret->type == SYM_CHAR))
+	if ((exp1->ret->type == SYM_INT || exp1->ret->type == SYM_CHAR) &&
+		(exp2->ret->type == SYM_INT || exp2->ret->type == SYM_CHAR))
 	{
 		int newval;
 
@@ -1819,6 +1820,37 @@ EXP *do_cmp(int binop, EXP *exp1, EXP *exp2)
 	TAC *temp; /* TAC code for temp symbol */
 	TAC *ret;  /* TAC code for result */
 
+	if ((exp1->ret->type == SYM_INT || exp1->ret->type == SYM_CHAR) &&
+		(exp2->ret->type == SYM_INT || exp2->ret->type == SYM_CHAR))
+
+	{
+		int newval;
+		switch (binop)
+		{
+		case TAC_EQ:
+			newval = (exp1->ret->value == exp2->ret->value);
+			break;
+		case TAC_NE:
+			newval = (exp1->ret->value != exp2->ret->value);
+			break;
+		case TAC_LT:
+			newval = (exp1->ret->value < exp2->ret->value);
+			break;
+		case TAC_LE:
+			newval = (exp1->ret->value <= exp2->ret->value);
+			break;
+		case TAC_GT:
+			newval = (exp1->ret->value > exp2->ret->value);
+			break;
+		case TAC_GE:
+			newval = (exp1->ret->value >= exp2->ret->value);
+			break;
+		}
+		exp1->ret = mk_const(newval);
+
+		return exp1;
+	}
+
 	temp = mk_tac(TAC_VAR, mk_tmp(), NULL, NULL);
 	temp->prev = join_tac(exp1->tac, exp2->tac);
 
@@ -1835,6 +1867,20 @@ EXP *do_un(int unop, EXP *exp)
 {
 	TAC *temp; /* TAC code for temp symbol */
 	TAC *ret;  /* TAC code for result */
+
+	if (exp->ret->type == SYM_INT)
+	{
+		int newval;
+		switch (unop)
+		{
+		case TAC_NEG:
+			newval = (-exp->ret->value);
+			break;
+		}
+		exp->ret = mk_const(newval);
+
+		return exp;
+	}
 
 	temp = mk_tac(TAC_VAR, mk_tmp(), NULL, NULL);
 	temp->prev = exp->tac;
