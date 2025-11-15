@@ -2358,7 +2358,6 @@ void out_tac(FILE *f, TAC *i)
 		break;
 
 	case TAC_IFZ:
-		printf("if\n");
 		fprintf(f, "ifz %s goto %s", to_str(i->b, sb), i->a->name);
 		break;
 
