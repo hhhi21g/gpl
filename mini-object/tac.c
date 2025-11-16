@@ -79,6 +79,379 @@ static SYM *mk_bool_const(int v)
 	return mk_const(v ? 1 : 0);
 }
 
+int local_copy_propagation()
+{
+	int changed = 0;
+
+	for (BASIC_BLOCK *bb = bb_list; bb != NULL; bb = bb->next)
+	{
+		TAC *end = bb->last ? bb->last->next : NULL; // 固定BB结束位置
+
+		for (TAC *t = bb->first; t != NULL && t != end;)
+		{
+			if (t->op != TAC_COPY)
+			{
+				t = t->next;
+				continue;
+			}
+
+			SYM *x = t->a; // 左值
+			SYM *y = t->b; // 右值
+
+			if (!x || !y)
+			{
+				t = t->next;
+				continue;
+			}
+
+			int rhs_is_const = (y->type == SYM_INT || y->type == SYM_CHAR);
+
+			// 只允许两种情况进行传播
+			int can_propagate = 0;
+			if (rhs_is_const)
+			{
+				can_propagate = 1; // 常量传播
+			}
+			else if (x->type == SYM_TMP &&
+					 y->type != SYM_FUNC &&
+					 y->type != SYM_TEXT &&
+					 y->type != SYM_LABEL)
+			{
+				can_propagate = 1; // TMP 复制传播
+			}
+
+			if (!can_propagate)
+			{
+				t = t->next;
+				continue;
+			}
+
+			int propagated = 0;
+
+			// 向后扫描当前BB
+			for (TAC *i = t->next; i != end; i = i->next)
+			{
+				// x 或 y 被重新赋值，传播停止
+				if (i->a == x || i->a == y)
+					break;
+
+				// 进行替换
+				if (i->b == x)
+				{
+					i->b = y;
+					propagated = 1;
+				}
+				if (i->c == x)
+				{
+					i->c = y;
+					propagated = 1;
+				}
+
+				// 一元OUTPUT / RETURN / IFZ ：a 里也可能读 x
+				if ((i->op == TAC_OUTPUT ||
+					 i->op == TAC_RETURN ||
+					 i->op == TAC_IFZ) &&
+					i->a == x)
+				{
+					i->a = y;
+					propagated = 1;
+				}
+			}
+
+			if (!propagated)
+			{
+				t = t->next;
+				continue;
+			}
+			//  x 是 TMP 且后续不再使用 x 的情况下，才删除 COPY
+			int still_used = 0;
+			for (TAC *i = t->next; i != end; i = i->next)
+			{
+				if (i->a == x || i->b == x || i->c == x ||
+					((i->op == TAC_OUTPUT || i->op == TAC_RETURN || i->op == TAC_IFZ) && i->a == x))
+				{
+					still_used = 1;
+					break;
+				}
+			}
+
+			if (!still_used && x->type == SYM_TMP)
+			{
+				TAC *del = t;
+				t = t->next;
+
+				if (del->prev)
+					del->prev->next = del->next;
+				else
+					tac_first = del->next;
+
+				if (del->next)
+					del->next->prev = del->prev;
+				else
+					tac_last = del->prev;
+
+				if (bb->first == del)
+					bb->first = del->next;
+				if (bb->last == del)
+					bb->last = del->prev;
+
+				free(del);
+				changed = 1;
+			}
+			else
+			{
+				// 不删（x 是普通变量，或者后面还会用到）
+				t = t->next;
+				changed = 1;
+			}
+		}
+	}
+
+	return changed;
+}
+
+int local_constant_folding()
+{
+	int changed = 0;
+	BASIC_BLOCK *bb;
+
+	for (bb = bb_list; bb != NULL; bb = bb->next)
+	{
+		TAC *p = bb->first;
+		TAC *end = bb->last ? bb->last->next : NULL;
+
+		for (; p != end; p = p->next)
+		{
+			int op = p->op;
+
+			// 二元运算
+			if (op == TAC_ADD || op == TAC_SUB || op == TAC_MUL || op == TAC_DIV ||
+				op == TAC_EQ || op == TAC_NE || op == TAC_LT ||
+				op == TAC_LE || op == TAC_GT || op == TAC_GE)
+			{
+				SYM *x = p->b;
+				SYM *y = p->c;
+
+				if (!x || !y)
+					continue;
+
+				if (op == TAC_ADD)
+				{
+					if ((x->type == SYM_INT && x->value == 0) ||
+						(x->type == SYM_CHAR && x->value == 0))
+					{
+						// 0 + y = y
+						p->op = TAC_COPY;
+						p->b = y;
+						p->c = NULL;
+						changed = 1;
+						continue;
+					}
+					if ((y->type == SYM_INT && y->value == 0) ||
+						(y->type == SYM_CHAR && y->value == 0))
+					{
+						// x + 0 = x
+						p->op = TAC_COPY;
+						p->b = x;
+						p->c = NULL;
+						changed = 1;
+						continue;
+					}
+				}
+
+				if (op == TAC_SUB)
+				{
+					if ((y->type == SYM_INT && y->value == 0) ||
+						(y->type == SYM_CHAR && y->value == 0))
+					{
+						// x - 0 = x
+						p->op = TAC_COPY;
+						p->b = x;
+						p->c = NULL;
+						changed = 1;
+						continue;
+					}
+					if ((x->type == SYM_INT && x->value == 0) ||
+						(x->type == SYM_CHAR && x->value == 0))
+					{
+						// 0 - y = -y
+						p->op = TAC_NEG;
+						p->b = y;
+						p->c = NULL;
+						changed = 1;
+						continue;
+					}
+				}
+
+				if (op == TAC_MUL)
+				{
+					int x_is0 = (x->type == SYM_INT && x->value == 0) ||
+								(x->type == SYM_CHAR && x->value == 0);
+					int y_is0 = (y->type == SYM_INT && y->value == 0) ||
+								(y->type == SYM_CHAR && y->value == 0);
+					int x_is1 = (x->type == SYM_INT && x->value == 1) ||
+								(x->type == SYM_CHAR && x->value == 1);
+					int y_is1 = (y->type == SYM_INT && y->value == 1) ||
+								(y->type == SYM_CHAR && y->value == 1);
+
+					if (x_is0 || y_is0)
+					{
+						// x * 0 或 0 * y = 0
+						p->op = TAC_COPY;
+						p->b = mk_const(0);
+						p->c = NULL;
+						changed = 1;
+						continue;
+					}
+					if (x_is1)
+					{
+						// 1 * y = y
+						p->op = TAC_COPY;
+						p->b = y;
+						p->c = NULL;
+						changed = 1;
+						continue;
+					}
+					if (y_is1)
+					{
+						// x * 1 = x
+						p->op = TAC_COPY;
+						p->b = x;
+						p->c = NULL;
+						changed = 1;
+						continue;
+					}
+				}
+
+				if (op == TAC_DIV)
+				{
+					int x_is0 = (x->type == SYM_INT && x->value == 0) ||
+								(x->type == SYM_CHAR && x->value == 0);
+					int y_is1 = (y->type == SYM_INT && y->value == 1) ||
+								(y->type == SYM_CHAR && y->value == 1);
+					int y_is0 = (y->type == SYM_INT && y->value == 0) ||
+								(y->type == SYM_CHAR && y->value == 0);
+
+					if (x_is0 && !y_is0)
+					{
+						// 0 / y = 0
+						p->op = TAC_COPY;
+						p->b = mk_const(0);
+						p->c = NULL;
+						changed = 1;
+						continue;
+					}
+					if (y_is1)
+					{
+						// x / 1 = x
+						p->op = TAC_COPY;
+						p->b = x;
+						p->c = NULL;
+						changed = 1;
+						continue;
+					}
+					if (y_is0)
+					{
+						continue;
+					}
+				}
+
+				// 两个操作符均为常量
+				if (!((x->type == SYM_INT || x->type == SYM_CHAR) &&
+					  (y->type == SYM_INT || y->type == SYM_CHAR)))
+					continue;
+
+				int v1 = x->value;
+				int v2 = y->value;
+				int result;
+
+				switch (op)
+				{
+				case TAC_ADD:
+					result = v1 + v2;
+					break;
+				case TAC_SUB:
+					result = v1 - v2;
+					break;
+				case TAC_MUL:
+					result = v1 * v2;
+					break;
+
+				case TAC_DIV:
+					if (v2 == 0)
+						continue;
+					result = v1 / v2;
+					break;
+
+				case TAC_EQ:
+					result = (v1 == v2);
+					break;
+				case TAC_NE:
+					result = (v1 != v2);
+					break;
+				case TAC_LT:
+					result = (v1 < v2);
+					break;
+				case TAC_LE:
+					result = (v1 <= v2);
+					break;
+				case TAC_GT:
+					result = (v1 > v2);
+					break;
+				case TAC_GE:
+					result = (v1 >= v2);
+					break;
+				default:
+					continue;
+				}
+
+				p->op = TAC_COPY;
+				p->b = mk_const(result);
+				p->c = NULL;
+				changed = 1;
+				continue;
+			}
+
+			// 一元运算
+			if (op == TAC_NEG)
+			{
+				SYM *x = p->b;
+				if (!x)
+					continue;
+
+				if (x->type == SYM_INT || x->type == SYM_CHAR)
+				{
+					int r = -x->value;
+					p->op = TAC_COPY;
+					p->b = mk_const(r);
+					p->c = NULL;
+					changed = 1;
+					continue;
+				}
+			}
+		}
+	}
+
+	return changed;
+}
+
+void local_optimize()
+{
+	int changed;
+
+	do
+	{
+		changed = 0;
+
+		if (local_copy_propagation())
+			changed = 1;
+
+		if (local_constant_folding())
+			changed = 1;
+
+	} while (changed);
+}
+
 // 结构体定义中,还未添加成员
 STRUCT *begin_struct(const char *name)
 {
@@ -429,31 +802,6 @@ SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
 
 	return addr;
 }
-// SYM *make_array_elem_addr(SYM *base, EXP *idx, int elem_size, TAC **code)
-// {
-// 	int base_off = base->offset; // ★关键修复点：取真正偏移
-
-// 	// 1. 把数组基址 = R2 + base_offset
-// 	SYM *base_addr = mk_tmp();
-// 	*code = join_tac(*code, mk_tac(TAC_VAR, base_addr, NULL, NULL));
-// 	*code = join_tac(*code, mk_tac(TAC_ADD, base_addr,
-// 								   R2, mk_const(base_off)));
-// 	// 假设 REG_SP = R2
-
-// 	// 2. 处理 index * elem_size
-// 	*code = join_tac(*code, idx->tac);
-// 	SYM *mul = mk_tmp();
-// 	*code = join_tac(*code, mk_tac(TAC_VAR, mul, NULL, NULL));
-// 	*code = join_tac(*code,
-// 					 mk_tac(TAC_MUL, mul, idx->ret, mk_const(elem_size)));
-
-// 	// 3. 最终地址 = base_addr + mul
-// 	SYM *addr = mk_tmp();
-// 	*code = join_tac(*code, mk_tac(TAC_VAR, addr, NULL, NULL));
-// 	*code = join_tac(*code, mk_tac(TAC_ADD, addr, base_addr, mul));
-
-// 	return addr;
-// }
 
 STRUCT_MEMBER *find_member(STRUCT *def, const char *name)
 {
@@ -998,110 +1346,6 @@ static SYM *eval_un(int op, SYM *b)
 	return NULL;
 }
 
-int cfg_fold_if()
-{
-	int changed = 0;
-	for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
-	{
-		TAC *t = bb->last;
-		if (!t)
-			continue;
-		if (t->op == TAC_IFZ && is_const_sym(t->b))
-		{
-			if (t->b->value == 0)
-			{ // GOTO L
-				t->op = TAC_GOTO;
-				t->b = NULL;
-				changed = 1;
-			}
-			else
-			{ // 永远不会跳转
-				t->op = TAC_VAR;
-				t->a = mk_tmp();
-				t->b = t->c = NULL;
-				changed = 1;
-			}
-		}
-	}
-}
-
-// 标记可达块
-static void mark_reachable(BASIC_BLOCK *start)
-{
-	for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
-	{
-		bb->mark = 0;
-	}
-	BASIC_BLOCK *stack[4096];
-	int top = 0;
-	if (start)
-	{
-		stack[top++] = start;
-		start->mark = 1;
-	}
-	while (top)
-	{
-		BASIC_BLOCK *u = stack[--top];
-		for (int i = 0; i < u->succ_count; i++)
-		{
-			BASIC_BLOCK *v = u->succ[i];
-			if (v && !v->mark)
-			{
-				v->mark = 1;
-				stack[top++] = v;
-			}
-		}
-	}
-}
-void remove_unreachable_blocks()
-{
-	if (!bb_list)
-		return;
-	mark_reachable(bb_list);
-	// 从块链表中摘掉不可达块
-	BASIC_BLOCK *prev = NULL, *cur = bb_list;
-	while (cur)
-	{
-		if (!cur->mark)
-		{
-			BASIC_BLOCK *del = cur;
-			cur = cur->next;
-			if (prev)
-				prev->next = cur;
-			else
-				bb_list = cur;
-			if (del == bb_tail)
-				bb_tail = prev;
-			// 这里可以 free(del->succ/pred)，简单起见略
-		}
-		else
-		{
-			prev = cur;
-			cur = cur->next;
-		}
-	}
-	// 可选：重建线性 TAC 链（让 tac_first/tac_last 与当前块列表一致）
-	TAC *first = NULL, *last = NULL;
-	for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
-	{
-		for (TAC *t = bb->first;; t = t->next)
-		{
-			t->prev = last;
-			if (last)
-				last->next = t;
-			else
-				first = t;
-			last = t;
-			if (t == bb->last)
-				break;
-		}
-	}
-	if (last)
-		last->next = NULL;
-	tac_first = first;
-	tac_last = last; // （注意：你的 tac_last 是“反向链表尾”吗？按你当前结构，这样设置就够用）
-}
-
 // 入栈:循环开始时
 void push_loop_labels(SYM *cont, SYM *end)
 {
@@ -1591,13 +1835,21 @@ TAC *do_func(SYM *func, TAC *args, TAC *code)
 
 SYM *mk_tmp(void)
 {
-	SYM *sym;
-	char *name;
-	// sym->type = SYM_TMP;
-	name = malloc(12);
-	sprintf(name, "t%d", next_tmp++); /* Set up text */
-	return mk_var(name);
-	// return sym;
+	SYM *sym = mk_sym();
+	char *name = malloc(12);
+	sprintf(name, "t%d", next_tmp++);
+
+	sym->type = SYM_TMP;
+	sym->name = name;
+	sym->offset = -1;
+	sym->scope = scope;
+
+	if (scope)
+		insert_sym(&sym_tab_local, sym);
+	else
+		insert_sym(&sym_tab_global, sym);
+
+	return sym;
 }
 
 TAC *declare_para(char *name)

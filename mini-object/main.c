@@ -54,17 +54,13 @@ int main(int argc, char *argv[])
 
 	tac_init();
 	yyparse();
+	build_cfg();
+
+	local_optimize();
+
 	tac_list();
 	build_cfg();
 	cfg_dump(file_x);
-
-	// for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
-	// 	tac_constant_fold(bb);
-
-	// cfg_fold_if();
-	// remove_unreachable_blocks();
-
-	build_cfg();
 	tac_obj();
 
 	fclose(file_s);

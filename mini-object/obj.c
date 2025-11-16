@@ -151,88 +151,62 @@ int reg_alloc_temp()
 	return R_GEN;
 }
 
+// 找一个和 avoid 不同的寄存器用作临时
+static int alloc_hw_temp_except(int avoid)
+{
+	for (int r = R_GEN; r < R_NUM; r++)
+	{
+		if (r != avoid)
+		{
+			return r;
+		}
+	}
+	error("no free register");
+	return R_GEN;
+}
+
 void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 {
 	int reg_b, reg_c;
 
-	/* --- load operand b --- */
+	// 先处理b
 	if (b->type == SYM_INT)
 	{
-		reg_b = reg_alloc_temp();
+		// 常量：找任意一个临时寄存器
+		reg_b = alloc_hw_temp_except(-1);
 		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
 	}
 	else
 	{
+		// 变量：用寄存器分配器
 		reg_b = reg_alloc(b);
 	}
 
-	/* --- load operand c --- */
+	// 处理 c，要避免覆盖 reg_b
 	if (c->type == SYM_INT)
 	{
-		reg_c = reg_alloc_temp();
+		// 常量：直接找一个 != reg_b 的寄存器
+		reg_c = alloc_hw_temp_except(reg_b);
 		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
 	}
 	else
 	{
+		// 变量
 		reg_c = reg_alloc(c);
-	}
 
-	/* --- ensure reg_b != reg_c --- */
-	if (reg_b == reg_c)
-	{
-		/* 分配一个新的临时寄存器来装载 c */
-		int new_reg_c = reg_alloc_temp();
-
-		if (c->type == SYM_INT)
-			out_str(file_s, "    LOD R%u,%d\n", new_reg_c, c->value);
-		else
+		if (reg_c == reg_b)
+		{
+			// 冲突需要把 c 的值搬到一个新的寄存器
+			int new_reg_c = alloc_hw_temp_except(reg_b);
 			out_str(file_s, "    LOD R%u,R%u\n", new_reg_c, reg_c);
-
-		reg_c = new_reg_c;
+			reg_c = new_reg_c;
+		}
 	}
 
-	/* --- emit operation --- */
 	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
 
-	/* --- result lives in reg_b --- */
 	rdesc_fill(reg_b, a, MODIFIED);
 }
-
-// void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
-// {
-// 	int reg_a = reg_alloc(a);
-// 	int reg_b, reg_c;
-
-// 	// load b
-// 	if (b->type == SYM_INT)
-// 	{
-// 		reg_b = reg_alloc_temp();
-// 		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
-// 	}
-// 	else
-// 	{
-// 		reg_b = reg_alloc(b);
-// 	}
-
-// 	// load c
-// 	if (c->type == SYM_INT)
-// 	{
-// 		reg_c = reg_alloc_temp();
-// 		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
-// 	}
-// 	else
-// 	{
-// 		reg_c = reg_alloc(c);
-// 	}
-
-// 	// r_a = r_b
-// 	out_str(file_s, "    LOD R%u,R%u\n", reg_a, reg_b);
-
-// 	// r_a = r_a op r_c
-// 	out_str(file_s, "    %s R%u,R%u\n", op, reg_a, reg_c);
-
-// 	rdesc_fill(reg_a, a, MODIFIED);
-// }
 
 void asm_cmp(int op, SYM *a, SYM *b, SYM *c)
 {

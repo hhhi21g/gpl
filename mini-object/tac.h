@@ -9,7 +9,7 @@
 #define SYM_PTR 7
 #define SYM_ARRAY 8
 #define SYM_STRUCT 9
-#define SYM_TMP 666
+#define SYM_TMP 10
 
 /* type of tac */
 #define TAC_UNDEF 0		 /* undefine */
@@ -232,5 +232,9 @@ EXP *do_lvalue_load(LVALUE_PATH *lv);
 
 STRUCT *find_struct(const char *name);
 EXP *do_lvalue_addr(LVALUE_PATH *lv);
+
+int local_copy_propagation();
+int local_constant_folding();
+void local_optimize();
 
 void error(const char *format, ...);
