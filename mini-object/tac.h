@@ -144,6 +144,16 @@ typedef struct
 	PATH *path;
 } LVALUE_PATH;
 
+// 存储表达式
+typedef struct expMap
+{
+	int op;
+	SYM *b;
+	SYM *c;
+	SYM *t;
+	struct expMap *next;
+} expMap;
+
 /* global var */
 extern FILE *file_x, *file_s;
 extern int yylineno, scope, next_tmp, next_label;

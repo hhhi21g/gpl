@@ -79,6 +79,62 @@ static SYM *mk_bool_const(int v)
 	return mk_const(v ? 1 : 0);
 }
 
+// 在expMap链表中查找
+SYM *lookup_exp(expMap *map, int op, SYM *b, SYM *c)
+{
+	for (expMap *p = map; p; p = p->next)
+	{
+		if (p->op == op && p->b == b && p->c == c) // 表达式完全相同
+			return p->t;
+	}
+	return NULL;
+}
+
+// 新增表达式节点
+void insert_exp(expMap **map, int op, SYM *b, SYM *c, SYM *t)
+{
+	expMap *node = malloc(sizeof(expMap));
+	node->op = op;
+	node->b = b;
+	node->c = c;
+	node->t = t;
+	node->next = *map;
+	*map = node;
+}
+
+// 删除节点，同时维护tac双向链表和BB
+void remove_tac_bb(BASIC_BLOCK *bb, TAC *p)
+{
+	// 双向tac链表删除节点
+	if (p->prev)
+		p->prev->next = p->next;
+	else
+		tac_first = p->next;
+
+	if (p->next)
+		p->next->prev = p->prev;
+	else
+		tac_last = p->prev;
+
+	// 维护BBfirst和last
+	if (bb->first == p)
+		bb->first = p->next;
+	if (bb->last == p)
+		bb->last = p->prev;
+}
+
+// 替换
+void replace_all(TAC *start, SYM *old, SYM *new)
+{
+	for (TAC *t = start->next; t; t = t->next)
+	{
+		if (t->b == old)
+			t->b = new;
+		if (t->c == old)
+			t->c = new;
+	}
+}
+
 int local_copy_propagation()
 {
 	int changed = 0;
@@ -435,6 +491,46 @@ int local_constant_folding()
 	return changed;
 }
 
+int local_expression_elimination()
+{
+	int changed = 0;
+
+	for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+	{
+		expMap *map = NULL;
+		TAC *next;
+		for (TAC *p = bb->first; p != bb->last->next; p = next)
+		{
+			next = p->next;
+
+			int op = p->op;
+
+			if (!(op == TAC_ADD || op == TAC_SUB || op == TAC_MUL || op == TAC_DIV ||
+				  op == TAC_EQ || op == TAC_NE || op == TAC_LT || op == TAC_LE ||
+				  op == TAC_GT || op == TAC_GE))
+				continue;
+
+			SYM *b = p->b;
+			SYM *c = p->c;
+			if (!b || !c)
+				continue;
+
+			SYM *oldt = lookup_exp(map, op, b, c); // 查找公共表达式
+			if (oldt)
+			{
+				replace_all(p, p->a, oldt);
+				remove_tac_bb(bb, p);
+				changed++;
+			}
+			else
+			{
+				insert_exp(&map, op, b, c, p->a);
+			}
+		}
+	}
+	return changed;
+}
+
 void local_optimize()
 {
 	int changed;
@@ -447,6 +543,9 @@ void local_optimize()
 			changed = 1;
 
 		if (local_constant_folding())
+			changed = 1;
+
+		if (local_expression_elimination() != 0)
 			changed = 1;
 
 	} while (changed);
