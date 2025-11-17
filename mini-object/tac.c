@@ -123,6 +123,16 @@ void remove_tac_bb(BASIC_BLOCK *bb, TAC *p)
 		bb->last = p->prev;
 }
 
+int has_later_def(BASIC_BLOCK *bb, TAC *p, SYM *a)
+{
+	for (TAC *q = p->next; q && q != bb->last->next; q = q->next)
+	{
+		if (q->a == a && is_def_tac(q))
+			return 1;
+	}
+	return 0;
+}
+
 // 替换
 void replace_all(TAC *start, SYM *old, SYM *new)
 {
@@ -135,16 +145,27 @@ void replace_all(TAC *start, SYM *old, SYM *new)
 	}
 }
 
-int has_side_effect(TAC *t)
+int is_def_tac(TAC *p)
 {
-	switch (t->op)
+	switch (p->op)
 	{
-	case TAC_CALL:
-	case TAC_OUTPUT:
-	case TAC_RETURN:
+	case TAC_COPY:
+	case TAC_ADD:
+	case TAC_SUB:
+	case TAC_MUL:
+	case TAC_DIV:
+	case TAC_NEG:
+	case TAC_EQ:
+	case TAC_NE:
+	case TAC_LT:
+	case TAC_LE:
+	case TAC_GT:
+	case TAC_GE:
+	case TAC_LOAD:
 		return 1;
+	default:
+		return 0;
 	}
-	return 0;
 }
 
 int live_contains(SYM **live, int live_cnt, SYM *v)
@@ -568,35 +589,46 @@ int local_expression_elimination()
 int local_dead_assignment()
 {
 	int changed = 0;
+
 	for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
 	{
-		SYM *live[1000]; // 活跃变量集合
+		SYM *live[1024];
 		int live_cnt = 0;
-		TAC *prev;
 
-		for (TAC *p = bb->last; p != bb->last->next; p = p->prev)
+		TAC *first = bb->first;
+
+		for (TAC *p = bb->last; p;)
 		{
-			prev = p->prev;
-			int op = p->op;
+			TAC *prev = p->prev;
+			int is_first = (p == first);
+
 			SYM *a = p->a;
 			SYM *b = p->b;
 			SYM *c = p->c;
 
-			// 操作数都存活
-			add_live(live, &live_cnt, b);
-			add_live(live, &live_cnt, c);
+			// 使用则加入到live
+			if (b)
+				add_live(live, &live_cnt, b);
+			if (c)
+				add_live(live, &live_cnt, c);
 
-			if (a)
+			if (a && a->type == SYM_VAR && is_def_tac(p))
 			{
-				int a_live = live_contains(live, live_cnt, a);
-				if (!a_live && !has_side_effect(p)) // a没被使用过
+
+				int used_later = live_contains(live, live_cnt, a);
+
+				if (!used_later && has_later_def(bb, p, a)) // 同一BB内后面没被用过 且 后续还有定义则删除
 				{
 					remove_tac_bb(bb, p);
 					changed = 1;
+
+					if (is_first)
+						break;
+
+					p = prev;
 					continue;
 				}
 
-				// 删除a的旧值
 				for (int i = 0; i < live_cnt; i++)
 				{
 					if (live[i] == a)
@@ -606,8 +638,13 @@ int local_dead_assignment()
 					}
 				}
 			}
+
+			if (is_first)
+				break;
+			p = prev;
 		}
 	}
+
 	return changed;
 }
 
@@ -1616,29 +1653,29 @@ void build_cfg()
 	for (t = tac_first; t != NULL; t = t->next)
 	{
 		// 跳过未被引用的
-		if (t->op == TAC_LABEL)
-		{
-			int referenced = 0;
-			for (TAC *p = tac_first; p != NULL; p = p->next)
-			{
-				if ((p->op == TAC_GOTO || p->op == TAC_IFZ) && p->a && p->a == t->a)
-				{
-					referenced = 1;
-					break;
-				}
-			}
+		// if (t->op == TAC_LABEL)
+		// {
+		// 	int referenced = 0;
+		// 	for (TAC *p = tac_first; p != NULL; p = p->next)
+		// 	{
+		// 		if ((p->op == TAC_GOTO || p->op == TAC_IFZ) && p->a && p->a == t->a)
+		// 		{
+		// 			referenced = 1;
+		// 			break;
+		// 		}
+		// 	}
 
-			// 如果该 label 没有被任何 GOTO/IFZ 引用，且当前 block 未结束，则认为是块内标签
-			if (!referenced && cur_bb != NULL)
-			{
-				cur_bb->last = t; // 继续累积
-				continue;
-			}
-			else
-			{
-				cur_bb = NULL; // 强制结束当前块，新建一个
-			}
-		}
+		// 	// 如果该 label 没有被任何 GOTO/IFZ 引用，且当前 block 未结束，则认为是块内标签
+		// 	if (!referenced && cur_bb != NULL)
+		// 	{
+		// 		cur_bb->last = t; // 继续累积
+		// 		continue;
+		// 	}
+		// 	else
+		// 	{
+		// 		cur_bb = NULL; // 强制结束当前块，新建一个
+		// 	}
+		// }
 
 		if (t->op == TAC_LABEL || t->op == TAC_BEGINFUNC || !cur_bb)
 		{

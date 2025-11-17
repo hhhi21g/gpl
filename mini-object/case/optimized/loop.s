@@ -118,6 +118,7 @@ L4:
 
 	# t3 = a + t2
 	LOD R10,(R2+8)
+    STO (R2+48),R8
     ADD R10,R8
 
 	# var t4
@@ -129,17 +130,21 @@ L4:
 	# var t5
 
 	# t5 = t4 / b
+    STO (R2+56),R11
 	LOD R12,(R2+12)
     DIV R11,R12
 
 	# var t6
 
 	# t6 = t3 - t5
+    STO (R2+52),R10
+    STO (R2+60),R11
     SUB R10,R11
 
 	# var t7
 
 	# t7 = t6 + 9
+    STO (R2+64),R10
     LOD R5,9
     ADD R10,R5
 
@@ -148,40 +153,35 @@ L4:
 
 	# var t8
 
-	# t8 = b * c
-    MUL R12,R9
-
 	# var t9
-
-	# t9 = a + t8
-	LOD R13,(R2+8)
-    ADD R13,R12
 
 	# var t10
 
 	# t10 = c - a
-	LOD R14,(R2+8)
-    SUB R9,R14
+	LOD R13,(R2+8)
+    SUB R9,R13
 
 	# var t11
 
 	# t11 = t10 / b
-	LOD R15,(R2+12)
-    DIV R9,R15
+    STO (R2+80),R9
+    DIV R9,R12
 
 	# var t12
 
-	# t12 = t9 - t11
-    SUB R13,R9
+	# t12 = t3 - t11
+    STO (R2+84),R9
+    SUB R14,R9
 
 	# var t13
 
 	# t13 = t12 + 9
+    STO (R2+88),R14
     LOD R5,9
-    ADD R13,R5
+    ADD R14,R5
 
 	# e = t13
-	STO (R2+24),R13
+	STO (R2+24),R14
 
 	# var t14
 
@@ -194,12 +194,8 @@ L4:
 
 	# label L5
     STO (R2+96),R7
-    STO (R2+48),R8
-    STO (R2+84),R9
     STO (R2+68),R10
-    STO (R2+60),R11
-    STO (R2+72),R12
-    STO (R2+92),R13
+    STO (R2+92),R14
 L5:
 
 	# goto L4
