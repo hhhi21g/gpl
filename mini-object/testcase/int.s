@@ -30,54 +30,57 @@ main:
     ADD R5,R6
 
 	# b = t0
-    STO (R2+24),R5
-   STO (R2+12),R5
+	STO (R2+12),R5
 
 	# var t1
 
 	# t1 = b - 20
-    LOD R6,20
-    SUB R5,R6
+	LOD R6,(R2+12)
+    LOD R5,20
+    SUB R6,R5
 
 	# c = t1
-    STO (R2+28),R5
-   STO (R2+16),R5
+	STO (R2+16),R6
 
 	# var t2
 
 	# t2 = c * 30
-    LOD R6,30
-    MUL R5,R6
+	LOD R7,(R2+16)
+    LOD R5,30
+    MUL R7,R5
 
 	# d = t2
-    STO (R2+32),R5
-   STO (R2+20),R5
+	STO (R2+20),R7
 
 	# output a
-	LOD R6,(R2+8)
-    LOD R15,(R2+8)
-	OTI
+	LOD R8,(R2+8)
+    LOD R15,R8
+    OTI
 
 	# output b
-	LOD R7,(R2+12)
-    LOD R15,(R2+12)
-	OTI
+	LOD R9,(R2+12)
+    LOD R15,R9
+    OTI
 
 	# output c
-	LOD R8,(R2+16)
-    LOD R15,(R2+16)
-	OTI
+	LOD R10,(R2+16)
+    LOD R15,R10
+    OTI
 
 	# output d
-    LOD R15,(R2+20)
-	OTI
+	LOD R11,(R2+20)
+    LOD R15,R11
+    OTI
 
 	# output L1
-	LOD R9,L1
-	LOD R15,R9
-	OTS
+	LOD R12,L1
+    LOD R15,R12
+    OTS
 
 	# end
+    STO (R2+24),R5
+    STO (R2+28),R6
+    STO (R2+32),R7
 	LOD R3,(R2+4)
 	LOD R2,(R2)
 	JMP R3

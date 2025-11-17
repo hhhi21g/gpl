@@ -135,6 +135,40 @@ void replace_all(TAC *start, SYM *old, SYM *new)
 	}
 }
 
+int has_side_effect(TAC *t)
+{
+	switch (t->op)
+	{
+	case TAC_CALL:
+	case TAC_OUTPUT:
+	case TAC_RETURN:
+		return 1;
+	}
+	return 0;
+}
+
+int live_contains(SYM **live, int live_cnt, SYM *v)
+{
+	if (!v)
+		return 0;
+	for (int i = 0; i < live_cnt; i++)
+	{
+		if (live[i] == v)
+			return 1;
+	}
+	return 0;
+}
+
+void add_live(SYM **live, int *live_cnt, SYM *v)
+{
+	if (!v)
+		return;
+	if (!live_contains(live, *live_cnt, v))
+	{
+		live[(*live_cnt)++] = v;
+	}
+}
+
 int local_copy_propagation()
 {
 	int changed = 0;
@@ -531,6 +565,52 @@ int local_expression_elimination()
 	return changed;
 }
 
+int local_dead_assignment()
+{
+	int changed = 0;
+	for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+	{
+		SYM *live[1000]; // 活跃变量集合
+		int live_cnt = 0;
+		TAC *prev;
+
+		for (TAC *p = bb->last; p != bb->last->next; p = p->prev)
+		{
+			prev = p->prev;
+			int op = p->op;
+			SYM *a = p->a;
+			SYM *b = p->b;
+			SYM *c = p->c;
+
+			// 操作数都存活
+			add_live(live, &live_cnt, b);
+			add_live(live, &live_cnt, c);
+
+			if (a)
+			{
+				int a_live = live_contains(live, live_cnt, a);
+				if (!a_live && !has_side_effect(p)) // a没被使用过
+				{
+					remove_tac_bb(bb, p);
+					changed = 1;
+					continue;
+				}
+
+				// 删除a的旧值
+				for (int i = 0; i < live_cnt; i++)
+				{
+					if (live[i] == a)
+					{
+						live[i] = live[--live_cnt];
+						break;
+					}
+				}
+			}
+		}
+	}
+	return changed;
+}
+
 void local_optimize()
 {
 	int changed;
@@ -547,6 +627,9 @@ void local_optimize()
 
 		if (local_expression_elimination() != 0)
 			changed = 1;
+
+		// if (local_dead_assignment())
+		// 	changed = 1;
 
 	} while (changed);
 }

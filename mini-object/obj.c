@@ -58,19 +58,19 @@ void asm_write_back(int r)
 
 void asm_load(int r, SYM *s)
 {
-	/* already in a reg */
-	for (int i = R_GEN; i < R_NUM; i++)
-	{
-		if (rdesc[i].var == s)
-		{
-			/* load from the reg */
-			out_str(file_s, "	LOD R%u,R%u\n", r, i);
+	// /* already in a reg */
+	// for (int i = R_GEN; i < R_NUM; i++)
+	// {
+	// 	if (rdesc[i].var == s)
+	// 	{
+	// 		/* load from the reg */
+	// 		out_str(file_s, "	LOD R%u,R%u\n", r, i);
 
-			/* update rdesc */
-			// rdesc_fill(r, s, rdesc[i].mod);
-			return;
-		}
-	}
+	// 		/* update rdesc */
+	// 		// rdesc_fill(r, s, rdesc[i].mod);
+	// 		return;
+	// 	}
+	// }
 
 	/* not in a reg */
 	switch (s->type)
@@ -521,7 +521,29 @@ void asm_code(TAC *c)
 
 	case TAC_COPY:
 	{
-		int rb = reg_alloc(c->b);
+		// a = a
+		if (c->a == c->b)
+		{
+			return; // 不生成任何指令
+		}
+
+		SYM *dst = c->a;
+		SYM *src = c->b; // 原寄存器，需要被继承
+
+		int rs = -1;
+
+		for (int i = R_GEN; i < R_NUM; i++)
+		{
+			if (rdesc[i].var == src)
+			{
+				rs = i;
+				// printf("rdesc[%d].var = %d\n", i, rdesc[i].var->value);
+				break;
+			}
+		}
+
+		if (rs < 0)
+			rs = reg_alloc(src);
 
 		// 左值是变量
 		if (c->a->type == SYM_VAR)
@@ -531,25 +553,30 @@ void asm_code(TAC *c)
 				// 局部变量
 				// out_str(file_s, "	STO (R%u+%d),R%u\n", R_BP, c->a->offset, rb);
 				if (c->a->offset >= 0)
-					out_str(file_s, "   STO (R%u+%d),R%u\n", R_BP, c->a->offset, rb);
+					out_str(file_s, "	STO (R%u+%d),R%u\n", R_BP, c->a->offset, rs);
 				else
-					out_str(file_s, "   STO (R%u-%d),R%u\n", R_BP, -c->a->offset, rb);
+					out_str(file_s, "	STO (R%u-%d),R%u\n", R_BP, -c->a->offset, rs);
 			}
 			else
 			{
 				// 全局变量
 				out_str(file_s, "	LOD R4,STATIC\n");
-				out_str(file_s, "	STO (R4+%d),R%u\n", c->a->offset, rb);
+				out_str(file_s, "	STO (R4+%d),R%u\n", c->a->offset, rs);
 			}
+			if (!(c->b->type == SYM_TMP)) // src 不是临时变量
+			{
+				rdesc_fill(rs, dst, MODIFIED);
+			}
+			return;
 		}
 		else
 		{
 			// 临时变量或寄存器变量
 			int ra = reg_alloc(c->a);
-			out_str(file_s, "	LOD R%u,R%u\n", ra, rb);
+			out_str(file_s, "	LOD R%u,R%u\n", ra, rs);
+			rdesc_fill(ra, c->a, UNMODIFIED);
 		}
 
-		rdesc_fill(rb, c->a, UNMODIFIED);
 		return;
 	}
 
@@ -566,47 +593,74 @@ void asm_code(TAC *c)
 		rdesc[r].mod = MODIFIED;
 		return;
 
-	case TAC_OUTPUT:
-		if (c->a->type == SYM_VAR)
-		{
-			r = reg_alloc(c->a);
-			int real_type = SYM_INT;
-			if (c->a && c->a->etc)
-			{
-				real_type = *((int *)c->a->etc);
-				// printf("%d", real_type);
-			}
-			// if (real_type != SYM_PTR)
-			// 	out_str(file_s, "	LOD R15,R%u\n", r);
-			// else
-			if (c->a->scope == 1)
-			{
-				// 局部变量
-				// out_str(file_s, "	LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
-				if (c->a->offset >= 0)
-					out_str(file_s, "    LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
-				else
-					out_str(file_s, "    LOD R15,(R%u-%d)\n", R_BP, -c->a->offset);
-			}
-			else
-			{
-				// 全局变量：从 STATIC 段取
-				out_str(file_s, "	LOD R4,STATIC\n");
-				out_str(file_s, "	LOD R15,(R4+%d)\n", c->a->offset);
-			}
+	// case TAC_OUTPUT:
+	// 	if (c->a->type == SYM_VAR)
+	// 	{
+	// 		r = reg_alloc(c->a);
+	// 		int real_type = SYM_INT;
+	// 		if (c->a && c->a->etc)
+	// 		{
+	// 			real_type = *((int *)c->a->etc);
+	// 			// printf("%d", real_type);
+	// 		}
+	// 		// if (real_type != SYM_PTR)
+	// 		// 	out_str(file_s, "	LOD R15,R%u\n", r);
+	// 		// else
+	// 		if (c->a->scope == 1)
+	// 		{
+	// 			// 局部变量
+	// 			// out_str(file_s, "	LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
+	// 			if (c->a->offset >= 0)
+	// 				out_str(file_s, "    LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
+	// 			else
+	// 				out_str(file_s, "    LOD R15,(R%u-%d)\n", R_BP, -c->a->offset);
+	// 		}
+	// 		else
+	// 		{
+	// 			// 全局变量：从 STATIC 段取
+	// 			out_str(file_s, "	LOD R4,STATIC\n");
+	// 			out_str(file_s, "	LOD R15,(R4+%d)\n", c->a->offset);
+	// 		}
 
-			if (real_type == SYM_CHAR)
-				out_str(file_s, "	OTC\n");
-			else
-				out_str(file_s, "	OTI\n");
-		}
-		else if (c->a->type == SYM_TEXT)
+	// 		if (real_type == SYM_CHAR)
+	// 			out_str(file_s, "	OTC\n");
+	// 		else
+	// 			out_str(file_s, "	OTI\n");
+	// 	}
+	// 	else if (c->a->type == SYM_TEXT)
+	// 	{
+	// 		r = reg_alloc(c->a);
+	// 		out_str(file_s, "	LOD R15,R%u\n", r);
+	// 		out_str(file_s, "	OTS\n");
+	// 	}
+	// 	return;
+	case TAC_OUTPUT:
+	{
+		SYM *s = c->a;
+
+		if (s->type == SYM_TEXT)
 		{
-			r = reg_alloc(c->a);
-			out_str(file_s, "	LOD R15,R%u\n", r);
-			out_str(file_s, "	OTS\n");
+			int r = reg_alloc(s);
+			out_str(file_s, "    LOD R15,R%u\n", r);
+			out_str(file_s, "    OTS\n");
+			return;
 		}
+
+		int r = reg_alloc(s);
+
+		out_str(file_s, "    LOD R15,R%u\n", r);
+
+		int real_type = SYM_INT;
+		if (s->etc)
+			real_type = *((int *)s->etc);
+
+		if (real_type == SYM_CHAR)
+			out_str(file_s, "    OTC\n");
+		else
+			out_str(file_s, "    OTI\n");
+
 		return;
+	}
 
 	case TAC_VARARRAY:
 	{
