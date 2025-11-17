@@ -665,8 +665,8 @@ void local_optimize()
 		if (local_expression_elimination() != 0)
 			changed = 1;
 
-		// if (local_dead_assignment())
-		// 	changed = 1;
+		if (local_dead_assignment())
+			changed = 1;
 
 	} while (changed);
 }

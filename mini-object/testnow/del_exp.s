@@ -19,8 +19,8 @@ main:
 	LOD R5,1
 	STO (R2+8),R5
 
-	# b = 2
-	LOD R6,2
+	# b = 1
+	LOD R6,1
 	STO (R2+12),R6
 
 	# var t0
@@ -34,35 +34,32 @@ main:
 
 	# var t1
 
-	# t1 = a + 1
-    LOD R6,1
-    ADD R5,R6
+	# t1 = b + 1
+    LOD R5,1
+    ADD R6,R5
 
 	# c = t1
-	STO (R2+16),R5
+	STO (R2+16),R6
 
 	# goto L2
-    STO (R2+24),R5
+    STO (R2+24),R6
 	JMP L2
 
 	# label L1
 L1:
 
-	# var t2
-
-	# t2 = b + 1
-	LOD R5,(R2+12)
-    LOD R6,1
-    ADD R5,R6
-
-	# c = t2
+	# c = 2
+	LOD R5,2
 	STO (R2+16),R5
 
 	# label L2
-    STO (R2+28),R5
+    STO (R2+16),R5
 L2:
 
-	# var t3
+	# output c
+	LOD R5,(R2+16)
+    LOD R15,R5
+    OTI
 
 	# end
 	LOD R3,(R2+4)

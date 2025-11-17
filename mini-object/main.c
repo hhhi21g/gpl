@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 	tac_init();
 	yyparse();
 	build_cfg();
-	cfg_dump(file_x);
+	// cfg_dump(file_x);
 
 	// 数据流分析
 	compute_def_use();
@@ -65,6 +65,7 @@ int main(int argc, char *argv[])
 	print_liveness();
 
 	local_optimize();
+	// global_optimize();
 
 	tac_list();
 	build_cfg();
