@@ -101,6 +101,17 @@ typedef struct basic_block
 	int pred_count;
 	struct basic_block *next;
 	int mark;
+
+	SYM *def[1024]; // BB中被赋值的符号集合
+	SYM *use[1024]; // BB内使用，但在该使用点之前没有被定义过的符号集合
+	int def_cnt;
+	int use_cnt;
+
+	// 活跃变量分析
+	SYM *in[1024];	// 进入BB时活跃的变量
+	SYM *out[1024]; // 离开BB时活跃的变量
+	int in_cnt;
+	int out_cnt;
 } BASIC_BLOCK;
 
 typedef struct STRUCT_MEMBER

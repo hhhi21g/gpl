@@ -5,6 +5,7 @@
 #include "tac.h"
 #include "mini.y.h"
 #include "obj.h"
+#include "optimize.h"
 
 FILE *file_x, *file_s;
 
@@ -55,12 +56,19 @@ int main(int argc, char *argv[])
 	tac_init();
 	yyparse();
 	build_cfg();
+	cfg_dump(file_x);
+
+	// 数据流分析
+	compute_def_use();
+	print_def_use();
+	live_variables_analysis();
+	print_liveness();
 
 	local_optimize();
 
 	tac_list();
 	build_cfg();
-	cfg_dump(file_x);
+
 	tac_obj();
 
 	fclose(file_s);
