@@ -112,6 +112,12 @@ typedef struct basic_block
 	SYM *out[1024]; // 离开BB时活跃的变量
 	int in_cnt;
 	int out_cnt;
+
+	// 可用表达式分析
+	unsigned char *gen;	  // 在该BB中生成的表达式
+	unsigned char *kill;  // 在该BB中被杀死的表达式
+	unsigned char *ae_in; //  可用表达式分析的in和out，与活跃变量分析区别开
+	unsigned char *ae_out;
 } BASIC_BLOCK;
 
 typedef struct STRUCT_MEMBER
@@ -158,12 +164,16 @@ typedef struct
 // 存储表达式
 typedef struct expMap
 {
+	int id;
 	int op;
 	SYM *b;
 	SYM *c;
 	SYM *t;
 	struct expMap *next;
 } expMap;
+
+extern expMap *exp_list;
+extern int exp_int;
 
 /* global var */
 extern FILE *file_x, *file_s;

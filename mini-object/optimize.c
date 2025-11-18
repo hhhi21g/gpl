@@ -6,6 +6,9 @@
 #include "tac.h"
 #include "optimize.h"
 
+expMap *exp_list = NULL;
+int exp_cnt = 0;
+
 // 是否是临时变量或普通变量
 int is_var(SYM *s)
 {
@@ -330,6 +333,165 @@ int global_dead_assignment()
     }
 
     return changed;
+}
+
+// 是否是二元运算
+int is_exp_op(int op)
+{
+    return (op == TAC_ADD || op == TAC_SUB ||
+            op == TAC_MUL || op == TAC_DIV ||
+            op == TAC_EQ || op == TAC_NE ||
+            op == TAC_LT || op == TAC_LE ||
+            op == TAC_GT || op == TAC_GE);
+}
+
+// 处理交换律：是否是交换律, 加乘==！=是
+int is_commutative_op(int op)
+{
+    return (op == TAC_ADD || op == TAC_MUL || op == TAC_EQ || op == TAC_NE);
+}
+
+// 处理交换律：通过按地址排序让两个符合交换律的式子相同
+void normalize_operands(int op, SYM **pb, SYM **pc)
+{
+    SYM *b = *pb;
+    SYM *c = *pc;
+
+    if (!is_commutative_op(op))
+        return;
+
+    if (b > c)
+    {
+        SYM *tmp = b;
+        b = c;
+        c = tmp;
+    }
+
+    *pb = b;
+    *pc = c;
+}
+
+// 创建一个新节点
+expMap *new_exp(int op, SYM *b, SYM *c)
+{
+    expMap *e = (expMap *)malloc(sizeof(expMap));
+    e->id = exp_cnt++;
+    e->op = op;
+    e->b = b;
+    e->c = c;
+    e->t = NULL;
+    e->next = exp_list;
+    exp_list = e;
+
+    return e;
+}
+
+expMap *find_exp(int op, SYM *b, SYM *c)
+{
+    for (expMap *e = exp_list; e; e = e->next)
+    {
+        if (e->op == op && e->b == b && e->c == c)
+            return e;
+    }
+    return NULL;
+}
+
+// 查找并返回规范化的表达式
+expMap *get_exp(int op, SYM *b, SYM *c)
+{
+    if (!is_exp_op(op) || !b || !c)
+        return NULL;
+
+    normalize_operands(op, &b, &c);
+
+    expMap *e = find_exp(op, b, c);
+    if (!e)
+    {
+        e = new_exp(op, b, c);
+    }
+    return e;
+}
+
+// 初始化
+void init_blocks()
+{
+    for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+    {
+        bb->gen = (unsigned char *)calloc(exp_cnt, sizeof(unsigned char));
+        bb->kill = (unsigned char *)calloc(exp_cnt, sizeof(unsigned char));
+        bb->ae_in = (unsigned char *)calloc(exp_cnt, sizeof(unsigned char));
+        bb->ae_out = (unsigned char *)calloc(exp_cnt, sizeof(unsigned char));
+    }
+}
+
+void build_expMap()
+{
+    exp_list = NULL;
+    exp_cnt = 0;
+
+    for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+    {
+        for (TAC *p = bb->first; p; p = p->next)
+        {
+            if (is_exp_op(p->op) && p->b && p->c)
+            {
+                get_exp(p->op, p->b, p->c);
+            }
+        }
+    }
+}
+
+// 计算gen,kill
+void compute_gen_kill()
+{
+    for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+    {
+        memset(bb->gen, 0, exp_cnt);
+        memset(bb->kill, 0, exp_cnt);
+        for (TAC *p = bb->first; p != bb->last->next; p = p->next)
+        {
+            if ((is_exp_op(p->op)) && p->b && p->c)
+            {
+                expMap *e = get_exp(p->op, p->b, p->c);
+
+                // 加入GEN
+                bb->gen[e->id] = 1;
+            }
+
+            if ((p->op == TAC_COPY || is_exp_op(p->op)) && p->a)
+            {
+                SYM *x = p->a;
+                // kill所有含x的表达式
+                for (expMap *e = exp_list; e; e = e->next)
+                {
+                    if (e->b == x || e->c == x)
+                    {
+                        bb->kill[e->id] = 1;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void print_gen_kill()
+{
+    for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+    {
+        printf("BB %p:\n", bb);
+
+        printf("GEN: ");
+        for (int i = 0; i < exp_cnt; i++)
+            if (bb->gen[i])
+                printf("%d ", i);
+        printf("\n");
+
+        printf("KILL: ");
+        for (int i = 0; i < exp_cnt; i++)
+            if (bb->kill[i])
+                printf("%d ", i);
+        printf("\n");
+    }
 }
 
 void global_optimize()

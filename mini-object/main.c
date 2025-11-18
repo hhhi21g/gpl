@@ -58,11 +58,19 @@ int main(int argc, char *argv[])
 	build_cfg();
 	// cfg_dump(file_x);
 
-	// 数据流分析
+	// def use
 	compute_def_use();
-	print_def_use();
+	// print_def_use();
+
+	// 活跃变量分析
 	live_variables_analysis();
-	print_liveness();
+	// print_liveness();
+
+	// kill gen
+	build_expMap();
+	init_blocks();
+	compute_gen_kill();
+	print_gen_kill();
 
 	local_optimize();
 	// global_optimize();

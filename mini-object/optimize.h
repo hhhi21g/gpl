@@ -9,4 +9,9 @@ void print_liveness();
 
 int global_dead_assignment();
 void global_optimize();
+
+void init_blocks();
+void build_expMap();
+void compute_gen_kill();
+void print_gen_kill();
 #endif
