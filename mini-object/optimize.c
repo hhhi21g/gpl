@@ -118,12 +118,16 @@ void compute_def_use()
                     bb->def[bb->def_cnt++] = a;
                 break;
 
-            // output/return/ifz: use a
+            // output/return: use a
             case TAC_OUTPUT:
             case TAC_RETURN:
-            case TAC_IFZ:
                 if (is_var(a) && !in_list(bb->def, bb->def_cnt, a) && !in_list(bb->use, bb->use_cnt, a))
                     bb->use[bb->use_cnt++] = a;
+                break;
+
+            case TAC_IFZ:
+                if (is_var(b) && !in_list(bb->def, bb->def_cnt, b) && !in_list(bb->use, bb->use_cnt, b))
+                    bb->use[bb->use_cnt++] = b;
                 break;
 
             // GOTO / LABEL / BEGIN / END / VAR：不产生 def/use
@@ -242,7 +246,7 @@ int global_dead_assignment()
         SYM *live[1024];
         int live_cnt = bb->out_cnt;
 
-        memcpy(live, bb->out, sizeof(SYM *) * live_cnt);
+        memcpy(live, bb->out, sizeof(SYM *) * live_cnt); // 使用当前BB的out初始化live
 
         TAC *first = bb->first;
 
@@ -255,18 +259,49 @@ int global_dead_assignment()
             SYM *b = p->b;
             SYM *c = p->c;
 
-            // 使用则加入到live
-            if (b)
-                add_live(live, &live_cnt, b);
-            if (c)
-                add_live(live, &live_cnt, c);
+            switch (p->op)
+            {
+            // 二元运算：use b,c
+            case TAC_COPY:
+            case TAC_ADD:
+            case TAC_SUB:
+            case TAC_MUL:
+            case TAC_DIV:
+            case TAC_EQ:
+            case TAC_NE:
+            case TAC_LT:
+            case TAC_LE:
+            case TAC_GT:
+            case TAC_GE:
+                if (is_var(b))
+                    add_live(live, &live_cnt, b);
+                if (is_var(c))
+                    add_live(live, &live_cnt, c);
+                break;
+
+            // output/return/ifz: use a
+            case TAC_OUTPUT:
+            case TAC_RETURN:
+                if (is_var(a))
+                    add_live(live, &live_cnt, a);
+                break;
+
+            case TAC_IFZ:
+                if (is_var(b))
+                    add_live(live, &live_cnt, b);
+                break;
+
+            // 其他 op：根据需要再补
+            default:
+                break;
+            }
 
             if (a && (a->type == SYM_VAR || a->type == SYM_TMP) && is_def_tac(p))
             {
 
                 int used_later = live_contains(live, live_cnt, a);
 
-                if (!used_later)
+                if (!used_later) // 不在live里就删除，无需后续还有定义
                 {
                     remove_tac_bb(bb, p);
                     changed = 1;

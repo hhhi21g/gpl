@@ -1653,29 +1653,29 @@ void build_cfg()
 	for (t = tac_first; t != NULL; t = t->next)
 	{
 		// 跳过未被引用的
-		// if (t->op == TAC_LABEL)
-		// {
-		// 	int referenced = 0;
-		// 	for (TAC *p = tac_first; p != NULL; p = p->next)
-		// 	{
-		// 		if ((p->op == TAC_GOTO || p->op == TAC_IFZ) && p->a && p->a == t->a)
-		// 		{
-		// 			referenced = 1;
-		// 			break;
-		// 		}
-		// 	}
+		if (t->op == TAC_LABEL)
+		{
+			int referenced = 0;
+			for (TAC *p = tac_first; p != NULL; p = p->next)
+			{
+				if ((p->op == TAC_GOTO || p->op == TAC_IFZ) && p->a && p->a == t->a)
+				{
+					referenced = 1;
+					break;
+				}
+			}
 
-		// 	// 如果该 label 没有被任何 GOTO/IFZ 引用，且当前 block 未结束，则认为是块内标签
-		// 	if (!referenced && cur_bb != NULL)
-		// 	{
-		// 		cur_bb->last = t; // 继续累积
-		// 		continue;
-		// 	}
-		// 	else
-		// 	{
-		// 		cur_bb = NULL; // 强制结束当前块，新建一个
-		// 	}
-		// }
+			// 如果该 label 没有被任何 GOTO/IFZ 引用，且当前 block 未结束，则认为是块内标签
+			if (!referenced && cur_bb != NULL)
+			{
+				cur_bb->last = t; // 继续累积
+				continue;
+			}
+			else
+			{
+				cur_bb = NULL; // 强制结束当前块，新建一个
+			}
+		}
 
 		if (t->op == TAC_LABEL || t->op == TAC_BEGINFUNC || !cur_bb)
 		{

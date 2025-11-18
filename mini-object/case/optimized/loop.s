@@ -153,35 +153,45 @@ L4:
 
 	# var t8
 
+	# t8 = b * c
+    MUL R12,R9
+
 	# var t9
+
+	# t9 = a + t8
+	LOD R13,(R2+8)
+    STO (R2+72),R12
+    ADD R13,R12
 
 	# var t10
 
 	# t10 = c - a
-	LOD R13,(R2+8)
-    SUB R9,R13
+	LOD R14,(R2+8)
+    SUB R9,R14
 
 	# var t11
 
 	# t11 = t10 / b
     STO (R2+80),R9
-    DIV R9,R12
+	LOD R15,(R2+12)
+    DIV R9,R15
 
 	# var t12
 
-	# t12 = t3 - t11
+	# t12 = t9 - t11
+    STO (R2+76),R13
     STO (R2+84),R9
-    SUB R14,R9
+    SUB R13,R9
 
 	# var t13
 
 	# t13 = t12 + 9
-    STO (R2+88),R14
+    STO (R2+88),R13
     LOD R5,9
-    ADD R14,R5
+    ADD R13,R5
 
 	# e = t13
-	STO (R2+24),R14
+	STO (R2+24),R13
 
 	# var t14
 
@@ -195,7 +205,7 @@ L4:
 	# label L5
     STO (R2+96),R7
     STO (R2+68),R10
-    STO (R2+92),R14
+    STO (R2+92),R13
 L5:
 
 	# goto L4

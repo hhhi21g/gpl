@@ -11,53 +11,30 @@ main:
 
 	# var a
 
-	# var b
-
-	# var c
-
 	# a = 1
 	LOD R5,1
 	STO (R2+8),R5
 
-	# b = 1
-	LOD R6,1
-	STO (R2+12),R6
-
-	# var t0
-
 	# ifz 0 goto L1
     STO (R2+8),R5
-    STO (R2+12),R6
-	LOD R7,0
-	TST R7
+	LOD R6,0
+	TST R6
 	JEZ L1
 
-	# var t1
-
-	# t1 = b + 1
-    LOD R5,1
-    ADD R6,R5
-
-	# c = t1
-	STO (R2+16),R6
-
-	# goto L2
-    STO (R2+24),R6
-	JMP L2
+	# a = 2
+	LOD R7,2
+	STO (R2+8),R7
 
 	# label L1
+    STO (R2+8),R7
 L1:
 
-	# c = 2
-	LOD R5,2
-	STO (R2+16),R5
+	# a = 3
+	LOD R5,3
+	STO (R2+8),R5
 
-	# label L2
-    STO (R2+16),R5
-L2:
-
-	# output c
-	LOD R5,(R2+16)
+	# output a
+    STO (R2+8),R5
     LOD R15,R5
     OTI
 

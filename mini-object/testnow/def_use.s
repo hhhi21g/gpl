@@ -31,17 +31,16 @@ main:
 
 	# var t1
 
-	# t1 = a + 10
+	# t1 = a + b
 	LOD R8,(R2+8)
-    LOD R5,10
-    ADD R8,R5
+    STO (R2+12),R7
+    ADD R8,R7
 
 	# c = t1
 	STO (R2+16),R8
 
 	# return 0
     STO (R2+20),R5
-    STO (R2+12),R7
     STO (R2+24),R8
 	LOD R5,0
     LOD R15,R5

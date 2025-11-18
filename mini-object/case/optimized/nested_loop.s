@@ -79,6 +79,7 @@ L4:
 	# var t3
 
 	# t3 = t2 + 9
+    STO (R2+28),R5
     LOD R6,9
     ADD R5,R6
 

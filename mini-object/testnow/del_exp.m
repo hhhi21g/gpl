@@ -1,14 +1,11 @@
 main() {
-    int a, b, c;
+    int a;
+    a = 1;      
 
-    a = 1;
-    b = a;      
-
-    if (a < 0) {
-        c = b + 1;
-    } else {
-        c = 2;
+    if (0) {
+        a = 2;  
     }
 
-    output c;
+    a = 3;     
+    output a;   
 }

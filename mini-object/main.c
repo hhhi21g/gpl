@@ -69,6 +69,7 @@ int main(int argc, char *argv[])
 
 	tac_list();
 	build_cfg();
+	cfg_dump(file_x);
 
 	tac_obj();
 
