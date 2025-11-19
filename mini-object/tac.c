@@ -4,6 +4,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "tac.h"
+#include "optimize.h"
 
 /* global var */
 int scope, next_tmp, next_label;
@@ -82,6 +83,7 @@ static SYM *mk_bool_const(int v)
 // 在expMap链表中查找
 SYM *lookup_exp(expMap *map, int op, SYM *b, SYM *c)
 {
+	normalize_operands(op, &b, &c);
 	for (expMap *p = map; p; p = p->next)
 	{
 		if (p->op == op && p->b == b && p->c == c) // 表达式完全相同
@@ -93,7 +95,9 @@ SYM *lookup_exp(expMap *map, int op, SYM *b, SYM *c)
 // 新增表达式节点
 void insert_exp(expMap **map, int op, SYM *b, SYM *c, SYM *t)
 {
+	normalize_operands(op, &b, &c);
 	expMap *node = malloc(sizeof(expMap));
+	node->id = -1;
 	node->op = op;
 	node->b = b;
 	node->c = c;

@@ -396,6 +396,16 @@ expMap *find_exp(int op, SYM *b, SYM *c)
     return NULL;
 }
 
+expMap *find_exp_in_map(expMap *map, int op, SYM *b, SYM *c)
+{
+    for (expMap *p = map; p; p = p->next)
+    {
+        if (p->op == op && p->b == b && p->c == c)
+            return p;
+    }
+    return NULL;
+}
+
 // 查找并返回规范化的表达式
 expMap *get_exp(int op, SYM *b, SYM *c)
 {
@@ -494,6 +504,200 @@ void print_gen_kill()
     }
 }
 
+// 计算可用表达式分析中的in: 前驱所有BB的out的集合
+void compute_ae_in(BASIC_BLOCK *bb)
+{
+    if (bb->pred_count == 0)
+    {
+        memset(bb->ae_in, 0, exp_cnt);
+        return;
+    }
+
+    for (int i = 0; i < exp_cnt; i++)
+    {
+        bb->ae_in[i] = 1;
+    }
+
+    for (int p = 0; p < bb->pred_count; p++)
+    {
+        BASIC_BLOCK *pred = bb->pred[p];
+
+        for (int i = 0; i < exp_cnt; i++) // 逐位取交集
+        {
+            bb->ae_in[i] = bb->ae_in[i] && pred->ae_out[i];
+        }
+    }
+}
+
+// 计算可用表达式分析中的out: gen ∪ (IN - kill)
+int compute_ae_out(BASIC_BLOCK *bb)
+{
+    unsigned char new_out[1024];
+    memset(new_out, 0, 1024);
+
+    for (int i = 0; i < exp_cnt; i++)
+    { // out = gen ∪ (in - kill)
+        new_out[i] = (bb->gen[i] || bb->ae_in[i]) && (!bb->kill[i]);
+    }
+
+    int changed = 0;
+    for (int i = 0; i < exp_cnt; i++)
+    {
+        if (new_out[i] != bb->ae_out[i])
+        {
+            changed = 1;
+            break;
+        }
+    }
+
+    memcpy(bb->ae_out, new_out, exp_cnt);
+    return changed;
+}
+
+void available_expressions_analysis()
+{
+    int changed = 1;
+    BASIC_BLOCK *entry = bb_list;
+
+    for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+    {
+        if (bb == entry)
+            memset(bb->ae_out, 0, exp_cnt); // entry初始out为空集
+        else
+        {
+            for (int i = 0; i < exp_cnt; i++) // 初始out为全集
+                bb->ae_out[i] = 1;
+        }
+    }
+
+    while (changed)
+    {
+        changed = 0;
+        for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+        {
+            compute_ae_in(bb);
+            if (compute_ae_out(bb))
+                changed = 1;
+        }
+    }
+}
+
+void print_available_expressions()
+{
+    printf("===== Available Expressions Analysis Result =====\n");
+
+    for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+    {
+        printf("BB %p:\n", bb);
+
+        printf("IN : ");
+        for (int i = 0; i < exp_cnt; i++)
+            if (bb->ae_in[i])
+                printf("%d ", i);
+        printf("\n");
+
+        printf("OUT: ");
+        for (int i = 0; i < exp_cnt; i++)
+            if (bb->ae_out[i])
+                printf("%d ", i);
+        printf("\n\n");
+    }
+}
+
+static SYM *exp_temp[1024]; // 表达式id上一次被计算时产生的临时变量
+
+void kill_expression(expMap **map, SYM *a)
+{
+    expMap **pp = map;
+    while (*pp)
+    {
+        expMap *q = *pp;
+        if (q->b == a || q->c == a)
+        {
+            *pp = q->next;
+            free(q);
+        }
+        else
+        {
+            pp = &((*pp)->next);
+        }
+    }
+}
+
+int global_expression_elimination()
+{
+    int changed = 0;
+
+    for (int i = 0; i < exp_cnt; i++)
+        exp_temp[i] = NULL;
+
+    for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
+    {
+        expMap *map = NULL;
+
+        for (expMap *e = exp_list; e; e = e->next)
+        {
+            if (bb->ae_in[e->id] == 1 && exp_temp[e->id]) // 根据BB的IN构建map,即当前BB内可复用的表达式表
+            {
+                insert_exp(&map, e->op, e->b, e->c, exp_temp[e->id]);
+            }
+        }
+
+        TAC *next;
+        for (TAC *p = bb->first; p != bb->last->next; p = next)
+        {
+            next = p->next;
+
+            int op = p->op;
+
+            if (!is_exp_op(op))
+            {
+                if (p->a && (op == TAC_COPY || op == TAC_INPUT))
+                {
+                    SYM *a = p->a;
+
+                    // 从exp_temp中删除
+                    for (expMap *e = exp_list; e; e = e->next)
+                    {
+                        if (e->b == a || e->c == a)
+                        {
+                            exp_temp[e->id] = NULL;
+                        }
+                    }
+                    kill_expression(&map, a);
+                }
+                continue;
+            }
+
+            SYM *b = p->b;
+            SYM *c = p->c;
+            if (!b || !c)
+                continue;
+
+            expMap *m = find_exp_in_map(map, op, b, c);
+
+            if (m)
+            {
+                SYM *oldt = m->t; // 用找到的对应的临时变量进行替换
+
+                p->op = TAC_COPY;
+                p->b = oldt;
+                p->c = NULL;
+                changed++;
+            }
+            else
+            {
+                expMap *e = get_exp(op, b, c);
+                int id = e->id;
+
+                exp_temp[id] = p->a;
+                insert_exp(&map, op, b, c, p->a);
+            }
+        }
+    }
+    return changed;
+}
+
 void global_optimize()
 {
     int changed;
@@ -508,8 +712,8 @@ void global_optimize()
         // if (local_constant_folding())
         //     changed = 1;
 
-        // if (local_expression_elimination() != 0)
-        //     changed = 1;
+        if (global_expression_elimination() != 0)
+            changed = 1;
 
         if (global_dead_assignment())
             changed = 1;

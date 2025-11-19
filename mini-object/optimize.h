@@ -14,4 +14,11 @@ void init_blocks();
 void build_expMap();
 void compute_gen_kill();
 void print_gen_kill();
+
+void compute_ae_in(BASIC_BLOCK *bb);
+int compute_ae_out(BASIC_BLOCK *bb);
+void available_expressions_analysis();
+void print_available_expressions();
+
+int global_expression_elimination();
 #endif

@@ -1,7 +1,10 @@
 #!/bin/bash
 
 make
-./mini testcase/arr-while.m
-./asm testcase/arr-while.s
-./machine testcase/arr-while.o
+./mini case/optimized/loop.m
+./asm case/optimized/loop.s
+./machine case/optimized/loop.o
 
+./mini case/optimized/nested_loop.m
+./asm case/optimized/nested_loop.s
+./machine case/optimized/nested_loop.o

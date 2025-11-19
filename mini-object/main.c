@@ -70,10 +70,14 @@ int main(int argc, char *argv[])
 	build_expMap();
 	init_blocks();
 	compute_gen_kill();
-	print_gen_kill();
+	// print_gen_kill();
+
+	// 可用表达式分析
+	available_expressions_analysis();
+	print_available_expressions();
 
 	local_optimize();
-	// global_optimize();
+	global_optimize();
 
 	tac_list();
 	build_cfg();
