@@ -976,6 +976,78 @@ static int can_hoist_tac(TAC *p,
     return 1;
 }
 
+// 修改版 can_hoist_tac：只允许操作数在循环中不被定义的表达式 hoist
+// static int can_hoist_tac(
+//     TAC *p,
+//     SYM **loop_defs, int loop_def_cnt,
+//     BASIC_BLOCK **loop_blocks, int loop_cnt)
+// {
+//     // 1) 必须是二元表达式
+//     if (!is_exp_op(p->op))
+//         return 0;
+
+//     SYM *a = p->a;
+//     SYM *b = p->b;
+//     SYM *c = p->c;
+
+//     if (!a || !b || !c)
+//         return 0;
+
+//     // 2) 结果必须是临时变量（跟你原来的约束一致）
+//     if (a->type != SYM_TMP)
+//         return 0;
+
+//     // 3) 操作数在循环中不能被赋值（不从循环内的 temp 链条“递推”不变）
+//     if (sym_in_defs(b, loop_defs, loop_def_cnt))
+//         return 0;
+//     if (sym_in_defs(c, loop_defs, loop_def_cnt))
+//         return 0;
+
+//     // 4) 禁止1：控制流表达式（ifz 条件）绝对不能 hoist
+//     for (int li = 0; li < loop_cnt; li++)
+//     {
+//         BASIC_BLOCK *bb = loop_blocks[li];
+//         for (TAC *q = bb->first; q && q != bb->last->next; q = q->next)
+//         {
+//             if (q->op == TAC_IFZ && q->b == a)
+//                 return 0;
+//         }
+//     }
+
+//     // 5) 禁止2：如果 p->a 被赋值给普通变量，则不能 hoist
+//     for (int li = 0; li < loop_cnt; li++)
+//     {
+//         BASIC_BLOCK *bb = loop_blocks[li];
+//         for (TAC *q = bb->first; q && q != bb->last->next; q = q->next)
+//         {
+//             if (q->op == TAC_COPY && q->b == a)
+//             {
+//                 if (q->a && q->a->type == SYM_VAR)
+//                     return 0;
+//             }
+//         }
+//     }
+
+//     // 6) 禁止3：p->a 在循环中必须至少一次被使用
+//     int used = 0;
+//     for (int li = 0; li < loop_cnt && !used; li++)
+//     {
+//         BASIC_BLOCK *bb = loop_blocks[li];
+//         for (TAC *q = bb->first; q && q != bb->last->next; q = q->next)
+//         {
+//             if (q->b == a || q->c == a)
+//             {
+//                 used = 1;
+//                 break;
+//             }
+//         }
+//     }
+//     if (!used)
+//         return 0;
+
+//     return 1;
+// }
+
 // 将循环内不变表达式移动到preheader
 static void insert_tac_after(TAC *p, TAC *pos, BASIC_BLOCK *bb)
 {
@@ -1231,11 +1303,21 @@ void global_optimize()
 
         // if (global_expression_elimination() != 0)
         //     changed = 1;
-        if (loop_invariant_code_motion())
+
+        if (global_dead_assignment())
             changed = 1;
 
-        // if (global_dead_assignment())
-        //     changed = 1;
+        if (loop_invariant_code_motion())
+        {
+            changed = 1;
+            build_cfg();
+            compute_def_use();
+            live_variables_analysis();
+            build_expMap();
+            init_blocks();
+            compute_gen_kill();
+            available_expressions_analysis();
+        }
 
     } while (changed);
 }

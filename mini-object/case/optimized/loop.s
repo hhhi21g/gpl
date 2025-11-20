@@ -14,15 +14,9 @@
 
 	# var t6
 
-	# var t8
-
-	# var t9
-
 	# var t10
 
 	# var t11
-
-	# var t12
 
 	# label main
 main:
@@ -92,38 +86,21 @@ main:
 	STO (R4+12),R9
     SUB R5,R9
 
-	# t8 = b * c
-    MUL R10,R7
-
-	# t9 = a + t8
-	LOD R11,(R2+8)
-	LOD R4,STATIC
-	STO (R4+20),R10
-    ADD R11,R10
-
 	# t10 = c - a
-	LOD R12,(R2+8)
-    SUB R7,R12
+	LOD R11,(R2+8)
+    SUB R7,R11
 
 	# t11 = t10 / b
 	LOD R4,STATIC
-	STO (R4+28),R7
-	LOD R13,(R2+12)
-    DIV R7,R13
-
-	# t12 = t9 - t11
-	LOD R4,STATIC
-	STO (R4+24),R11
-	LOD R4,STATIC
-	STO (R4+32),R7
-    SUB R11,R7
+	STO (R4+20),R7
+    DIV R7,R10
 
 	# label L1
 	LOD R4,STATIC
 	STO (R4+16),R5
-    STO (R2+32),R8
 	LOD R4,STATIC
-	STO (R4+36),R11
+	STO (R4+24),R7
+    STO (R2+32),R8
 L1:
 
 	# var t0
@@ -185,20 +162,45 @@ L4:
 	# var t7
 
 	# t7 = t6 + 9
+	LOD R4,STATIC
+	LOD R8,(R4+16)
     LOD R5,9
     ADD R8,R5
 
 	# d = t7
 	STO (R2+20),R8
 
+	# var t8
+
+	# t8 = t2
+	LOD R4,STATIC
+	LOD R9,(R4+0)
+	STO (R2+52),R9
+
+	# var t9
+
+	# t9 = a + t8
+	LOD R10,(R2+8)
+    STO (R2+52),R9
+    ADD R10,R9
+
+	# var t12
+
+	# t12 = t9 - t11
+    STO (R2+56),R10
+	LOD R4,STATIC
+	LOD R11,(R4+24)
+    SUB R10,R11
+
 	# var t13
 
 	# t13 = t12 + 9
+    STO (R2+60),R10
     LOD R5,9
-    ADD R9,R5
+    ADD R10,R5
 
 	# e = t13
-	STO (R2+24),R9
+	STO (R2+24),R10
 
 	# var t14
 
@@ -210,9 +212,9 @@ L4:
 	STO (R2+28),R7
 
 	# label L5
-    STO (R2+56),R7
-    STO (R2+48),R8
-    STO (R2+52),R9
+    STO (R2+28),R7
+    STO (R2+20),R8
+    STO (R2+24),R10
 L5:
 
 	# goto L4
@@ -237,7 +239,7 @@ L6:
     OTS
 
 	# label L2
-    STO (R2+60),R5
+    STO (R2+32),R5
 L2:
 
 	# goto L1
@@ -283,5 +285,5 @@ L8:
 L7:
 	DBS 32,0
 STATIC:
-	DBN 0,40
+	DBN 0,28
 STACK:

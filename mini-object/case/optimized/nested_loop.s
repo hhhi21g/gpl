@@ -87,13 +87,13 @@ L4:
 	STO (R2+12),R5
 
 	# output j
-	LOD R8,(R2+12)
-    LOD R15,R8
+    STO (R2+12),R5
+    LOD R15,R5
     OTI
 
 	# output L7
-	LOD R9,L7
-    LOD R15,R9
+	LOD R8,L7
+    LOD R15,R8
     OTS
 
 	# var t4
@@ -106,8 +106,7 @@ L4:
 	STO (R2+8),R7
 
 	# label L5
-    STO (R2+32),R5
-    STO (R2+36),R7
+    STO (R2+8),R7
 L5:
 
 	# goto L4
@@ -127,7 +126,7 @@ L6:
 	STO (R2+16),R5
 
 	# label L2
-    STO (R2+40),R5
+    STO (R2+16),R5
 L2:
 
 	# goto L1

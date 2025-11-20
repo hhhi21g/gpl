@@ -35,6 +35,14 @@ void rdesc_fill(int r, SYM *s, int mod)
 	rdesc[r].mod = mod;
 }
 
+void rdesc_clear_all()
+{
+	for (int r = R_GEN; r < R_NUM; r++)
+	{
+		rdesc_clear(r);
+	}
+}
+
 void asm_write_back(int r)
 {
 	if ((rdesc[r].var != NULL) && rdesc[r].mod)
@@ -886,6 +894,10 @@ void asm_code(TAC *c)
 		// 	tmpoff -= 4;
 		// 	return;
 		// }
+		if (c->a->type == SYM_TMP)
+		{
+			c->a->type = SYM_VAR; // 临时转局部变量
+		}
 		if (scope)
 		{
 			c->a->scope = 1; /* local var */
