@@ -3,6 +3,7 @@
 	STO (R2),0
 	LOD R4,EXIT
 	STO (R2+4),R4
+	LOD R4,STATIC
 
 	# var t2
 
@@ -69,7 +70,6 @@ main:
 
 	# t3 = a + t2
     STO (R2+8),R5
-	LOD R4,STATIC
 	STO (R4+0),R6
     ADD R5,R6
 
@@ -78,15 +78,12 @@ main:
     ADD R9,R7
 
 	# t5 = t4 / b
-	LOD R4,STATIC
 	STO (R4+8),R9
 	LOD R10,(R2+12)
     DIV R9,R10
 
 	# t6 = t3 - t5
-	LOD R4,STATIC
 	STO (R4+4),R5
-	LOD R4,STATIC
 	STO (R4+12),R9
     SUB R5,R9
 
@@ -95,22 +92,17 @@ main:
     SUB R7,R11
 
 	# t11 = t10 / b
-	LOD R4,STATIC
 	STO (R4+24),R7
     DIV R7,R10
 
 	# t12 = t3 - t11
-	LOD R4,STATIC
 	LOD R12,(R4+4)
-	LOD R4,STATIC
 	STO (R4+28),R7
     SUB R12,R7
 
 	# label L1
-	LOD R4,STATIC
 	STO (R4+16),R5
     STO (R2+32),R8
-	LOD R4,STATIC
 	STO (R4+32),R12
 L1:
 
@@ -173,7 +165,6 @@ L4:
 	# var t7
 
 	# t7 = t6 + 9
-	LOD R4,STATIC
 	LOD R8,(R4+16)
     LOD R5,9
     ADD R8,R5
@@ -186,7 +177,6 @@ L4:
 	# var t13
 
 	# t13 = t12 + 9
-	LOD R4,STATIC
 	LOD R9,(R4+32)
     LOD R5,9
     ADD R9,R5

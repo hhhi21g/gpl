@@ -3,6 +3,7 @@
 	STO (R2),0
 	LOD R4,EXIT
 	STO (R2+4),R4
+	LOD R4,STATIC
 
 	# label main
 main:

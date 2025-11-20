@@ -76,7 +76,7 @@ void asm_write_back(int r)
 		}
 		else /* global var */
 		{
-			out_str(file_s, "	LOD R%u,STATIC\n", R_TP);
+			// out_str(file_s, "	LOD R%u,STATIC\n", R_TP);
 			out_str(file_s, "	STO (R%u+%u),R%u\n", R_TP, rdesc[r].var->offset, r);
 		}
 		rdesc[r].mod = UNMODIFIED;
@@ -99,6 +99,21 @@ void asm_load(int r, SYM *s)
 	// 	}
 	// }
 
+	for (int i = R_GEN; i < R_NUM; i++)
+	{
+		if (rdesc[i].var == s)
+		{
+			// s 已经在寄存器 i 中
+			// 如果 i != r，则复制寄存器即可，不用访问内存
+			if (i != r)
+				out_str(file_s, "    LOD R%u,R%u\n", r, i);
+
+			// 更新寄存器描述符：现在 r 也保存 s 的值
+			rdesc_fill(r, s, rdesc[i].mod);
+
+			return;
+		}
+	}
 	/* not in a reg */
 	switch (s->type)
 	{
@@ -117,7 +132,7 @@ void asm_load(int r, SYM *s)
 		}
 		else /* global var */
 		{
-			out_str(file_s, "	LOD R%u,STATIC\n", R_TP);
+			// out_str(file_s, "	LOD R%u,STATIC\n", R_TP);
 			out_str(file_s, "	LOD R%u,(R%u+%d)\n", r, R_TP, s->offset);
 		}
 		break;
@@ -396,6 +411,8 @@ void asm_head()
 		"	STO (R2+4),R4\n";
 
 	out_str(file_s, "%s", head);
+
+	out_str(file_s, "	LOD R%u,STATIC\n", R_TP);
 }
 
 void asm_tail()
