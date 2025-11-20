@@ -125,6 +125,13 @@ void remove_tac_bb(BASIC_BLOCK *bb, TAC *p)
 		bb->first = p->next;
 	if (bb->last == p)
 		bb->last = p->prev;
+
+	if (bb->first == NULL)
+		bb->last = NULL;
+	if (bb->last == NULL)
+		bb->first = NULL;
+
+	p->prev = p->next = NULL;
 }
 
 int has_later_def(BASIC_BLOCK *bb, TAC *p, SYM *a)
@@ -1648,65 +1655,135 @@ void add_edge(BASIC_BLOCK *from, BASIC_BLOCK *to)
 	to->pred[to->pred_count++] = from;
 }
 
+// void build_cfg()
+// {
+// 	TAC *t;
+// 	BASIC_BLOCK *cur_bb = NULL;
+// 	bb_list = bb_tail = NULL;
+
+// 	for (t = tac_first; t != NULL; t = t->next)
+// 	{
+// 		// 跳过未被引用的
+// 		if (t->op == TAC_LABEL)
+// 		{
+// 			int referenced = 0;
+// 			for (TAC *p = tac_first; p != NULL; p = p->next)
+// 			{
+// 				if ((p->op == TAC_GOTO || p->op == TAC_IFZ) && p->a && p->a == t->a)
+// 				{
+// 					referenced = 1;
+// 					break;
+// 				}
+// 			}
+
+// 			// 如果该 label 没有被任何 GOTO/IFZ 引用，且当前 block 未结束，则认为是块内标签
+// 			if (!referenced && cur_bb != NULL)
+// 			{
+// 				cur_bb->last = t; // 继续累积
+// 				continue;
+// 			}
+// 			else
+// 			{
+// 				cur_bb = NULL; // 强制结束当前块，新建一个
+// 			}
+// 		}
+
+// 		if (t->op == TAC_LABEL || t->op == TAC_BEGINFUNC || !cur_bb)
+// 		{
+// 			cur_bb = newblock(t);
+// 			if (bb_list == NULL)
+// 			{
+// 				bb_list = bb_tail = cur_bb;
+// 				cur_bb->id = 0;
+// 			}
+// 			else
+// 			{
+// 				cur_bb->id = bb_tail->id + 1;
+// 				bb_tail->next = cur_bb;
+// 				bb_tail = cur_bb;
+// 			}
+// 		}
+
+// 		cur_bb->last = t;
+
+// 		if (t->op == TAC_GOTO || t->op == TAC_IFZ ||
+// 			t->op == TAC_RETURN || t->op == TAC_ENDFUNC)
+// 		{
+// 			cur_bb = NULL;
+// 		}
+// 	}
+
+// 	for (BASIC_BLOCK *bb = bb_list; bb != NULL; bb = bb->next)
+// 	{
+// 		TAC *last = bb->last;
+
+// 		if (last->op == TAC_GOTO)
+// 		{
+// 			BASIC_BLOCK *target = find_block_by_label(last->a->name);
+// 			add_edge(bb, target);
+// 		}
+// 		else if (last->op == TAC_IFZ)
+// 		{
+// 			BASIC_BLOCK *if_target = find_block_by_label(last->a->name);
+// 			add_edge(bb, if_target); // 条件不满足跳转
+
+// 			if (bb->next)
+// 				add_edge(bb, bb->next); // 条件满足顺序流
+// 		}
+// 		else if (last->op != TAC_RETURN && last->op != TAC_ENDFUNC && bb->next)
+// 		{
+// 			add_edge(bb, bb->next);
+// 		}
+// 	}
+// }
+
 void build_cfg()
 {
 	TAC *t;
-	BASIC_BLOCK *cur_bb = NULL;
+	BASIC_BLOCK *cur = NULL;
 	bb_list = bb_tail = NULL;
 
 	for (t = tac_first; t != NULL; t = t->next)
 	{
-		// 跳过未被引用的
+		int must_start_new = 0;
+
+		// 1. label 必须开新 block
 		if (t->op == TAC_LABEL)
-		{
-			int referenced = 0;
-			for (TAC *p = tac_first; p != NULL; p = p->next)
-			{
-				if ((p->op == TAC_GOTO || p->op == TAC_IFZ) && p->a && p->a == t->a)
-				{
-					referenced = 1;
-					break;
-				}
-			}
+			must_start_new = 1;
 
-			// 如果该 label 没有被任何 GOTO/IFZ 引用，且当前 block 未结束，则认为是块内标签
-			if (!referenced && cur_bb != NULL)
+		// 2. 其他情况下，如果当前没有 block（上一条是 goto/ifz/return/endfunc）
+		if (!cur)
+			must_start_new = 1;
+
+		if (must_start_new)
+		{
+			cur = newblock(t);
+			if (!bb_list)
 			{
-				cur_bb->last = t; // 继续累积
-				continue;
+				bb_list = bb_tail = cur;
+				cur->id = 0;
 			}
 			else
 			{
-				cur_bb = NULL; // 强制结束当前块，新建一个
+				cur->id = bb_tail->id + 1;
+				bb_tail->next = cur;
+				bb_tail = cur;
 			}
 		}
 
-		if (t->op == TAC_LABEL || t->op == TAC_BEGINFUNC || !cur_bb)
-		{
-			cur_bb = newblock(t);
-			if (bb_list == NULL)
-			{
-				bb_list = bb_tail = cur_bb;
-				cur_bb->id = 0;
-			}
-			else
-			{
-				cur_bb->id = bb_tail->id + 1;
-				bb_tail->next = cur_bb;
-				bb_tail = cur_bb;
-			}
-		}
+		// 更新 block 的 last
+		cur->last = t;
 
-		cur_bb->last = t;
-
+		// 3. 结束 block 的指令：
 		if (t->op == TAC_GOTO || t->op == TAC_IFZ ||
 			t->op == TAC_RETURN || t->op == TAC_ENDFUNC)
 		{
-			cur_bb = NULL;
+			cur = NULL; // 强制结束，下条指令开启新 block
 		}
 	}
 
-	for (BASIC_BLOCK *bb = bb_list; bb != NULL; bb = bb->next)
+	// ===== 建 CFG 边 =====
+	for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
 	{
 		TAC *last = bb->last;
 
@@ -1717,15 +1794,16 @@ void build_cfg()
 		}
 		else if (last->op == TAC_IFZ)
 		{
-			BASIC_BLOCK *if_target = find_block_by_label(last->a->name);
-			add_edge(bb, if_target); // 条件不满足跳转
+			BASIC_BLOCK *target = find_block_by_label(last->a->name);
+			add_edge(bb, target);
 
 			if (bb->next)
-				add_edge(bb, bb->next); // 条件满足顺序流
+				add_edge(bb, bb->next);
 		}
-		else if (last->op != TAC_RETURN && last->op != TAC_ENDFUNC && bb->next)
+		else if (last->op != TAC_RETURN && last->op != TAC_ENDFUNC)
 		{
-			add_edge(bb, bb->next);
+			if (bb->next)
+				add_edge(bb, bb->next);
 		}
 	}
 }
