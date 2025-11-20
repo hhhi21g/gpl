@@ -64,13 +64,9 @@ main:
 	STO (R2+32),R8
 
 	# t2 = b * c
-    STO (R2+12),R6
-    STO (R2+16),R7
     MUL R6,R7
 
 	# t3 = a + t2
-    STO (R2+8),R5
-	STO (R4+0),R6
     ADD R5,R6
 
 	# t4 = a + c
@@ -78,13 +74,10 @@ main:
     ADD R9,R7
 
 	# t5 = t4 / b
-	STO (R4+8),R9
 	LOD R10,(R2+12)
     DIV R9,R10
 
 	# t6 = t3 - t5
-	STO (R4+4),R5
-	STO (R4+12),R9
     SUB R5,R9
 
 	# t10 = c - a
@@ -92,18 +85,13 @@ main:
     SUB R7,R11
 
 	# t11 = t10 / b
-	STO (R4+24),R7
     DIV R7,R10
 
 	# t12 = t3 - t11
 	LOD R12,(R4+4)
-	STO (R4+28),R7
     SUB R12,R7
 
 	# label L1
-	STO (R4+16),R5
-    STO (R2+32),R8
-	STO (R4+32),R12
 L1:
 
 	# var t0
@@ -121,7 +109,6 @@ L1:
 	LOD R5,1
 
 	# ifz t0 goto L3
-    STO (R2+40),R5
 	TST R5
 	JEZ L3
 
@@ -135,7 +122,6 @@ L1:
 	STO (R2+28),R8
 
 	# label L4
-    STO (R2+28),R8
 L4:
 
 	# var t1
@@ -153,7 +139,6 @@ L4:
 	LOD R5,1
 
 	# ifz t1 goto L6
-    STO (R2+44),R5
 	TST R5
 	JEZ L6
 
@@ -194,9 +179,6 @@ L4:
 	STO (R2+28),R7
 
 	# label L5
-    STO (R2+28),R7
-    STO (R2+20),R8
-    STO (R2+24),R9
 L5:
 
 	# goto L4
@@ -221,7 +203,6 @@ L6:
     OTS
 
 	# label L2
-    STO (R2+32),R5
 L2:
 
 	# goto L1
