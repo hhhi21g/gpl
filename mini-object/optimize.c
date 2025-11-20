@@ -1223,29 +1223,19 @@ void global_optimize()
     {
         changed = 0;
 
-        // // 1. 全局CSE（不会破坏控制流）
-        // changed |= global_expression_elimination();
+        // if (local_copy_propagation())
+        //     changed = 1;
 
-        // // 2. 全局死赋值删除（不会动基本结构）
-        // changed |= global_dead_assignment();
+        // if (local_constant_folding())
+        //     changed = 1;
 
-        // // ---- 执行破坏 CFG 的优化（需要重建分析）----
-        // if (changed)
-        // {
-        //     compute_def_use();
-        //     available_expressions_analysis();
-        // }
-
-        // 3. 最后执行 LICM（因为 LICM 会移动指令）
+        // if (global_expression_elimination() != 0)
+        //     changed = 1;
         if (loop_invariant_code_motion())
             changed = 1;
 
-        // 4. LICM 后必须立即重算数据流
-        if (changed)
-        {
-            compute_def_use();
-            available_expressions_analysis();
-        }
+        // if (global_dead_assignment())
+        //     changed = 1;
 
     } while (changed);
 }

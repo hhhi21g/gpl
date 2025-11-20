@@ -17,11 +17,6 @@ main()
 			d=a+b*c-(a+c)/b+9;
 			e=a+b*c-(c-a)/b+9;
 			i = i - 1;
-			output " ";
-			output d;
-			output " ";
-			output e;
-			output "\n";
 		}
 
 		j = j - 1;

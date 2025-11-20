@@ -21,4 +21,7 @@ void available_expressions_analysis();
 void print_available_expressions();
 
 int global_expression_elimination();
+int loop_invariant_code_motion();
+
+void kill_expression(expMap **map, SYM *a);
 #endif

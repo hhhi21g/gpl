@@ -152,251 +152,135 @@ int reg_alloc_temp()
 }
 
 // 找一个和 avoid 不同的寄存器用作临时
-// static int alloc_hw_temp_except(int avoid)
-// {
-// 	for (int r = R_GEN; r < R_NUM; r++)
-// 	{
-// 		if (r != avoid)
-// 		{
-// 			return r;
-// 		}
-// 	}
-// 	error("no free register");
-// 	return R_GEN;
-// }
-
 static int alloc_hw_temp_except(int avoid)
 {
 	for (int r = R_GEN; r < R_NUM; r++)
 	{
-		if (r != avoid && rdesc[r].var == NULL)
-		{
-			return r; // 只用空闲寄存器
-		}
-	}
-
-	// 若没有空闲寄存器，必须 spill 一个
-	for (int r = R_GEN; r < R_NUM; r++)
-	{
-		if (r != avoid && !rdesc[r].mod)
-		{
-			rdesc_clear(r);
-			return r;
-		}
-	}
-
-	// 最坏情况，spill 一个 allow 的寄存器
-	for (int r = R_GEN; r < R_NUM; r++)
-	{
 		if (r != avoid)
 		{
-			asm_write_back(r);
-			rdesc_clear(r);
 			return r;
 		}
 	}
-
-	error("no register available for temp");
-	return avoid;
+	error("no free register");
+	return R_GEN;
 }
+
 void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 {
-	/* 1. 为结果 a 分配一个寄存器 rd */
-	int rd = reg_alloc(a); // 里面可能会把旧的 a 从内存读出来，但我们会覆盖掉，没关系
+	int reg_b, reg_c;
 
-	/* 2. 把 b 的值加载到 rd */
-
-	if (b->type == SYM_INT || b->type == SYM_CHAR)
+	// 先处理b
+	if (b->type == SYM_INT)
 	{
-		// b 是常量，直接加载立即数
-		out_str(file_s, "    LOD R%u,%d\n", rd, b->value);
+		// 常量：找任意一个临时寄存器
+		reg_b = alloc_hw_temp_except(-1);
+		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
 	}
 	else
 	{
-		// b 是变量/临时，加载它的值到 rd
-		asm_load(rd, b);
-		// 注意：asm_load 不会改 rdesc，rd 现在只是临时装了 b 的值
+		// 变量：用寄存器分配器
+		reg_b = reg_alloc(b);
 	}
 
-	/* 3. 为 c 准备一个寄存器 rc，注意不能和 rd 冲突 */
-
-	int rc;
-
-	if (c->type == SYM_INT || c->type == SYM_CHAR)
+	// 处理 c，要避免覆盖 reg_b
+	if (c->type == SYM_INT)
 	{
-		// c 是常量，找一个 != rd 的临时寄存器
-		rc = alloc_hw_temp_except(rd);
-		out_str(file_s, "    LOD R%u,%d\n", rc, c->value);
+		// 常量：直接找一个 != reg_b 的寄存器
+		reg_c = alloc_hw_temp_except(reg_b);
+		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
 	}
 	else
 	{
-		// c 是变量，用寄存器分配器拿一个寄存器
-		rc = reg_alloc(c);
+		// 变量
+		reg_c = reg_alloc(c);
 
-		// 这里要避免 rc 和 rd 一样，否则 ADD/SUB 时会毁掉 c
-		if (rc == rd)
+		if (reg_c == reg_b)
 		{
-			int new_rc = alloc_hw_temp_except(rd);
-			out_str(file_s, "    LOD R%u,R%u\n", new_rc, rc);
-
-			/* 让 new_rc 继承原来 rc 的描述符 */
-			rdesc_fill(new_rc, rdesc[rc].var, rdesc[rc].mod);
-			rdesc_clear(rc);
-
-			rc = new_rc;
+			// 冲突需要把 c 的值搬到一个新的寄存器
+			int new_reg_c = alloc_hw_temp_except(reg_b);
+			out_str(file_s, "    LOD R%u,R%u\n", new_reg_c, reg_c);
+			reg_c = new_reg_c;
 		}
 	}
 
-	/* 4. 真正的二元运算： rd = b (op) c */
+	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
 
-	out_str(file_s, "    %s R%u,R%u\n", op, rd, rc);
-
-	/* 5. rd 现在保存的是 a 的值，更新寄存器描述符 */
-
-	rdesc_fill(rd, a, MODIFIED);
-
-	return;
+	rdesc_fill(reg_b, a, MODIFIED);
 }
-
-static int cmp_label_id = 2000; // 比较表达式内部用的临时 label 计数器
 
 void asm_cmp(int op, SYM *a, SYM *b, SYM *c)
 {
-	/* 用两个“纯临时”的硬件寄存器来保存 b 和 c，避免污染 rdesc */
-	int rb = reg_alloc_temp();
-	int rc = reg_alloc_temp();
+	int reg_b = -1, reg_c = -1;
 
-	if (rc == rb)
-		rc = alloc_hw_temp_except(rb);
-
-	/* 加载 b 到 rb */
-	if (b->type == SYM_INT || b->type == SYM_CHAR)
+	while (reg_b == reg_c)
 	{
-		out_str(file_s, "    LOD R%u,%d\n", rb, b->value);
-	}
-	else
-	{
-		asm_load(rb, b);
+		reg_b = reg_alloc(b);
+		reg_c = reg_alloc(c);
 	}
 
-	/* 加载 c 到 rc */
-	if (c->type == SYM_INT || c->type == SYM_CHAR)
-	{
-		out_str(file_s, "    LOD R%u,%d\n", rc, c->value);
-	}
-	else
-	{
-		asm_load(rc, c);
-	}
+	out_str(file_s, "	SUB R%u,R%u\n", reg_b, reg_c);
+	out_str(file_s, "	TST R%u\n", reg_b);
 
-	/* 生成两个内部 label：true 分支和结束分支 */
-	int id_true = cmp_label_id++;
-	int id_end = cmp_label_id++;
-
-	char L_true[32], L_end[32];
-	sprintf(L_true, "L%d", id_true);
-	sprintf(L_end, "L%d", id_end + 1);
-
-	/* rb = b - c; 并设置标志位 */
-	out_str(file_s, "    SUB R%u,R%u\n", rb, rc);
-	out_str(file_s, "    TST R%u\n", rb);
-
-	/* 根据不同比较操作生成跳转代码 */
 	switch (op)
 	{
 	case TAC_EQ:
-		/* b == c ？ */
-		out_str(file_s, "    JEZ %s\n", L_true); // == 时跳到 true
-		out_str(file_s, "    LOD R%u,0\n", rb);	 // false: 0
-		out_str(file_s, "    JMP %s\n", L_end);
-		out_str(file_s, "%s:\n", L_true);
-		out_str(file_s, "    LOD R%u,1\n", rb); // true: 1
-		out_str(file_s, "%s:\n", L_end);
+		out_str(file_s, "	LOD R3,R1+40\n");
+		out_str(file_s, "	JEZ R3\n");
+		out_str(file_s, "	LOD R%u,0\n", reg_b);
+		out_str(file_s, "	LOD R3,R1+24\n");
+		out_str(file_s, "	JMP R3\n");
+		out_str(file_s, "	LOD R%u,1\n", reg_b);
 		break;
 
 	case TAC_NE:
-		/* b != c ？ */
-		out_str(file_s, "    JEZ %s\n", L_true); // == 时先去 false 分支
-		// !=: 非零 → true
-		out_str(file_s, "    LOD R%u,1\n", rb); // true: 1
-		out_str(file_s, "    JMP %s\n", L_end);
-		out_str(file_s, "%s:\n", L_true);		// == 情况
-		out_str(file_s, "    LOD R%u,0\n", rb); // false: 0
-		out_str(file_s, "%s:\n", L_end);
+		out_str(file_s, "	LOD R3,R1+40\n");
+		out_str(file_s, "	JEZ R3\n");
+		out_str(file_s, "	LOD R%u,1\n", reg_b);
+		out_str(file_s, "	LOD R3,R1+24\n");
+		out_str(file_s, "	JMP R3\n");
+		out_str(file_s, "	LOD R%u,0\n", reg_b);
 		break;
 
 	case TAC_LT:
-		/* b < c ？  即 (b - c) < 0 */
-		out_str(file_s, "    JLZ %s\n", L_true); // <0 → true
-		out_str(file_s, "    LOD R%u,0\n", rb);	 // false
-		out_str(file_s, "    JMP %s\n", L_end);
-		out_str(file_s, "%s:\n", L_true);
-		out_str(file_s, "    LOD R%u,1\n", rb); // true
-		out_str(file_s, "%s:\n", L_end);
+		out_str(file_s, "	LOD R3,R1+40\n");
+		out_str(file_s, "	JLZ R3\n");
+		out_str(file_s, "	LOD R%u,0\n", reg_b);
+		out_str(file_s, "	LOD R3,R1+24\n");
+		out_str(file_s, "	JMP R3\n");
+		out_str(file_s, "	LOD R%u,1\n", reg_b);
 		break;
 
 	case TAC_LE:
-		/* b <= c ？ 即 (b - c) <= 0, 也就是 !(b>c) */
-		out_str(file_s, "    JGZ %s\n", L_true); // >0 → 先走 false 分支
-		// <=0: true
-		out_str(file_s, "    LOD R%u,1\n", rb); // true
-		out_str(file_s, "    JMP %s\n", L_end);
-		out_str(file_s, "%s:\n", L_true);		// >0 情况
-		out_str(file_s, "    LOD R%u,0\n", rb); // false
-		out_str(file_s, "%s:\n", L_end);
+		out_str(file_s, "	LOD R3,R1+40\n");
+		out_str(file_s, "	JGZ R3\n");
+		out_str(file_s, "	LOD R%u,1\n", reg_b);
+		out_str(file_s, "	LOD R3,R1+24\n");
+		out_str(file_s, "	JMP R3\n");
+		out_str(file_s, "	LOD R%u,0\n", reg_b);
 		break;
 
 	case TAC_GT:
-		/* b > c ？ 即 (b - c) > 0 */
-		out_str(file_s, "    JGZ %s\n", L_true); // >0 → true
-		out_str(file_s, "    LOD R%u,0\n", rb);	 // false
-		out_str(file_s, "    JMP %s\n", L_end);
-		out_str(file_s, "%s:\n", L_true);
-		out_str(file_s, "    LOD R%u,1\n", rb); // true
-		out_str(file_s, "%s:\n", L_end);
+		out_str(file_s, "	LOD R3,R1+40\n");
+		out_str(file_s, "	JGZ R3\n");
+		out_str(file_s, "	LOD R%u,0\n", reg_b);
+		out_str(file_s, "	LOD R3,R1+24\n");
+		out_str(file_s, "	JMP R3\n");
+		out_str(file_s, "	LOD R%u,1\n", reg_b);
 		break;
 
 	case TAC_GE:
-		/* b >= c ？ 即 (b - c) >= 0, 也就是 !(b<c) */
-		out_str(file_s, "    JLZ %s\n", L_true); // <0 → 先走 false 分支
-		// >=0: true
-		out_str(file_s, "    LOD R%u,1\n", rb); // true
-		out_str(file_s, "    JMP %s\n", L_end);
-		out_str(file_s, "%s:\n", L_true);		// <0 情况
-		out_str(file_s, "    LOD R%u,0\n", rb); // false
-		out_str(file_s, "%s:\n", L_end);
+		out_str(file_s, "	LOD R3,R1+40\n");
+		out_str(file_s, "	JLZ R3\n");
+		out_str(file_s, "	LOD R%u,1\n", reg_b);
+		out_str(file_s, "	LOD R3,R1+24\n");
+		out_str(file_s, "	JMP R3\n");
+		out_str(file_s, "	LOD R%u,0\n", reg_b);
 		break;
 	}
 
-	/* rb 里是 0/1，把它写回 a */
-
-	if (a->type == SYM_VAR)
-	{
-		if (a->scope == 1)
-		{
-			if (a->offset >= 0)
-				out_str(file_s, "    STO (R%u+%d),R%u\n", R_BP, a->offset, rb);
-			else
-				out_str(file_s, "    STO (R%u-%d),R%u\n", R_BP, -a->offset, rb);
-		}
-		else
-		{
-			out_str(file_s, "    LOD R4,STATIC\n");
-			out_str(file_s, "    STO (R4+%d),R%u\n", a->offset, rb);
-		}
-		/* 不把 rb 记录到 rdesc，避免错误继承 */
-	}
-	else
-	{
-		int ra = reg_alloc(a);
-		if (ra != rb)
-			out_str(file_s, "    LOD R%u,R%u\n", ra, rb);
-		rdesc_fill(ra, a, MODIFIED);
-	}
-
-	/* 这两个寄存器只是临时，不存任何变量 */
-	rdesc_clear(rb);
-	rdesc_clear(rc);
+	/* Delete c from the descriptors and insert a */
+	rdesc_clear(reg_b);
+	rdesc_fill(reg_b, a, MODIFIED);
 }
 
 void asm_cond(char *op, SYM *a, char *l)
@@ -637,65 +521,63 @@ void asm_code(TAC *c)
 
 	case TAC_COPY:
 	{
+		// a = a
+		if (c->a == c->b)
+		{
+			return; // 不生成任何指令
+		}
+
 		SYM *dst = c->a;
-		SYM *src = c->b;
+		SYM *src = c->b; // 原寄存器，需要被继承
 
-		/* a = a 直接忽略 */
-		if (dst == src)
-			return;
-
-		/* 1. 取 src 的值 */
 		int rs = -1;
 
-		/* 若 src 已在寄存器，直接使用 */
 		for (int i = R_GEN; i < R_NUM; i++)
 		{
 			if (rdesc[i].var == src)
 			{
 				rs = i;
+				// printf("rdesc[%d].var = %d\n", i, rdesc[i].var->value);
 				break;
 			}
 		}
 
-		/* 若 src 不在寄存器，加载 */
 		if (rs < 0)
 			rs = reg_alloc(src);
 
-		/* 2. 处理左值 */
-		if (dst->type == SYM_VAR)
+		// 左值是变量
+		if (c->a->type == SYM_VAR)
 		{
-			/* 写到内存：dst 是局部变量 */
-			if (dst->scope == 1)
+			if (c->a->scope == 1)
 			{
-				if (dst->offset >= 0)
-					out_str(file_s, "    STO (R%u+%d),R%u\n", R_BP, dst->offset, rs);
+				// 局部变量
+				// out_str(file_s, "	STO (R%u+%d),R%u\n", R_BP, c->a->offset, rb);
+				if (c->a->offset >= 0)
+					out_str(file_s, "	STO (R%u+%d),R%u\n", R_BP, c->a->offset, rs);
 				else
-					out_str(file_s, "    STO (R%u-%d),R%u\n", R_BP, -dst->offset, rs);
+					out_str(file_s, "	STO (R%u-%d),R%u\n", R_BP, -c->a->offset, rs);
 			}
 			else
 			{
-				/* 全局变量 */
-				out_str(file_s, "    LOD R4,STATIC\n");
-				out_str(file_s, "    STO (R4+%d),R%u\n", dst->offset, rs);
+				// 全局变量
+				out_str(file_s, "	LOD R4,STATIC\n");
+				out_str(file_s, "	STO (R4+%d),R%u\n", c->a->offset, rs);
 			}
-
-			/* 不可以让 rs 继承 dst — 决不能覆盖寄存器描述符 */
-			/* 赋值后，不需要修改寄存器描述符 */
+			if (!(c->b->type == SYM_TMP)) // src 不是临时变量
+			{
+				rdesc_fill(rs, dst, MODIFIED);
+			}
 			return;
 		}
 		else
 		{
-			/* dst 是临时变量或中间值，要放到寄存器 */
-
-			int rd = reg_alloc(dst); /* 取出目标寄存器 */
-
-			/* 目标寄存器不能与 rs 相同，否则覆盖自己 */
-			if (rd != rs)
-				out_str(file_s, "    LOD R%u,R%u\n", rd, rs);
-
-			rdesc_fill(rd, dst, MODIFIED);
-			return;
+			// 临时变量或寄存器变量
+			int ra = reg_alloc(c->a);
+			out_str(file_s, "	LOD R%u,R%u\n", ra, rs);
+			rdesc_fill(ra, c->a, UNMODIFIED);
 		}
+
+		return;
 	}
 
 	case TAC_INPUT:
