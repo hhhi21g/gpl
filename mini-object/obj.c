@@ -12,8 +12,6 @@ int tof; /* top of frame */
 int oof; /* offset of formal */
 int oon; /* offset of next frame */
 struct rdesc rdesc[R_NUM];
-BASIC_BLOCK *cur_bb = NULL;
-
 // int tmpoff;
 
 void rdesc_clear(int r)
@@ -63,28 +61,8 @@ static int is_temp_name(const char *name)
 	return 1; // 形如 t0, t1, t23 ...
 }
 
-void asm_write_back(int r, TAC *cur)
+void asm_write_back(int r)
 {
-	SYM *s = rdesc[r].var;
-
-	if (!s)
-	{
-		rdesc[r].mod = 0;
-		return;
-	}
-
-	// temp 不写回
-	if (s->type == SYM_TMP)
-	{
-		rdesc[r].mod = 0;
-		return;
-	}
-
-	if (!need_write_back(s, cur))
-	{
-		rdesc[r].mod = 0;
-		return;
-	}
 
 	if ((rdesc[r].var != NULL) && rdesc[r].mod)
 	{
@@ -167,51 +145,15 @@ void asm_load(int r, SYM *s)
 	// rdesc_fill(r, s, UNMODIFIED);
 }
 
-int used_later_in_bb(SYM *v, TAC *p)
-{
-	for (TAC *q = p->next; q && q->bb == p->bb; q = q->next)
-	{
-		if (q->b == v || q->c == v)
-			return 1;
-
-		// 如果 q 重新定义 v，则 v 在此之后不需要保持了
-		if (q->a == v)
-			return 0;
-	}
-	return 0;
-}
-
-int need_write_back(SYM *s, TAC *cur)
-{
-	if (!s)
-		return 0;
-	if (s->type == SYM_TMP)
-		return 0;
-
-	BASIC_BLOCK *bb = cur->bb;
-
-	// 如果后续指令中还用到 s，则寄存器即可，不必写回
-	if (used_later_in_bb(s, cur))
-		return 0;
-
-	// 后续BB要用，就必须写回
-	if (in_list(bb->out, bb->out_cnt, s))
-		return 1;
-
-	// 否则不需要
-	return 0;
-}
-
-int reg_alloc(SYM *s, TAC *cur)
+int reg_alloc(SYM *s)
 {
 	int r; /* already in a register */
-
 	for (r = R_GEN; r < R_NUM; r++)
 	{
 		if (rdesc[r].var == s)
 		{
 			if (rdesc[r].mod)
-				asm_write_back(r, cur);
+				asm_write_back(r);
 			return r;
 		}
 	} /* empty register */
@@ -235,7 +177,7 @@ int reg_alloc(SYM *s, TAC *cur)
 	} /* random register */
 	srand(time(NULL));
 	int random = (rand() % (R_NUM - R_GEN)) + R_GEN;
-	asm_write_back(random, cur);
+	asm_write_back(random);
 	asm_load(random, s);
 	rdesc_fill(random, s, UNMODIFIED);
 	return random;
@@ -265,7 +207,7 @@ static int alloc_hw_temp_except(int avoid)
 	return R_GEN;
 }
 
-void asm_bin(char *op, SYM *a, SYM *b, SYM *c, TAC *cur)
+void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 {
 	int reg_b, reg_c;
 
@@ -279,7 +221,7 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c, TAC *cur)
 	else
 	{
 		// 变量：用寄存器分配器
-		reg_b = reg_alloc(b, cur);
+		reg_b = reg_alloc(b);
 	}
 
 	// 处理 c，要避免覆盖 reg_b
@@ -292,7 +234,7 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c, TAC *cur)
 	else
 	{
 		// 变量
-		reg_c = reg_alloc(c, cur);
+		reg_c = reg_alloc(c);
 
 		if (reg_c == reg_b)
 		{
@@ -308,14 +250,14 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c, TAC *cur)
 	rdesc_fill(reg_b, a, MODIFIED);
 }
 
-void asm_cmp(int op, SYM *a, SYM *b, SYM *c, TAC *cur)
+void asm_cmp(int op, SYM *a, SYM *b, SYM *c)
 {
 	int reg_b = -1, reg_c = -1;
 
 	while (reg_b == reg_c)
 	{
-		reg_b = reg_alloc(b, cur);
-		reg_c = reg_alloc(c, cur);
+		reg_b = reg_alloc(b);
+		reg_c = reg_alloc(c);
 	}
 
 	out_str(file_s, "	SUB R%u,R%u\n", reg_b, reg_c);
@@ -383,10 +325,10 @@ void asm_cmp(int op, SYM *a, SYM *b, SYM *c, TAC *cur)
 	rdesc_fill(reg_b, a, MODIFIED);
 }
 
-void asm_cond(char *op, SYM *a, char *l, TAC *cur)
+void asm_cond(char *op, SYM *a, char *l)
 {
 	for (int r = R_GEN; r < R_NUM; r++)
-		asm_write_back(r, cur);
+		asm_write_back(r);
 
 	if (a != NULL)
 	{
@@ -401,7 +343,7 @@ void asm_cond(char *op, SYM *a, char *l, TAC *cur)
 		if (r < R_NUM)
 			out_str(file_s, "	TST R%u\n", r);
 		else
-			out_str(file_s, "	TST R%u\n", reg_alloc(a, cur)); /* Load into new register */
+			out_str(file_s, "	TST R%u\n", reg_alloc(a)); /* Load into new register */
 	}
 
 	out_str(file_s, "	%s %s\n", op, l);
@@ -409,11 +351,11 @@ void asm_cond(char *op, SYM *a, char *l, TAC *cur)
 
 static int ret_label_id = 1000; // 函数label
 
-void asm_call(SYM *a, SYM *b, TAC *cur) // a:返回值变量；b：函数名
+void asm_call(SYM *a, SYM *b) // a:返回值变量；b：函数名
 {
 	int r;
 	for (int r = R_GEN; r < R_NUM; r++)
-		asm_write_back(r, cur);
+		asm_write_back(r);
 	for (int r = R_GEN; r < R_NUM; r++)
 		rdesc_clear(r);
 
@@ -434,23 +376,23 @@ void asm_call(SYM *a, SYM *b, TAC *cur) // a:返回值变量；b：函数名
 	// 取返回值，R15保存
 	if (a != NULL)
 	{
-		int ra = reg_alloc(a, cur);
+		int ra = reg_alloc(a);
 		out_str(file_s, "	LOD R%u,R15\n", ra);
 		rdesc[ra].mod = MODIFIED;
 	}
 	oon = 0;
 }
 
-void asm_return(SYM *a, TAC *cur)
+void asm_return(SYM *a)
 {
 	for (int r = R_GEN; r < R_NUM; r++)
-		asm_write_back(r, cur);
+		asm_write_back(r);
 	for (int r = R_GEN; r < R_NUM; r++)
 		rdesc_clear(r);
 
 	if (a != NULL) /* return value */
 	{
-		int ra = reg_alloc(a, cur);
+		int ra = reg_alloc(a);
 		out_str(file_s, "    LOD R15,R%u\n", ra);
 	}
 
@@ -593,23 +535,23 @@ void asm_code(TAC *c)
 		return;
 
 	case TAC_ADD:
-		asm_bin("ADD", c->a, c->b, c->c, c);
+		asm_bin("ADD", c->a, c->b, c->c);
 		return;
 
 	case TAC_SUB:
-		asm_bin("SUB", c->a, c->b, c->c, c);
+		asm_bin("SUB", c->a, c->b, c->c);
 		return;
 
 	case TAC_MUL:
-		asm_bin("MUL", c->a, c->b, c->c, c);
+		asm_bin("MUL", c->a, c->b, c->c);
 		return;
 
 	case TAC_DIV:
-		asm_bin("DIV", c->a, c->b, c->c, c);
+		asm_bin("DIV", c->a, c->b, c->c);
 		return;
 
 	case TAC_NEG:
-		asm_bin("SUB", c->a, mk_const(0), c->b, c);
+		asm_bin("SUB", c->a, mk_const(0), c->b);
 		return;
 
 	case TAC_EQ:
@@ -618,7 +560,7 @@ void asm_code(TAC *c)
 	case TAC_LE:
 	case TAC_GT:
 	case TAC_GE:
-		asm_cmp(c->op, c->a, c->b, c->c, c);
+		asm_cmp(c->op, c->a, c->b, c->c);
 		return;
 
 	case TAC_COPY:
@@ -645,7 +587,7 @@ void asm_code(TAC *c)
 		}
 
 		if (rs < 0)
-			rs = reg_alloc(src, c);
+			rs = reg_alloc(src);
 
 		// 左值是变量
 		if (c->a->type == SYM_VAR)
@@ -674,7 +616,7 @@ void asm_code(TAC *c)
 		else
 		{
 			// 临时变量或寄存器变量
-			int ra = reg_alloc(c->a, c);
+			int ra = reg_alloc(c->a);
 			out_str(file_s, "	LOD R%u,R%u\n", ra, rs);
 			rdesc_fill(ra, c->a, UNMODIFIED);
 		}
@@ -683,7 +625,7 @@ void asm_code(TAC *c)
 	}
 
 	case TAC_INPUT:
-		r = reg_alloc(c->a, c);
+		r = reg_alloc(c->a);
 		int t = SYM_INT;
 		if (c->a && c->a->etc)
 			t = *((int *)c->a->etc);
@@ -695,19 +637,60 @@ void asm_code(TAC *c)
 		rdesc[r].mod = MODIFIED;
 		return;
 
+	// case TAC_OUTPUT:
+	// 	if (c->a->type == SYM_VAR)
+	// 	{
+	// 		r = reg_alloc(c->a);
+	// 		int real_type = SYM_INT;
+	// 		if (c->a && c->a->etc)
+	// 		{
+	// 			real_type = *((int *)c->a->etc);
+	// 			// printf("%d", real_type);
+	// 		}
+	// 		// if (real_type != SYM_PTR)
+	// 		// 	out_str(file_s, "	LOD R15,R%u\n", r);
+	// 		// else
+	// 		if (c->a->scope == 1)
+	// 		{
+	// 			// 局部变量
+	// 			// out_str(file_s, "	LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
+	// 			if (c->a->offset >= 0)
+	// 				out_str(file_s, "    LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
+	// 			else
+	// 				out_str(file_s, "    LOD R15,(R%u-%d)\n", R_BP, -c->a->offset);
+	// 		}
+	// 		else
+	// 		{
+	// 			// 全局变量：从 STATIC 段取
+	// 			out_str(file_s, "	LOD R4,STATIC\n");
+	// 			out_str(file_s, "	LOD R15,(R4+%d)\n", c->a->offset);
+	// 		}
+
+	// 		if (real_type == SYM_CHAR)
+	// 			out_str(file_s, "	OTC\n");
+	// 		else
+	// 			out_str(file_s, "	OTI\n");
+	// 	}
+	// 	else if (c->a->type == SYM_TEXT)
+	// 	{
+	// 		r = reg_alloc(c->a);
+	// 		out_str(file_s, "	LOD R15,R%u\n", r);
+	// 		out_str(file_s, "	OTS\n");
+	// 	}
+	// 	return;
 	case TAC_OUTPUT:
 	{
 		SYM *s = c->a;
 
 		if (s->type == SYM_TEXT)
 		{
-			int r = reg_alloc(s, c);
+			int r = reg_alloc(s);
 			out_str(file_s, "    LOD R15,R%u\n", r);
 			out_str(file_s, "    OTS\n");
 			return;
 		}
 
-		int r = reg_alloc(s, c);
+		int r = reg_alloc(s);
 
 		out_str(file_s, "    LOD R15,R%u\n", r);
 
@@ -760,8 +743,8 @@ void asm_code(TAC *c)
 
 	case TAC_LOADIDX:
 		int base_load = reg_alloc_temp();
-		int offset_load = reg_alloc(c->c, c);
-		int ra = reg_alloc(c->a, c);
+		int offset_load = reg_alloc(c->c);
+		int ra = reg_alloc(c->a);
 
 		if (base_load == offset_load)
 		{
@@ -794,8 +777,8 @@ void asm_code(TAC *c)
 
 	case TAC_STOREIDX:
 		int base_store = reg_alloc_temp();
-		int offset_store = reg_alloc(c->b, c);
-		int rval = reg_alloc(c->c, c);
+		int offset_store = reg_alloc(c->b);
+		int rval = reg_alloc(c->c);
 
 		if (base_store == offset_store)
 		{
@@ -828,7 +811,7 @@ void asm_code(TAC *c)
 	case TAC_ADDR:
 	{
 		// a = &b
-		int r = reg_alloc(c->a, c);
+		int r = reg_alloc(c->a);
 		if (c->b->scope == 1)
 			// out_str(file_s, "    LOD R%u,R%u+%d\n", r, R_BP, c->b->offset);
 			if (c->b->offset >= 0)
@@ -845,8 +828,8 @@ void asm_code(TAC *c)
 	case TAC_LOAD:
 	{
 		// a = *b
-		int rb = reg_alloc(c->b, c);
-		int ra = reg_alloc(c->a, c);
+		int rb = reg_alloc(c->b);
+		int ra = reg_alloc(c->a);
 		// out_str(file_s, "    LOD R%u,(R%u)\n", ra, rb);
 
 		int elem_type = SYM_INT;
@@ -861,8 +844,8 @@ void asm_code(TAC *c)
 
 	case TAC_LOADC:
 	{
-		int ra = reg_alloc(c->a, c);
-		int rb = reg_alloc(c->b, c);
+		int ra = reg_alloc(c->a);
+		int rb = reg_alloc(c->b);
 		out_str(file_s, "    LDC R%u,(R%u)\n", ra, rb);
 		return;
 	}
@@ -870,8 +853,8 @@ void asm_code(TAC *c)
 	case TAC_STORE:
 	{
 		// *a = b
-		int ra = reg_alloc(c->a, c);
-		int rb = reg_alloc(c->b, c);
+		int ra = reg_alloc(c->a);
+		int rb = reg_alloc(c->b);
 
 		if (c->a->offset >= 0)
 			out_str(file_s, "    LOD R%u,(R%u+%d)\n", ra, R_BP, c->a->offset);
@@ -885,8 +868,8 @@ void asm_code(TAC *c)
 
 	case TAC_STOREC:
 	{
-		int ra = reg_alloc(c->a, c);
-		int rb = reg_alloc(c->b, c);
+		int ra = reg_alloc(c->a);
+		int rb = reg_alloc(c->b);
 
 		if (c->a->offset >= 0)
 			out_str(file_s, "    LOD R%u,(R%u+%d)\n", ra, R_BP, c->a->offset);
@@ -899,29 +882,29 @@ void asm_code(TAC *c)
 	}
 
 	case TAC_GOTO:
-		asm_cond("JMP", NULL, c->a->name, c);
+		asm_cond("JMP", NULL, c->a->name);
 		return;
 
 	case TAC_IFZ:
-		asm_cond("JEZ", c->b, c->a->name, c);
+		asm_cond("JEZ", c->b, c->a->name);
 		return;
 
 	case TAC_LABEL:
 		for (int r = R_GEN; r < R_NUM; r++)
-			asm_write_back(r, c);
+			asm_write_back(r);
 		for (int r = R_GEN; r < R_NUM; r++)
 			rdesc_clear(r);
 		out_str(file_s, "%s:\n", c->a->name);
 		return;
 
 	case TAC_ACTUAL:
-		r = reg_alloc(c->a, c);
+		r = reg_alloc(c->a);
 		out_str(file_s, "	STO (R2+%d),R%u\n", tof + oon, r);
 		oon += 4;
 		return;
 
 	case TAC_CALL:
-		asm_call(c->a, c->b, c);
+		asm_call(c->a, c->b);
 		return;
 
 	case TAC_BEGINFUNC:
@@ -960,11 +943,11 @@ void asm_code(TAC *c)
 		return;
 
 	case TAC_RETURN:
-		asm_return(c->a, c);
+		asm_return(c->a);
 		return;
 
 	case TAC_ENDFUNC:
-		asm_return(NULL, c);
+		asm_return(NULL);
 		scope = 0;
 		return;
 
@@ -994,7 +977,6 @@ void tac_obj()
 		out_str(file_s, "\n");
 		// if (cur->a && cur->a->etc)
 		// 	printf("asm_code %d", *((int *)cur->a->etc));
-		cur_bb = cur->bb;
 		asm_code(cur);
 	}
 	asm_tail();

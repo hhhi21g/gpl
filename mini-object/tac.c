@@ -1752,14 +1752,6 @@ void build_cfg()
 			add_edge(bb, bb->next);
 		}
 	}
-
-	for (BASIC_BLOCK *bb = bb_list; bb; bb = bb->next)
-	{
-		for (TAC *p = bb->first; p && p != bb->last->next; p = p->next)
-		{
-			p->bb = bb; // ⭐ 设置每条 TAC 的所属基本块
-		}
-	}
 }
 
 void cfg_dump(FILE *out)

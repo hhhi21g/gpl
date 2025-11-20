@@ -71,8 +71,6 @@ typedef struct sym
 	void *etc2; // 指向结构体数组对应的结构体
 } SYM;
 
-struct basic_block; // ⭐ 必须加这句
-
 typedef struct tac
 {
 	struct tac *next;
@@ -82,7 +80,6 @@ typedef struct tac
 	SYM *b;
 	SYM *c;
 	void *etc;
-	struct basic_block *bb;
 } TAC;
 
 typedef struct exp
