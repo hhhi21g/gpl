@@ -217,6 +217,7 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 		// 常量：找任意一个临时寄存器
 		reg_b = alloc_hw_temp_except(-1);
 		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
+		rdesc_clear(reg_b);
 	}
 	else
 	{
@@ -230,6 +231,7 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 		// 常量：直接找一个 != reg_b 的寄存器
 		reg_c = alloc_hw_temp_except(reg_b);
 		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
+		rdesc_clear(reg_c);
 	}
 	else
 	{
@@ -241,6 +243,7 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 			// 冲突需要把 c 的值搬到一个新的寄存器
 			int new_reg_c = alloc_hw_temp_except(reg_b);
 			out_str(file_s, "    LOD R%u,R%u\n", new_reg_c, reg_c);
+			rdesc_clear(new_reg_c);
 			reg_c = new_reg_c;
 		}
 	}
@@ -401,6 +404,22 @@ void asm_return(SYM *a)
 	out_str(file_s, "	JMP R3\n");		   /* return */
 }
 
+int is_cmp_op(int op)
+{
+	return op == TAC_LT || op == TAC_LE ||
+		   op == TAC_GT || op == TAC_GE ||
+		   op == TAC_EQ || op == TAC_NE;
+}
+
+int is_zero_const(SYM *s)
+{
+	if (!s)
+		return 0;
+	if (s->type != SYM_INT && s->type != SYM_CHAR)
+		return 0;
+	return s->value == 0; // 按你 SYM 结构里整型常量字段的名字改，比如 ival / value
+}
+
 void asm_head()
 {
 	char head[] =
@@ -471,31 +490,6 @@ void asm_static(void)
 	out_str(file_s, "	DBN 0,%u\n", tos);
 	out_str(file_s, "STACK:\n");
 }
-
-// static void asm_load_addr(int r, SYM *s) // offset+BP
-// {
-// 	switch (s->type)
-// 	{
-// 	case SYM_VAR:
-// 	case SYM_ARRAY:
-// 		if (s->scope == 1)
-// 		{
-// 			// out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_BP, s->offset);
-// 			if (s->offset >= 0)
-// 				out_str(file_s, "    LOD R15,(R%u+%d)\n", R_BP, s->offset);
-// 			else
-// 				out_str(file_s, "    LOD R15,(R%u-%d)\n", R_BP, -s->offset);
-// 		}
-// 		else
-// 		{
-// 			out_str(file_s, "	LOD R%u,STATIC\n", R_TP);
-// 			out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_TP, s->offset);
-// 		}
-// 		break;
-// 	default:
-// 		break;
-// 	}
-// }
 
 static void asm_load_addr(int r, SYM *s) // 把 &s 放到寄存器 r
 {
@@ -637,47 +631,6 @@ void asm_code(TAC *c)
 		rdesc[r].mod = MODIFIED;
 		return;
 
-	// case TAC_OUTPUT:
-	// 	if (c->a->type == SYM_VAR)
-	// 	{
-	// 		r = reg_alloc(c->a);
-	// 		int real_type = SYM_INT;
-	// 		if (c->a && c->a->etc)
-	// 		{
-	// 			real_type = *((int *)c->a->etc);
-	// 			// printf("%d", real_type);
-	// 		}
-	// 		// if (real_type != SYM_PTR)
-	// 		// 	out_str(file_s, "	LOD R15,R%u\n", r);
-	// 		// else
-	// 		if (c->a->scope == 1)
-	// 		{
-	// 			// 局部变量
-	// 			// out_str(file_s, "	LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
-	// 			if (c->a->offset >= 0)
-	// 				out_str(file_s, "    LOD R15,(R%u+%d)\n", R_BP, c->a->offset);
-	// 			else
-	// 				out_str(file_s, "    LOD R15,(R%u-%d)\n", R_BP, -c->a->offset);
-	// 		}
-	// 		else
-	// 		{
-	// 			// 全局变量：从 STATIC 段取
-	// 			out_str(file_s, "	LOD R4,STATIC\n");
-	// 			out_str(file_s, "	LOD R15,(R4+%d)\n", c->a->offset);
-	// 		}
-
-	// 		if (real_type == SYM_CHAR)
-	// 			out_str(file_s, "	OTC\n");
-	// 		else
-	// 			out_str(file_s, "	OTI\n");
-	// 	}
-	// 	else if (c->a->type == SYM_TEXT)
-	// 	{
-	// 		r = reg_alloc(c->a);
-	// 		out_str(file_s, "	LOD R15,R%u\n", r);
-	// 		out_str(file_s, "	OTS\n");
-	// 	}
-	// 	return;
 	case TAC_OUTPUT:
 	{
 		SYM *s = c->a;
@@ -958,6 +911,39 @@ void asm_code(TAC *c)
 	}
 }
 
+/* 根据你现有的取寄存器函数改名：
+   假设有 get_rreg(var, mod) 返回装载了var的寄存器，
+   mod=0 表示只读，mod=1 表示修改。*/
+
+/* 输出标签名：你现在是直接用 printf("JEZ %s\n", label->name) */
+static void asm_cmp_ifz_zero(TAC *cmp, TAC *br)
+{
+	SYM *t = cmp->a;   // 布尔临时（用不上）
+	SYM *lhs = cmp->b; // 左操作数 x
+	SYM *rhs = cmp->c; // 右操作数，应为 0
+	SYM *lab = br->a;  // ifz 跳转的目标 label
+
+	(void)t;
+	(void)rhs; // 防止未使用警告
+
+	/* 目前只处理 (x > 0)，也就是 TAC_GT */
+	if (cmp->op != TAC_GT)
+	{
+		// 保守：如果不是我们支持的情况，退回原本的生成方式
+		// 你可以直接调用原来的 asm_cmp(cmp); asm_ifz(br); 然后 return;
+		// 这里为了简单，先直接返回，让上层不要调用这个函数
+		return;
+	}
+
+	/* 1. 把 x 放到寄存器里 */
+	int rx = reg_alloc(lhs); // 只读
+
+	/* 2. TST 这个寄存器，设置标志位 */
+	out_str(file_s, "    TST R%u\n", rx);
+	out_str(file_s, "    JEZ %s\n", lab->name);
+	out_str(file_s, "    JLZ %s\n", lab->name);
+}
+
 void tac_obj()
 {
 	tof = LOCAL_OFF; /* TOS allows space for link info */
@@ -970,14 +956,24 @@ void tac_obj()
 	asm_head();
 
 	TAC *cur;
-	for (cur = tac_first; cur != NULL; cur = cur->next)
+	for (cur = tac_first; cur != NULL;)
 	{
 		out_str(file_s, "\n	# ");
 		out_tac(file_s, cur);
 		out_str(file_s, "\n");
 		// if (cur->a && cur->a->etc)
 		// 	printf("asm_code %d", *((int *)cur->a->etc));
+		if (is_cmp_op(cur->op) && cur->op == TAC_GT && cur->a && cur->next &&
+			cur->next->op == TAC_IFZ &&
+			cur->next->b == cur->a && // ifz 用的就是这条比较产生的临时 t
+			is_zero_const(cur->c))	  // 形如 (x > 0)
+		{
+			asm_cmp_ifz_zero(cur, cur->next); // 生成优化后的汇编
+			cur = cur->next->next;			  // 跳过比较 + ifz 两条 TAC
+			continue;
+		}
 		asm_code(cur);
+		cur = cur->next;
 	}
 	asm_tail();
 	asm_static();

@@ -110,93 +110,68 @@ L1:
 
 	# t0 = (j > 0)
 	LOD R5,(R2+32)
-	LOD R6,0
-	SUB R5,R6
-	TST R5
-	LOD R3,R1+40
-	JGZ R3
-	LOD R5,0
-	LOD R3,R1+24
-	JMP R3
-	LOD R5,1
-
-	# ifz t0 goto L3
-    STO (R2+40),R5
-	TST R5
-	JEZ L3
+    TST R5
+    JEZ L3
+    JLZ L3
 
 	# output j
-	LOD R7,(R2+32)
-    LOD R15,R7
+    LOD R15,R5
     OTI
 
 	# i = 9
-	LOD R8,9
-	STO (R2+28),R8
+	LOD R6,9
+	STO (R2+28),R6
 
 	# label L4
-    STO (R2+28),R8
+    STO (R2+28),R6
 L4:
 
 	# var t1
 
 	# t1 = (i > 0)
 	LOD R5,(R2+28)
-	LOD R6,0
-	SUB R5,R6
-	TST R5
-	LOD R3,R1+40
-	JGZ R3
-	LOD R5,0
-	LOD R3,R1+24
-	JMP R3
-	LOD R5,1
-
-	# ifz t1 goto L6
-    STO (R2+44),R5
-	TST R5
-	JEZ L6
+    TST R5
+    JEZ L6
+    JLZ L6
 
 	# output i
-	LOD R7,(R2+28)
-    LOD R15,R7
+    LOD R15,R5
     OTI
 
 	# var t7
 
 	# t7 = t6 + 9
-	LOD R8,(R4+16)
+	LOD R6,(R4+16)
     LOD R5,9
-    ADD R8,R5
+    ADD R6,R5
 
 	# d = t7
-	STO (R2+20),R8
+	STO (R2+20),R6
 
 	# var t8
 
 	# var t13
 
 	# t13 = t12 + 9
-	LOD R9,(R4+32)
-    LOD R5,9
-    ADD R9,R5
+	LOD R5,(R4+32)
+    LOD R6,9
+    ADD R5,R6
 
 	# e = t13
-	STO (R2+24),R9
+	STO (R2+24),R5
 
 	# var t14
 
 	# t14 = i - 1
+	LOD R6,(R2+28)
     LOD R5,1
-    SUB R7,R5
+    SUB R6,R5
 
 	# i = t14
-	STO (R2+28),R7
+	STO (R2+28),R6
 
 	# label L5
-    STO (R2+28),R7
-    STO (R2+20),R8
-    STO (R2+24),R9
+    STO (R2+28),R6
 L5:
 
 	# goto L4

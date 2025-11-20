@@ -74,8 +74,9 @@ L4:
 
 	# t2 = 2 * i
     LOD R5,2
-	LOD R7,(R2+8)
-    MUL R5,R7
+	LOD R5,(R2+8)
+    LOD R6,R5
+    MUL R5,R6
 
 	# var t3
 
@@ -93,13 +94,14 @@ L4:
     OTI
 
 	# output L7
-	LOD R8,L7
-    LOD R15,R8
+	LOD R6,L7
+    LOD R15,R6
     OTS
 
 	# var t4
 
 	# t4 = i + 1
+	LOD R7,(R2+8)
     LOD R5,1
     ADD R7,R5
 
