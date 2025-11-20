@@ -43,8 +43,27 @@ void rdesc_clear_all()
 	}
 }
 
+static int is_temp_name(const char *name)
+{
+	if (!name)
+		return 0;
+	if (name[0] != 't')
+		return 0;						  // 以 't' 开头
+	if (!isdigit((unsigned char)name[1])) // 后面必须是数字
+		return 0;
+
+	// 检查剩余字符是否全是数字
+	for (int i = 2; name[i]; i++)
+	{
+		if (!isdigit((unsigned char)name[i]))
+			return 0;
+	}
+	return 1; // 形如 t0, t1, t23 ...
+}
+
 void asm_write_back(int r)
 {
+
 	if ((rdesc[r].var != NULL) && rdesc[r].mod)
 	{
 		if (rdesc[r].var->scope == 1) /* local var */
@@ -887,16 +906,10 @@ void asm_code(TAC *c)
 		return;
 
 	case TAC_VAR:
-		// if (c->a->name[0] == 't')
-		// {
-		// 	c->a->scope = 1;
-		// 	c->a->offset = tmpoff;
-		// 	tmpoff -= 4;
-		// 	return;
-		// }
+
 		if (c->a->type == SYM_TMP)
 		{
-			c->a->type = SYM_VAR; // 临时转局部变量
+			c->a->type = SYM_VAR;
 		}
 		if (scope)
 		{

@@ -784,42 +784,7 @@ static int in_block_list(BASIC_BLOCK **list, int cnt, BASIC_BLOCK *bb)
     return 0;
 }
 
-// 从tail走到header,将沿途节点加入到循环
-// static void collect_natural_loop(BASIC_BLOCK *header, BASIC_BLOCK *tail,
-//                                  BASIC_BLOCK **loop_blocks, int *loop_cnt)
-// {
-//     *loop_cnt = 0;
-
-//     // loop_nodes = {header, tail}
-//     loop_blocks[(*loop_cnt)++] = header;
-//     if (!in_block_list(loop_blocks, *loop_cnt, tail))
-//         loop_blocks[(*loop_cnt)++] = tail;
-
-//     // 反向遍历
-//     BASIC_BLOCK *stack[MAX_BB];
-//     int top = 0;
-//     stack[top++] = tail;
-
-//     while (top > 0)
-//     {
-//         BASIC_BLOCK *m = stack[--top];
-//         for (int i = 0; i < m->pred_count; i++)
-//         {
-//             BASIC_BLOCK *p = m->pred[i];
-
-//             if (p == header)
-//                 continue; // 不把 header 的上游前驱加入 loop
-
-//             if (!in_block_list(loop_blocks, *loop_cnt, p))
-//             {
-//                 loop_blocks[(*loop_cnt)++] = p;
-//                 stack[top++] = p;
-//             }
-//         }
-//     }
-// }
-
-// 收集循环里所有被赋值的变量
+// 由tail到header的所有基本块集合
 static void collect_natural_loop(
     BASIC_BLOCK *header,
     BASIC_BLOCK *tail,
@@ -837,6 +802,7 @@ static void collect_natural_loop(
     int top = 0;
     stack[top++] = tail;
 
+    // DFS遍历
     while (top > 0)
     {
         BASIC_BLOCK *m = stack[--top];
@@ -849,11 +815,11 @@ static void collect_natural_loop(
             if (p == header)
                 continue;
 
-            // ⭐⭐ 关键判定：header 必须支配 p
-            // 否则 p 是循环外的节点，不能加入循环
+            // p 没被header支配，是循环外的节点，不能加入循环
             if (!dom[p->id][header->id])
                 continue;
 
+            // 在循环内
             if (!in_block_list(loop_blocks, *loop_cnt, p))
             {
                 loop_blocks[(*loop_cnt)++] = p;
@@ -898,6 +864,25 @@ static int can_hoist_tac(TAC *p,
                          SYM **invariant_defs, int inv_def_cnt,
                          BASIC_BLOCK **loop_blocks, int loop_cnt)
 {
+
+    if (p->op == TAC_COPY)
+    {
+        SYM *a = p->a;
+        SYM *b = p->b;
+
+        if (!a || !b)
+            return 0;
+        if (a->type != SYM_TMP)
+            return 0;
+
+        if (sym_in_defs(b, loop_defs, loop_def_cnt))
+        {
+            if (!sym_in_list2(invariant_defs, inv_def_cnt, b))
+                return 0;
+        }
+
+        return 1;
+    }
     if (!is_exp_op(p->op))
         return 0;
 
@@ -911,42 +896,24 @@ static int can_hoist_tac(TAC *p,
     if (!a || !b || !c)
         return 0;
 
-    // 禁止1：控制流表达式（ifz cond）绝对不能 hoist
-    for (int li = 0; li < loop_cnt; li++)
-    {
-        BASIC_BLOCK *bb = loop_blocks[li];
-        for (TAC *q = bb->first; q && q != bb->last->next; q = q->next)
-        {
-            if (q->op == TAC_IFZ)
-            {
-                if (q->b == a) // p->a 被作为条件变量
-                    return 0;
-            }
-        }
-    }
-
-    // 禁止2：如果 p->a 被赋值给普通变量，则不能 hoist
-    for (int li = 0; li < loop_cnt; li++)
-    {
-        BASIC_BLOCK *bb = loop_blocks[li];
-        for (TAC *q = bb->first; q && q != bb->last->next; q = q->next)
-        {
-            if (q->op == TAC_COPY && q->b == a)
-            {
-                if (q->a && q->a->type == SYM_VAR)
-                    return 0;
-            }
-        }
-    }
-
-    // 禁止3：p->a 在循环中必须至少一次被使用
     int used = 0;
     for (int li = 0; li < loop_cnt; li++)
     {
         BASIC_BLOCK *bb = loop_blocks[li];
         for (TAC *q = bb->first; q && q != bb->last->next; q = q->next)
         {
-            if (q->b == a || q->c == a)
+            if (q->op == TAC_IFZ) // ifz不能被移出循环
+            {
+                if (q->b == a)
+                    return 0;
+            }
+            if (q->op == TAC_COPY && q->b == a) // 只移出临时变量类型
+            {
+                if (q->a && q->a->type == SYM_VAR)
+                    return 0;
+            }
+
+            if (q->b == a || q->c == a) // 临时变量的值只被临时变量使用，才会移出
             {
                 used = 1;
                 break;
@@ -955,10 +922,11 @@ static int can_hoist_tac(TAC *p,
         if (used)
             break;
     }
+
     if (!used)
         return 0;
 
-    // 原有检查：操作数在循环中不被定义
+    // 操作数在循环中不被重新赋值
     SYM *ops[2] = {b, c};
     for (int i = 0; i < 2; i++)
     {
@@ -976,85 +944,11 @@ static int can_hoist_tac(TAC *p,
     return 1;
 }
 
-// 修改版 can_hoist_tac：只允许操作数在循环中不被定义的表达式 hoist
-// static int can_hoist_tac(
-//     TAC *p,
-//     SYM **loop_defs, int loop_def_cnt,
-//     BASIC_BLOCK **loop_blocks, int loop_cnt)
-// {
-//     // 1) 必须是二元表达式
-//     if (!is_exp_op(p->op))
-//         return 0;
-
-//     SYM *a = p->a;
-//     SYM *b = p->b;
-//     SYM *c = p->c;
-
-//     if (!a || !b || !c)
-//         return 0;
-
-//     // 2) 结果必须是临时变量（跟你原来的约束一致）
-//     if (a->type != SYM_TMP)
-//         return 0;
-
-//     // 3) 操作数在循环中不能被赋值（不从循环内的 temp 链条“递推”不变）
-//     if (sym_in_defs(b, loop_defs, loop_def_cnt))
-//         return 0;
-//     if (sym_in_defs(c, loop_defs, loop_def_cnt))
-//         return 0;
-
-//     // 4) 禁止1：控制流表达式（ifz 条件）绝对不能 hoist
-//     for (int li = 0; li < loop_cnt; li++)
-//     {
-//         BASIC_BLOCK *bb = loop_blocks[li];
-//         for (TAC *q = bb->first; q && q != bb->last->next; q = q->next)
-//         {
-//             if (q->op == TAC_IFZ && q->b == a)
-//                 return 0;
-//         }
-//     }
-
-//     // 5) 禁止2：如果 p->a 被赋值给普通变量，则不能 hoist
-//     for (int li = 0; li < loop_cnt; li++)
-//     {
-//         BASIC_BLOCK *bb = loop_blocks[li];
-//         for (TAC *q = bb->first; q && q != bb->last->next; q = q->next)
-//         {
-//             if (q->op == TAC_COPY && q->b == a)
-//             {
-//                 if (q->a && q->a->type == SYM_VAR)
-//                     return 0;
-//             }
-//         }
-//     }
-
-//     // 6) 禁止3：p->a 在循环中必须至少一次被使用
-//     int used = 0;
-//     for (int li = 0; li < loop_cnt && !used; li++)
-//     {
-//         BASIC_BLOCK *bb = loop_blocks[li];
-//         for (TAC *q = bb->first; q && q != bb->last->next; q = q->next)
-//         {
-//             if (q->b == a || q->c == a)
-//             {
-//                 used = 1;
-//                 break;
-//             }
-//         }
-//     }
-//     if (!used)
-//         return 0;
-
-//     return 1;
-// }
-
-// 将循环内不变表达式移动到preheader
+// 将p插入到pos之后
 static void insert_tac_after(TAC *p, TAC *pos, BASIC_BLOCK *bb)
 {
-    // 插入全局 TAC 链
     if (!pos)
     {
-        // 插入到整个函数最前面
         p->next = tac_first;
         if (tac_first)
             tac_first->prev = p;
@@ -1069,27 +963,17 @@ static void insert_tac_after(TAC *p, TAC *pos, BASIC_BLOCK *bb)
         p->prev = pos;
     }
 
-    // ⚠⚠⚠ ABSOLUTELY DO NOT modify preheader->last here !!!
-    // 原来的代码写了:
-    //     bb->last = p;
-    // 这是错误的，因为 TAC 链不是 block 局部的！
-    //
-    // 我们只需要保证 p 被逻辑地放在 preheader 内，
-    // 但 block->last 的更新应由 CFG 重建，而不是直接修改。
-
-    // 正确做法：如果 p 紧挨着插入在 preheader 末尾，则逻辑上它属于 preheader
     if (bb)
     {
         if (!bb->first)
             bb->first = p;
 
-        // ❌ 不更新 bb->last !!
-        // 如果一定要标记，可以仅当 pos == bb->last 时再更改：
         if (pos == bb->last)
-            bb->last = p; // 只在确实是 block 尾部插入时更新
+            bb->last = p;
     }
 }
 
+// 循环内部找临时变量a的变量声明，获得所在基本块
 static TAC *find_var_def_in_loop(SYM *a,
                                  BASIC_BLOCK **loop_blocks, int loop_cnt,
                                  BASIC_BLOCK **var_bb_out)
@@ -1109,13 +993,8 @@ static TAC *find_var_def_in_loop(SYM *a,
     }
     return NULL;
 }
-// loop_blocks: 该 natural loop 中的所有基本块
-// loop_cnt:    基本块数量
-// loop_defs:   输出，用来存循环内所有“被重新定义”的变量
-// loop_def_cnt: 输出数量
-//
-// 逻辑：把所有在循环内被写（def）的变量收集到 loop_defs[]
-//
+
+// 收集循环内所有被赋值的变量，loop_defs
 static void collect_loop_defs(
     BASIC_BLOCK **loop_blocks,
     int loop_cnt,
@@ -1124,13 +1003,14 @@ static void collect_loop_defs(
 {
     *loop_def_cnt = 0;
 
+    // 逐个遍历循环块
     for (int i = 0; i < loop_cnt; i++)
     {
         BASIC_BLOCK *bb = loop_blocks[i];
 
-        // 利用前面 compute_def_use() 得到的 bb->def 数组
         for (int j = 0; j < bb->def_cnt; j++)
         {
+            // 利用BB的def
             SYM *d = bb->def[j];
 
             // 去重
@@ -1162,11 +1042,11 @@ int loop_invariant_code_motion()
     BASIC_BLOCK *bb_array[MAX_BB] = {0};
     int bb_cnt = build_bb_array(bb_array);
 
-    // 1. 计算 dominators
+    // 计算 dom
     static unsigned char dom[MAX_BB][MAX_BB];
     compute_dominators(bb_array, bb_cnt, dom);
 
-    // 2. 找所有 back edges (tail -> header)，满足 header 支配 tail
+    // 找所有tail -> header，满足 header 支配 tail
     for (BASIC_BLOCK *tail = bb_list; tail; tail = tail->next)
     {
         for (int si = 0; si < tail->succ_count; si++)
@@ -1175,26 +1055,25 @@ int loop_invariant_code_motion()
             int t_id = tail->id;
             int h_id = header->id;
 
-            // header 支配 tail，则 tail->header 为回边
+            // header 支配 tail
             if (dom[t_id][h_id])
             {
-                // 2.1 构造 natural loop
+                // natural loop
                 BASIC_BLOCK *loop_blocks[MAX_BB];
                 int loop_cnt = 0;
                 collect_natural_loop(header, tail, loop_blocks, &loop_cnt, dom);
 
-                // 2.2 找 preheader（唯一环外前驱）
+                // 找 preheader
                 BASIC_BLOCK *preheader = find_preheader(header, loop_blocks, loop_cnt);
                 if (!preheader)
                     continue; // 没有合适 preheader，跳过这个 loop
 
-                // 2.3 收集合环内 def 集合
+                // 收集环内 def 集合
                 SYM *loop_defs[1024];
                 int loop_def_cnt = 0;
                 collect_loop_defs(loop_blocks, loop_cnt, loop_defs, &loop_def_cnt);
 
-                // 2.4 迭代寻找所有 loop-invariant 指令
-                //      简单起见：一次扫描，不做多轮 fixpoint，对当前用例已经够用
+                // 迭代寻找所有 loop-invariant 指令
                 SYM *invariant_defs[1024];
                 int inv_def_cnt = 0;
 
@@ -1224,11 +1103,11 @@ int loop_invariant_code_motion()
                             hoist_bb[hoist_cnt] = bb;
                             hoist_cnt++;
 
-                            // 记录它定义的结果 a 为 invariant 定义
+                            // 记录它定义的 a 为 invariant 定义
                             if (p->a && !sym_in_list2(invariant_defs, inv_def_cnt, p->a))
                                 invariant_defs[inv_def_cnt++] = p->a;
 
-                            // 确保对应的 var 也被挪到 preheader
+                            // 对应的 var 也被挪到 preheader
                             if (!sym_in_list2(hoisted_temps, hoist_var_cnt, p->a))
                             {
                                 BASIC_BLOCK *var_bb = NULL;
@@ -1255,8 +1134,8 @@ int loop_invariant_code_motion()
                         var_insert_pos = q;
                 }
 
-                // 2.5 把这些指令从各自 BB 中移动到 preheader 的末尾
-                TAC *insert_pos = preheader->last; // 插入点（之后）
+                // 把这些指令从各自 BB 中移动到 preheader 的末尾
+                TAC *insert_pos = preheader->last;
                 for (int i = 0; i < hoist_var_cnt; i++)
                 {
                     TAC *v = hoist_var_tac[i];
@@ -1264,13 +1143,12 @@ int loop_invariant_code_motion()
 
                     remove_tac_bb(from_bb, v);
 
-                    // 插到最后一个 var 后面（或 preheader 开头）
+                    // 插到最后一个 var 后面
                     insert_tac_after(v, var_insert_pos, preheader);
                     var_insert_pos = v;
                     changed = 1;
                 }
 
-                // TAC *insert_pos = preheader->last; // 此时 last 已经包括新插入的 var
                 for (int i = 0; i < hoist_cnt; i++)
                 {
                     TAC *p = hoist_tac[i];
@@ -1295,14 +1173,24 @@ void global_optimize()
     {
         changed = 0;
 
-        // if (local_copy_propagation())
-        //     changed = 1;
+        if (local_copy_propagation())
+            changed = 1;
+        if (local_constant_folding())
+            changed = 1;
 
-        // if (local_constant_folding())
-        //     changed = 1;
+        build_cfg();
+        compute_def_use();
+        live_variables_analysis();
+        build_expMap();
+        init_blocks();
+        compute_gen_kill();
+        available_expressions_analysis();
 
-        // if (global_expression_elimination() != 0)
-        //     changed = 1;
+        if (global_expression_elimination() != 0)
+            changed = 1;
+
+        if (local_copy_propagation())
+            changed = 1;
 
         if (global_dead_assignment())
             changed = 1;

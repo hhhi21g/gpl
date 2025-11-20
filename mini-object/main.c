@@ -55,26 +55,26 @@ int main(int argc, char *argv[])
 
 	tac_init();
 	yyparse();
-	build_cfg();
+	// build_cfg();
 	// cfg_dump(file_x);
 
 	// def use
-	compute_def_use();
+	// compute_def_use();
 	// print_def_use();
 
 	// 活跃变量分析
-	live_variables_analysis();
+	// live_variables_analysis();
 	// print_liveness();
 
 	// kill gen
-	build_expMap();
-	init_blocks();
-	compute_gen_kill();
+	// build_expMap();
+	// init_blocks();
+	// compute_gen_kill();
 	// print_gen_kill();
 
 	// 可用表达式分析
-	available_expressions_analysis();
-	print_available_expressions();
+	// available_expressions_analysis();
+	// print_available_expressions();
 
 	// local_optimize();
 	global_optimize();

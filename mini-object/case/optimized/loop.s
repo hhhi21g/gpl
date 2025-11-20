@@ -14,9 +14,13 @@
 
 	# var t6
 
+	# var t9
+
 	# var t10
 
 	# var t11
+
+	# var t12
 
 	# label main
 main:
@@ -92,15 +96,22 @@ main:
 
 	# t11 = t10 / b
 	LOD R4,STATIC
-	STO (R4+20),R7
+	STO (R4+24),R7
     DIV R7,R10
+
+	# t12 = t3 - t11
+	LOD R4,STATIC
+	LOD R12,(R4+4)
+	LOD R4,STATIC
+	STO (R4+28),R7
+    SUB R12,R7
 
 	# label L1
 	LOD R4,STATIC
 	STO (R4+16),R5
-	LOD R4,STATIC
-	STO (R4+24),R7
     STO (R2+32),R8
+	LOD R4,STATIC
+	STO (R4+32),R12
 L1:
 
 	# var t0
@@ -172,35 +183,16 @@ L4:
 
 	# var t8
 
-	# t8 = t2
-	LOD R4,STATIC
-	LOD R9,(R4+0)
-	STO (R2+52),R9
-
-	# var t9
-
-	# t9 = a + t8
-	LOD R10,(R2+8)
-    STO (R2+52),R9
-    ADD R10,R9
-
-	# var t12
-
-	# t12 = t9 - t11
-    STO (R2+56),R10
-	LOD R4,STATIC
-	LOD R11,(R4+24)
-    SUB R10,R11
-
 	# var t13
 
 	# t13 = t12 + 9
-    STO (R2+60),R10
+	LOD R4,STATIC
+	LOD R9,(R4+32)
     LOD R5,9
-    ADD R10,R5
+    ADD R9,R5
 
 	# e = t13
-	STO (R2+24),R10
+	STO (R2+24),R9
 
 	# var t14
 
@@ -214,7 +206,7 @@ L4:
 	# label L5
     STO (R2+28),R7
     STO (R2+20),R8
-    STO (R2+24),R10
+    STO (R2+24),R9
 L5:
 
 	# goto L4
@@ -285,5 +277,5 @@ L8:
 L7:
 	DBS 32,0
 STATIC:
-	DBN 0,28
+	DBN 0,36
 STACK:

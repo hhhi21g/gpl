@@ -638,10 +638,10 @@ block
     SYM *cont  = g_for_cont_stack[g_for_depth - 1];
     SYM *end   = g_for_end_stack[g_for_depth - 1];
 
-    if (start != NULL)
-        printf("g_for_start\n");
-    else
-        printf("start null\n");
+    // if (start != NULL)
+    //     printf("g_for_start\n");
+    // else
+    //     printf("start null\n");
 
     $$ = do_while($3, $6, start, cont, end);
 
