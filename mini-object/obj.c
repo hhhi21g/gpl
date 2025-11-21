@@ -193,116 +193,51 @@ int reg_alloc_temp()
 	return R_GEN;
 }
 
-// 找一个和 avoid 不同的寄存器用作临时
-static int alloc_hw_temp_except(int avoid)
-{
-	for (int r = R_GEN; r < R_NUM; r++)
-	{
-		if (r != avoid)
-		{
-			return r;
-		}
-	}
-	error("no free register");
-	return R_GEN;
-}
 static int alloc_clean_temp_reg()
 {
-	// Step 1: 优先找一个未绑定变量的寄存器
+	// 优先找未绑定变量的寄存器
 	for (int r = R_GEN; r < R_NUM; r++)
 	{
 		if (rdesc[r].var == NULL)
 		{
-			return r; // 已经是干净寄存器
+			return r; // 干净寄存器
 		}
 	}
 
-	// Step 2: 没有空寄存器，那就挑一个牺牲品
-	//         一般选 R_GEN，这样可控并且保持决定性
+	// 没有空寄存器
 	int r = R_GEN;
 
-	// 如果这个寄存器绑定了某个变量，则必须 write-back
+	// 如果这个寄存器绑定了某个变量，write-back
 	if (rdesc[r].var != NULL && rdesc[r].mod)
 	{
 		asm_write_back(r);
 	}
 
-	// 不管是否 write-back，必须解除绑定
+	// 不管是否 write-back，都解除绑定
 	rdesc_clear(r);
 
 	return r;
 }
 
-// void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
-// {
-// 	int reg_b, reg_c;
-
-// 	// 先处理b
-// 	if (b->type == SYM_INT)
-// 	{
-// 		// 常量：找任意一个临时寄存器
-// 		reg_b = alloc_hw_temp_except(-1);
-// 		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
-// 		rdesc_clear(reg_b);
-// 	}
-// 	else
-// 	{
-// 		// 变量：用寄存器分配器
-// 		reg_b = reg_alloc(b);
-// 	}
-
-// 	// 处理 c，要避免覆盖 reg_b
-// 	if (c->type == SYM_INT)
-// 	{
-// 		// 常量：直接找一个 != reg_b 的寄存器
-// 		reg_c = alloc_hw_temp_except(reg_b);
-// 		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
-// 		rdesc_clear(reg_c);
-// 	}
-// 	else
-// 	{
-// 		// 变量
-// 		reg_c = reg_alloc(c);
-
-// 		if (reg_c == reg_b)
-// 		{
-// 			// 冲突需要把 c 的值搬到一个新的寄存器
-// 			int new_reg_c = alloc_hw_temp_except(reg_b);
-// 			out_str(file_s, "    LOD R%u,R%u\n", new_reg_c, reg_c);
-// 			rdesc_clear(new_reg_c);
-// 			reg_c = new_reg_c;
-// 		}
-// 	}
-
-// 	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
-
-// 	rdesc_fill(reg_b, a, MODIFIED);
-// }
-
 void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 {
 	int reg_b, reg_c;
 
-	// === 1. 取得 b 的寄存器（左操作数） ===
 	if (b->type == SYM_INT || b->type == SYM_CHAR)
 	{
-		// 常量：加载到一个干净临时寄存器
 		reg_b = alloc_clean_temp_reg();
 		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
-		// 不绑定 rdesc，因为是临时寄存器
 	}
 	else
 	{
 		reg_b = reg_alloc(b);
 	}
 
-	// === 2. 取得 c 的寄存器（右操作数） ===
 	if (c->type == SYM_INT || c->type == SYM_CHAR)
 	{
-		// 常量：加载到另一个干净临时寄存器
 		reg_c = alloc_clean_temp_reg();
 
-		// 必须保证 reg_c != reg_b
+		// 保证reg_c != reg_b
 		if (reg_c == reg_b)
 		{
 			reg_c = alloc_clean_temp_reg();
@@ -314,7 +249,6 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 	{
 		reg_c = reg_alloc(c);
 
-		// ⚠️避免 reg_b == reg_c 冲突
 		if (reg_c == reg_b)
 		{
 			int new_reg_c = alloc_clean_temp_reg();
@@ -323,10 +257,8 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 		}
 	}
 
-	// === 3. 执行 reg_b = reg_b OP reg_c ===
 	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
 
-	// === 4. reg_b 现在保存结果，绑定到 a ===
 	rdesc_fill(reg_b, a, MODIFIED);
 }
 
@@ -1006,25 +938,20 @@ static void asm_cmp_ifz_zero(TAC *cmp, TAC *br)
 	out_str(file_s, "    JLZ %s\n", lab->name);
 }
 
-// 返回一个未绑定变量的“干净临时寄存器”
-// 1. 优先找 rdesc[r].var == NULL 的寄存器（真正干净）
-// 2. 如果没有：选择一个寄存器，写回内容并清除绑定
-//    （不再表示任何变量，之后可以安全用于 cmp 等操作）
-
 static void asm_cmp_ifz_general(TAC *cmp, TAC *br)
 {
 	SYM *lhs = cmp->b;
 	SYM *rhs = cmp->c;
 	SYM *lab = br->a;
 
-	// 必须 rhs 是常数
+	// rhs 是常数
 	if (!(rhs->type == SYM_INT || rhs->type == SYM_CHAR))
 		return;
 
-	// R = lhs - rhs
+	// lhs - rhs与0比较得到条件
 	int r_lhs = reg_alloc(lhs);
 
-	// 纯寄存器 rt，无绑定
+	// 寄存器rt
 	int rt = alloc_clean_temp_reg();
 
 	out_str(file_s, "    LOD R%u,R%u\n", rt, r_lhs);

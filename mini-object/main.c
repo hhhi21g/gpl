@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	// available_expressions_analysis();
 	// print_available_expressions();
 
-	// local_optimize();
+	local_optimize();
 	global_optimize();
 
 	tac_list();

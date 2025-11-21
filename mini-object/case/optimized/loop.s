@@ -100,10 +100,26 @@ main:
 	STO (R4+28),R7
     SUB R12,R7
 
-	# label L1
+	# t7 = t6 + 9
 	STO (R4+16),R5
-    STO (R2+32),R8
+    LOD R13,9
+    ADD R5,R13
+
+	# d = t7
+	STO (R2+20),R5
+
+	# t13 = t12 + 9
 	STO (R4+32),R12
+    LOD R13,9
+    ADD R12,R13
+
+	# e = t13
+	STO (R2+24),R12
+
+	# label L1
+    STO (R2-1),R5
+    STO (R2+32),R8
+    STO (R2-1),R12
 L1:
 
 	# var t0
@@ -140,39 +156,21 @@ L4:
 
 	# var t7
 
-	# t7 = t6 + 9
-	LOD R6,(R4+16)
-    LOD R7,9
-    ADD R6,R7
-
-	# d = t7
-	STO (R2+20),R6
-
 	# var t8
 
 	# var t13
 
-	# t13 = t12 + 9
-	LOD R7,(R4+32)
-    LOD R8,9
-    ADD R7,R8
-
-	# e = t13
-	STO (R2+24),R7
-
 	# var t14
 
 	# t14 = i - 1
-    LOD R8,1
-    SUB R5,R8
+    LOD R6,1
+    SUB R5,R6
 
 	# i = t14
 	STO (R2+28),R5
 
 	# label L5
     STO (R2+28),R5
-    STO (R2+20),R6
-    STO (R2+24),R7
 L5:
 
 	# goto L4

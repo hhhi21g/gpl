@@ -1730,9 +1730,13 @@ void build_cfg()
 		}
 	}
 
+	int id = 0;
+
 	for (BASIC_BLOCK *bb = bb_list; bb != NULL; bb = bb->next)
 	{
 		TAC *last = bb->last;
+
+		bb->id = id++;
 
 		if (last->op == TAC_GOTO)
 		{
