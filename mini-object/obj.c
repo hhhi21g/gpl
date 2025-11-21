@@ -206,50 +206,127 @@ static int alloc_hw_temp_except(int avoid)
 	error("no free register");
 	return R_GEN;
 }
+static int alloc_clean_temp_reg()
+{
+	// Step 1: 优先找一个未绑定变量的寄存器
+	for (int r = R_GEN; r < R_NUM; r++)
+	{
+		if (rdesc[r].var == NULL)
+		{
+			return r; // 已经是干净寄存器
+		}
+	}
+
+	// Step 2: 没有空寄存器，那就挑一个牺牲品
+	//         一般选 R_GEN，这样可控并且保持决定性
+	int r = R_GEN;
+
+	// 如果这个寄存器绑定了某个变量，则必须 write-back
+	if (rdesc[r].var != NULL && rdesc[r].mod)
+	{
+		asm_write_back(r);
+	}
+
+	// 不管是否 write-back，必须解除绑定
+	rdesc_clear(r);
+
+	return r;
+}
+
+// void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
+// {
+// 	int reg_b, reg_c;
+
+// 	// 先处理b
+// 	if (b->type == SYM_INT)
+// 	{
+// 		// 常量：找任意一个临时寄存器
+// 		reg_b = alloc_hw_temp_except(-1);
+// 		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
+// 		rdesc_clear(reg_b);
+// 	}
+// 	else
+// 	{
+// 		// 变量：用寄存器分配器
+// 		reg_b = reg_alloc(b);
+// 	}
+
+// 	// 处理 c，要避免覆盖 reg_b
+// 	if (c->type == SYM_INT)
+// 	{
+// 		// 常量：直接找一个 != reg_b 的寄存器
+// 		reg_c = alloc_hw_temp_except(reg_b);
+// 		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
+// 		rdesc_clear(reg_c);
+// 	}
+// 	else
+// 	{
+// 		// 变量
+// 		reg_c = reg_alloc(c);
+
+// 		if (reg_c == reg_b)
+// 		{
+// 			// 冲突需要把 c 的值搬到一个新的寄存器
+// 			int new_reg_c = alloc_hw_temp_except(reg_b);
+// 			out_str(file_s, "    LOD R%u,R%u\n", new_reg_c, reg_c);
+// 			rdesc_clear(new_reg_c);
+// 			reg_c = new_reg_c;
+// 		}
+// 	}
+
+// 	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
+
+// 	rdesc_fill(reg_b, a, MODIFIED);
+// }
 
 void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 {
 	int reg_b, reg_c;
 
-	// 先处理b
-	if (b->type == SYM_INT)
+	// === 1. 取得 b 的寄存器（左操作数） ===
+	if (b->type == SYM_INT || b->type == SYM_CHAR)
 	{
-		// 常量：找任意一个临时寄存器
-		reg_b = alloc_hw_temp_except(-1);
+		// 常量：加载到一个干净临时寄存器
+		reg_b = alloc_clean_temp_reg();
 		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
-		rdesc_clear(reg_b);
+		// 不绑定 rdesc，因为是临时寄存器
 	}
 	else
 	{
-		// 变量：用寄存器分配器
 		reg_b = reg_alloc(b);
 	}
 
-	// 处理 c，要避免覆盖 reg_b
-	if (c->type == SYM_INT)
+	// === 2. 取得 c 的寄存器（右操作数） ===
+	if (c->type == SYM_INT || c->type == SYM_CHAR)
 	{
-		// 常量：直接找一个 != reg_b 的寄存器
-		reg_c = alloc_hw_temp_except(reg_b);
+		// 常量：加载到另一个干净临时寄存器
+		reg_c = alloc_clean_temp_reg();
+
+		// 必须保证 reg_c != reg_b
+		if (reg_c == reg_b)
+		{
+			reg_c = alloc_clean_temp_reg();
+		}
+
 		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
-		rdesc_clear(reg_c);
 	}
 	else
 	{
-		// 变量
 		reg_c = reg_alloc(c);
 
+		// ⚠️避免 reg_b == reg_c 冲突
 		if (reg_c == reg_b)
 		{
-			// 冲突需要把 c 的值搬到一个新的寄存器
-			int new_reg_c = alloc_hw_temp_except(reg_b);
+			int new_reg_c = alloc_clean_temp_reg();
 			out_str(file_s, "    LOD R%u,R%u\n", new_reg_c, reg_c);
-			rdesc_clear(new_reg_c);
 			reg_c = new_reg_c;
 		}
 	}
 
+	// === 3. 执行 reg_b = reg_b OP reg_c ===
 	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
 
+	// === 4. reg_b 现在保存结果，绑定到 a ===
 	rdesc_fill(reg_b, a, MODIFIED);
 }
 
@@ -404,7 +481,7 @@ void asm_return(SYM *a)
 	out_str(file_s, "	JMP R3\n");		   /* return */
 }
 
-int is_cmp_op(int op)
+int is_cmp(int op)
 {
 	return op == TAC_LT || op == TAC_LE ||
 		   op == TAC_GT || op == TAC_GE ||
@@ -417,7 +494,7 @@ int is_zero_const(SYM *s)
 		return 0;
 	if (s->type != SYM_INT && s->type != SYM_CHAR)
 		return 0;
-	return s->value == 0; // 按你 SYM 结构里整型常量字段的名字改，比如 ival / value
+	return s->value == 0;
 }
 
 void asm_head()
@@ -911,37 +988,88 @@ void asm_code(TAC *c)
 	}
 }
 
-/* 根据你现有的取寄存器函数改名：
-   假设有 get_rreg(var, mod) 返回装载了var的寄存器，
-   mod=0 表示只读，mod=1 表示修改。*/
-
-/* 输出标签名：你现在是直接用 printf("JEZ %s\n", label->name) */
 static void asm_cmp_ifz_zero(TAC *cmp, TAC *br)
 {
-	SYM *t = cmp->a;   // 布尔临时（用不上）
-	SYM *lhs = cmp->b; // 左操作数 x
-	SYM *rhs = cmp->c; // 右操作数，应为 0
-	SYM *lab = br->a;  // ifz 跳转的目标 label
+	SYM *t = cmp->a;   // 比较运算布尔值
+	SYM *lhs = cmp->b; // 左操作数
+	SYM *rhs = cmp->c; // 右操作数
+	SYM *lab = br->a;  // 跳转目标label
 
-	(void)t;
-	(void)rhs; // 防止未使用警告
-
-	/* 目前只处理 (x > 0)，也就是 TAC_GT */
+	// 暂只处理x > 0初步尝试
 	if (cmp->op != TAC_GT)
-	{
-		// 保守：如果不是我们支持的情况，退回原本的生成方式
-		// 你可以直接调用原来的 asm_cmp(cmp); asm_ifz(br); 然后 return;
-		// 这里为了简单，先直接返回，让上层不要调用这个函数
 		return;
-	}
 
-	/* 1. 把 x 放到寄存器里 */
-	int rx = reg_alloc(lhs); // 只读
+	int rx = reg_alloc(lhs);
 
-	/* 2. TST 这个寄存器，设置标志位 */
 	out_str(file_s, "    TST R%u\n", rx);
 	out_str(file_s, "    JEZ %s\n", lab->name);
 	out_str(file_s, "    JLZ %s\n", lab->name);
+}
+
+// 返回一个未绑定变量的“干净临时寄存器”
+// 1. 优先找 rdesc[r].var == NULL 的寄存器（真正干净）
+// 2. 如果没有：选择一个寄存器，写回内容并清除绑定
+//    （不再表示任何变量，之后可以安全用于 cmp 等操作）
+
+static void asm_cmp_ifz_general(TAC *cmp, TAC *br)
+{
+	SYM *lhs = cmp->b;
+	SYM *rhs = cmp->c;
+	SYM *lab = br->a;
+
+	// 必须 rhs 是常数
+	if (!(rhs->type == SYM_INT || rhs->type == SYM_CHAR))
+		return;
+
+	// R = lhs - rhs
+	int r_lhs = reg_alloc(lhs);
+
+	// 纯寄存器 rt，无绑定
+	int rt = alloc_clean_temp_reg();
+
+	out_str(file_s, "    LOD R%u,R%u\n", rt, r_lhs);
+	out_str(file_s, "	LOD R3,%d\n", rhs->value);
+	out_str(file_s, "    SUB R%u,R3\n", rt);
+	out_str(file_s, "    TST R%u\n", rt);
+
+	switch (cmp->op)
+	{
+	case TAC_GT:
+		// fail = R <= 0
+		out_str(file_s, "    JEZ %s\n", lab->name);
+		out_str(file_s, "    JLZ %s\n", lab->name);
+		break;
+
+	case TAC_GE:
+		// fail = R < 0
+		out_str(file_s, "    JLZ %s\n", lab->name);
+		break;
+
+	case TAC_LT:
+		// fail = R >= 0
+		out_str(file_s, "    JEZ %s\n", lab->name);
+		out_str(file_s, "    JGZ %s\n", lab->name);
+		break;
+
+	case TAC_LE:
+		// fail = R > 0
+		out_str(file_s, "    JGZ %s\n", lab->name);
+		break;
+
+	case TAC_EQ:
+		// fail = R != 0
+		out_str(file_s, "    JLZ %s\n", lab->name);
+		out_str(file_s, "    JGZ %s\n", lab->name);
+		break;
+
+	case TAC_NE:
+		// fail = R == 0
+		out_str(file_s, "    JEZ %s\n", lab->name);
+		break;
+
+	default:
+		return;
+	}
 }
 
 void tac_obj()
@@ -961,17 +1089,27 @@ void tac_obj()
 		out_str(file_s, "\n	# ");
 		out_tac(file_s, cur);
 		out_str(file_s, "\n");
-		// if (cur->a && cur->a->etc)
-		// 	printf("asm_code %d", *((int *)cur->a->etc));
-		if (is_cmp_op(cur->op) && cur->op == TAC_GT && cur->a && cur->next &&
+
+		if (is_cmp(cur->op) && cur->op == TAC_GT && cur->a && cur->next &&
 			cur->next->op == TAC_IFZ &&
-			cur->next->b == cur->a && // ifz 用的就是这条比较产生的临时 t
-			is_zero_const(cur->c))	  // 形如 (x > 0)
+			cur->next->b == cur->a && // ifz 使用比较产生的临时 t
+			is_zero_const(cur->c))	  // x > 0形式
 		{
 			asm_cmp_ifz_zero(cur, cur->next); // 生成优化后的汇编
-			cur = cur->next->next;			  // 跳过比较 + ifz 两条 TAC
+			cur = cur->next->next;			  // 跳过比较 + ifz两条 TAC
 			continue;
 		}
+
+		if (is_cmp(cur->op) &&
+			cur->next &&
+			cur->next->op == TAC_IFZ &&
+			cur->next->b == cur->a)
+		{
+			asm_cmp_ifz_general(cur, cur->next);
+			cur = cur->next->next;
+			continue;
+		}
+
 		asm_code(cur);
 		cur = cur->next;
 	}

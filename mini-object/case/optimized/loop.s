@@ -142,8 +142,8 @@ L4:
 
 	# t7 = t6 + 9
 	LOD R6,(R4+16)
-    LOD R5,9
-    ADD R6,R5
+    LOD R7,9
+    ADD R6,R7
 
 	# d = t7
 	STO (R2+20),R6
@@ -153,25 +153,26 @@ L4:
 	# var t13
 
 	# t13 = t12 + 9
-	LOD R5,(R4+32)
-    LOD R6,9
-    ADD R5,R6
+	LOD R7,(R4+32)
+    LOD R8,9
+    ADD R7,R8
 
 	# e = t13
-	STO (R2+24),R5
+	STO (R2+24),R7
 
 	# var t14
 
 	# t14 = i - 1
-	LOD R6,(R2+28)
-    LOD R5,1
-    SUB R6,R5
+    LOD R8,1
+    SUB R5,R8
 
 	# i = t14
-	STO (R2+28),R6
+	STO (R2+28),R5
 
 	# label L5
-    STO (R2+28),R6
+    STO (R2+28),R5
+    STO (R2+20),R6
+    STO (R2+24),R7
 L5:
 
 	# goto L4

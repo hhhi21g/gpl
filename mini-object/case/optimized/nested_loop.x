@@ -1,41 +1,41 @@
 
 # tac list
 
-0x63bcc4cb60e0	label main
-0x63bcc4cb6120	begin
-0x63bcc4cb4840	var i
-0x63bcc4cb4920	var j
-0x63bcc4cb4a00	var k
-0x63bcc4cb4b30	k = 0
-0x63bcc4cb5f20	label L1
-0x63bcc4cb4d10	var t0
-0x63bcc4cb4d50	t0 = (k < 10)
-0x63bcc4cb5fe0	ifz t0 goto L3
-0x63bcc4cb4fe0	i = 0
-0x63bcc4cb5be0	label L4
-0x63bcc4cb5140	var t1
-0x63bcc4cb5180	t1 = (i < 10)
-0x63bcc4cb5ca0	ifz t1 goto L6
-0x63bcc4cb5560	var t2
-0x63bcc4cb55a0	t2 = 2 * i
-0x63bcc4cb5730	var t3
-0x63bcc4cb5770	t3 = t2 + 9
-0x63bcc4cb57b0	j = t3
-0x63bcc4cb5840	output j
-0x63bcc4cb5920	output L7
-0x63bcc4cb5b20	var t4
-0x63bcc4cb5b60	t4 = i + 1
-0x63bcc4cb5ba0	i = t4
-0x63bcc4cb5c20	label L5
-0x63bcc4cb5ce0	goto L4
-0x63bcc4cb5c60	label L6
-0x63bcc4cb5e60	var t5
-0x63bcc4cb5ea0	t5 = k + 1
-0x63bcc4cb5ee0	k = t5
-0x63bcc4cb5f60	label L2
-0x63bcc4cb6020	goto L1
-0x63bcc4cb5fa0	label L3
-0x63bcc4cb6160	end
+0x5d4999e050e0	label main
+0x5d4999e05120	begin
+0x5d4999e03840	var i
+0x5d4999e03920	var j
+0x5d4999e03a00	var k
+0x5d4999e03b30	k = 0
+0x5d4999e04f20	label L1
+0x5d4999e03d10	var t0
+0x5d4999e03d50	t0 = (k < 10)
+0x5d4999e04fe0	ifz t0 goto L3
+0x5d4999e03fe0	i = 0
+0x5d4999e04be0	label L4
+0x5d4999e04140	var t1
+0x5d4999e04180	t1 = (i < 10)
+0x5d4999e04ca0	ifz t1 goto L6
+0x5d4999e04560	var t2
+0x5d4999e045a0	t2 = 2 * i
+0x5d4999e04730	var t3
+0x5d4999e04770	t3 = t2 + 9
+0x5d4999e047b0	j = t3
+0x5d4999e04840	output j
+0x5d4999e04920	output L7
+0x5d4999e04b20	var t4
+0x5d4999e04b60	t4 = i + 1
+0x5d4999e04ba0	i = t4
+0x5d4999e04c20	label L5
+0x5d4999e04ce0	goto L4
+0x5d4999e04c60	label L6
+0x5d4999e04e60	var t5
+0x5d4999e04ea0	t5 = k + 1
+0x5d4999e04ee0	k = t5
+0x5d4999e04f60	label L2
+0x5d4999e05020	goto L1
+0x5d4999e04fa0	label L3
+0x5d4999e05160	end
 
 [B0]
 label main
