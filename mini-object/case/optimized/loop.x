@@ -1,74 +1,74 @@
 
 # tac list
 
-0x5f56c2668c40	var t2
-0x5f56c2668d40	var t3
-0x5f56c2668ee0	var t4
-0x5f56c2669030	var t5
-0x5f56c2669130	var t6
-0x5f56c26695d0	var t9
-0x5f56c2669770	var t10
-0x5f56c26698c0	var t11
-0x5f56c26699c0	var t12
-0x5f56c266a6f0	label main
-0x5f56c266a730	begin
-0x5f56c2667830	var a
-0x5f56c2667910	var b
-0x5f56c26679f0	var c
-0x5f56c2667ad0	var d
-0x5f56c2667bb0	var e
-0x5f56c2667c90	var i
-0x5f56c2667d70	var j
-0x5f56c2667e50	var k
-0x5f56c2667eb0	input a
-0x5f56c2667f10	input b
-0x5f56c2667f70	input c
-0x5f56c26680a0	j = 5
-0x5f56c2668c80	t2 = b * c
-0x5f56c2668d80	t3 = a + t2
-0x5f56c2668f20	t4 = a + c
-0x5f56c2669070	t5 = t4 / b
-0x5f56c2669170	t6 = t3 - t5
-0x5f56c26697b0	t10 = c - a
-0x5f56c2669900	t11 = t10 / b
-0x5f56c2669a00	t12 = t3 - t11
-0x5f56c26ec460	t7 = t6 + 9
-0x5f56c26ec4a0	d = t7
-0x5f56c26ec4e0	t13 = t12 + 9
-0x5f56c26ec520	e = t13
-0x5f56c266a270	label L1
-0x5f56c2668280	var t0
-0x5f56c26682c0	t0 = (j > 0)
-0x5f56c266a330	ifz t0 goto L3
-0x5f56c2668530	output j
-0x5f56c2668660	i = 9
-0x5f56c2669e50	label L4
-0x5f56c26687c0	var t1
-0x5f56c2668800	t1 = (i > 0)
-0x5f56c2669f10	ifz t1 goto L6
-0x5f56c2668a70	output i
-0x5f56c2669280	var t7
-0x5f56c26694d0	var t8
-0x5f56c2669b10	var t13
-0x5f56c2669d90	var t14
-0x5f56c2669dd0	t14 = i - 1
-0x5f56c2669e10	i = t14
-0x5f56c2669e90	label L5
-0x5f56c2669f50	goto L4
-0x5f56c2669ed0	label L6
-0x5f56c266a0d0	var t15
-0x5f56c266a110	t15 = j - 1
-0x5f56c266a150	j = t15
-0x5f56c266a230	output L7
-0x5f56c266a2b0	label L2
-0x5f56c266a370	goto L1
-0x5f56c266a2f0	label L3
-0x5f56c266a450	output L8
-0x5f56c266a4e0	output d
-0x5f56c266a540	output L7
-0x5f56c266a5d0	output e
-0x5f56c266a630	output L8
-0x5f56c266a770	end
+0x59bf0ba3dc40	var t2
+0x59bf0ba3dd40	var t3
+0x59bf0ba3dee0	var t4
+0x59bf0ba3e030	var t5
+0x59bf0ba3e130	var t6
+0x59bf0ba3e5d0	var t9
+0x59bf0ba3e770	var t10
+0x59bf0ba3e8c0	var t11
+0x59bf0ba3e9c0	var t12
+0x59bf0ba3f6f0	label main
+0x59bf0ba3f730	begin
+0x59bf0ba3c830	var a
+0x59bf0ba3c910	var b
+0x59bf0ba3c9f0	var c
+0x59bf0ba3cad0	var d
+0x59bf0ba3cbb0	var e
+0x59bf0ba3cc90	var i
+0x59bf0ba3cd70	var j
+0x59bf0ba3ce50	var k
+0x59bf0ba3ceb0	input a
+0x59bf0ba3cf10	input b
+0x59bf0ba3cf70	input c
+0x59bf0ba3d0a0	j = 5
+0x59bf0ba3dc80	t2 = b * c
+0x59bf0ba3dd80	t3 = a + t2
+0x59bf0ba3df20	t4 = a + c
+0x59bf0ba3e070	t5 = t4 / b
+0x59bf0ba3e170	t6 = t3 - t5
+0x59bf0ba3e7b0	t10 = c - a
+0x59bf0ba3e900	t11 = t10 / b
+0x59bf0ba3ea00	t12 = t3 - t11
+0x59bf0bac1460	t7 = t6 + 9
+0x59bf0bac14a0	d = t7
+0x59bf0bac14e0	t13 = t12 + 9
+0x59bf0bac1520	e = t13
+0x59bf0ba3f270	label L1
+0x59bf0ba3d280	var t0
+0x59bf0ba3d2c0	t0 = (j > 0)
+0x59bf0ba3f330	ifz t0 goto L3
+0x59bf0ba3d530	output j
+0x59bf0ba3d660	i = 9
+0x59bf0ba3ee50	label L4
+0x59bf0ba3d7c0	var t1
+0x59bf0ba3d800	t1 = (i > 0)
+0x59bf0ba3ef10	ifz t1 goto L6
+0x59bf0ba3da70	output i
+0x59bf0ba3e280	var t7
+0x59bf0ba3e4d0	var t8
+0x59bf0ba3eb10	var t13
+0x59bf0ba3ed90	var t14
+0x59bf0ba3edd0	t14 = i - 1
+0x59bf0ba3ee10	i = t14
+0x59bf0ba3ee90	label L5
+0x59bf0ba3ef50	goto L4
+0x59bf0ba3eed0	label L6
+0x59bf0ba3f0d0	var t15
+0x59bf0ba3f110	t15 = j - 1
+0x59bf0ba3f150	j = t15
+0x59bf0ba3f230	output L7
+0x59bf0ba3f2b0	label L2
+0x59bf0ba3f370	goto L1
+0x59bf0ba3f2f0	label L3
+0x59bf0ba3f450	output L8
+0x59bf0ba3f4e0	output d
+0x59bf0ba3f540	output L7
+0x59bf0ba3f5d0	output e
+0x59bf0ba3f630	output L8
+0x59bf0ba3f770	end
 
 [B0]
 var t2

@@ -1209,14 +1209,14 @@ int loop_sinking()
     if (!bb_list)
         return 0;
 
-    // --- Step 1: 构建 bb_array 并计算支配关系 ---
+    // 构建bb_array，计算dom支配关系
     BASIC_BLOCK *bb_array[MAX_BB] = {0};
     int bb_cnt = build_bb_array(bb_array);
 
-    static unsigned char dom[MAX_BB][MAX_BB];
+    unsigned char dom[MAX_BB][MAX_BB];
     compute_dominators(bb_array, bb_cnt, dom);
 
-    // --- Step 2: 遍历所有回边 tail -> header ---
+    // 遍历所有回边 tail到header
     for (BASIC_BLOCK *tail = bb_list; tail; tail = tail->next)
     {
         for (int si = 0; si < tail->succ_count; si++)
@@ -1237,16 +1237,16 @@ int loop_sinking()
             int loop_cnt = 0;
             collect_natural_loop(header, tail, loop_blocks, &loop_cnt, dom);
 
-            // preheader：header 的唯一一个环外前驱
+            // 找header 的唯一一个环外前驱
             BASIC_BLOCK *preheader = find_preheader(header, loop_blocks, loop_cnt);
             if (!preheader)
                 continue;
 
-            // 如果 preheader 是入口块（没有前驱），为了避免跨过 input 等初始化，直接跳过
+            // 如果preheader没有前驱，为了避免跨过input等初始化，直接跳过
             if (preheader->pred_count == 0)
                 continue;
 
-            // --- Step 3: 在这个循环里找可以下沉的 “var = tmp” 模式 ---
+            // 在这个循环里找可以下沉的var = tmp类型
             for (int li = 0; li < loop_cnt; li++)
             {
                 BASIC_BLOCK *bb = loop_blocks[li];
@@ -1262,7 +1262,7 @@ int loop_sinking()
                     if (a->type != SYM_VAR)
                         continue;
 
-                    // （1）a 在这个循环里必须恰好定义一次
+                    // a 在这个循环里恰好定义一次
                     int def_times = 0;
                     BASIC_BLOCK *def_bb = NULL;
                     TAC *def_tac = NULL;
@@ -1284,7 +1284,7 @@ int loop_sinking()
                     if (def_times != 1 || !def_tac)
                         continue;
 
-                    // 定义必须是 a = tmp 形式（TAC_COPY）
+                    // 定义是 a TAC_COPY tmp 形式
                     if (def_tac->op != TAC_COPY)
                         continue;
 
@@ -1292,7 +1292,7 @@ int loop_sinking()
                     if (!tmp || tmp->type != SYM_TMP)
                         continue;
 
-                    // （2）a 在循环内部不允许被使用
+                    // a 在循环内部不被使用
                     int used_in_loop = 0;
                     for (int lj = 0; lj < loop_cnt; lj++)
                     {
@@ -1313,7 +1313,7 @@ int loop_sinking()
                     if (used_in_loop)
                         continue;
 
-                    // （3）a 必须在循环外被使用（否则这就是 dead store，其他优化应该删掉它）
+                    // a在循环外被使用
                     int used_outside = 0;
                     for (BASIC_BLOCK *bb2 = bb_list; bb2; bb2 = bb2->next)
                     {
@@ -1343,7 +1343,7 @@ int loop_sinking()
                     if (!used_outside)
                         continue;
 
-                    // （4）tmp 必须也在循环里恰好有一个定义
+                    // tmp 在循环里恰好有一个定义
                     int tmp_def_times = 0;
                     BASIC_BLOCK *tmp_def_bb = NULL;
                     TAC *tmp_def_tac = NULL;
@@ -1365,11 +1365,11 @@ int loop_sinking()
                     if (tmp_def_times != 1 || !tmp_def_tac)
                         continue;
 
-                    // tmp 的定义必须是一个二元表达式（ADD/SUB/...）
+                    // tmp的定义是二元表达式
                     if (!is_exp_op(tmp_def_tac->op))
                         continue;
 
-                    // （5）tmp 在循环内只能被 a = tmp 这一处使用
+                    // tmp 在循环内只被a = tmp这一处使用
                     int tmp_used_other = 0;
                     for (int lj = 0; lj < loop_cnt; lj++)
                     {
@@ -1390,7 +1390,7 @@ int loop_sinking()
                     if (tmp_used_other)
                         continue;
 
-                    // （6）tmp_def_tac 的操作数在这个循环内不能被重新定义
+                    // tmp_def_tac的操作数在这个循环内不能被重新定义
                     int invariant = 1;
                     SYM *b = tmp_def_tac->b;
                     SYM *c = tmp_def_tac->c;
@@ -1421,9 +1421,8 @@ int loop_sinking()
                     if (!invariant)
                         continue;
 
-                    // ----------- 满足所有条件，可以下沉 -----------
-                    // 我们把 tmp_def_tac 和 def_tac 一起搬到 preheader 末尾
-
+                    // 满足所有条件，可以下沉
+                    // 把 tmp_def_tac 和 def_tac 移动到 preheader 末尾
                     TAC *new_tmp_def = mk_tac(tmp_def_tac->op,
                                               tmp_def_tac->a,
                                               tmp_def_tac->b,
