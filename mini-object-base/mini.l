@@ -1,0 +1,91 @@
+%{
+#include "tac.h"
+#include "mini.y.h"
+%}
+
+%option yylineno
+
+%%
+
+"int"  {  return INT;  }
+
+"input"  {  return INPUT;  }
+
+"output"  {  return OUTPUT;  }
+
+"return"  {  return RETURN;  }
+
+"if"  {  return IF;  }
+
+"else"  {  return ELSE;  }
+
+"while"  {  return WHILE;  }
+
+"for"  { return FOR; }
+
+"break"  { return BREAK; }
+
+"continue"  { return CONTINUE; }
+
+"char"  { return CHAR;  }
+
+"*"  { return '*'; }
+"&"  { return '&'; }
+
+"switch" { return SWITCH; }
+"case" { return CASE; }
+"default"  { return DEFAULT; }
+
+"struct" { return STRUCT_TOK; }
+"." { return '.'; }
+"->" { return PTR_OP; }
+"{" { return '{'; }
+"}" { return '}'; }
+
+"[" { return LBRACK; }
+"]" { return RBRACK; }
+
+[A-Za-z]([A-Za-z]|[0-9])*  {  
+	yylval.string = strdup(yytext); 
+	return IDENTIFIER;
+}
+
+[0-9]*	{
+	yylval.string = strdup(yytext); 
+	return INTEGER;
+}
+
+\'([^'\\]|\\.)\' {
+    yylval.string = strdup(yytext);
+    return CHAR_CONST;
+}
+
+\"[^\"]*\"  {
+	yylval.string = strdup(yytext); 
+	return TEXT;
+}
+
+
+"=="  {  return EQ;  }
+
+"!="  {  return NE;  }
+
+"<="  {  return LE;  }
+
+"<"  {  return LT;  }
+
+">="  {  return GE;  }
+
+">"  {  return GT;  }
+
+[ \t\r\n]|#.*
+
+. 	{	return *yytext; }
+
+%%
+
+int yywrap()
+{
+	return 1;
+}
+

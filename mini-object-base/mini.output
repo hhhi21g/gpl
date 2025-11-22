@@ -1,0 +1,3229 @@
+Terminals unused in grammar
+
+    PTR_OP
+    FUNC
+
+
+Rules useless in parser due to conflicts
+
+   98 output_statement: OUTPUT IDENTIFIER
+
+
+State 89 conflicts: 2 shift/reduce
+State 121 conflicts: 1 shift/reduce, 1 reduce/reduce
+State 129 conflicts: 1 shift/reduce
+State 155 conflicts: 2 shift/reduce
+
+
+Grammar
+
+    0 $accept: program $end
+
+    1 program: function_declaration_list
+
+    2 function_declaration_list: function_declaration
+    3                          | function_declaration_list function_declaration
+
+    4 function_declaration: function
+    5                     | declaration
+    6                     | struct_definition
+
+    7 dims_decl: LBRACK INTEGER RBRACK
+    8          | dims_decl LBRACK INTEGER RBRACK
+
+    9 dims_idx: LBRACK expression RBRACK
+   10         | dims_idx LBRACK expression RBRACK
+
+   11 declaration: INT variable_list ';'
+   12            | CHAR variable_list_char ';'
+
+   13 $@1: ε
+
+   14 declaration: STRUCT_TOK IDENTIFIER $@1 struct_var_list ';'
+
+   15 struct_var_list: IDENTIFIER
+   16                | struct_var_list ',' IDENTIFIER
+
+   17 $@2: ε
+
+   18 struct_definition: STRUCT_TOK IDENTIFIER $@2 '{' struct_member_list '}' ';'
+
+   19 struct_member_list: ε
+   20                   | struct_member_list struct_member_line
+
+   21 struct_member_line: INT IDENTIFIER ';'
+   22                   | CHAR IDENTIFIER ';'
+   23                   | INT IDENTIFIER LBRACK INTEGER RBRACK ';'
+   24                   | CHAR IDENTIFIER LBRACK INTEGER RBRACK ';'
+   25                   | STRUCT_TOK IDENTIFIER IDENTIFIER ';'
+   26                   | STRUCT_TOK IDENTIFIER IDENTIFIER LBRACK INTEGER RBRACK ';'
+
+   27 lvalue: IDENTIFIER
+   28       | lvalue '.' IDENTIFIER
+   29       | lvalue LBRACK expression RBRACK
+
+   30 variable_list: decl_item_int
+   31              | variable_list ',' decl_item_int
+
+   32 decl_item_int: IDENTIFIER
+   33              | '*' IDENTIFIER
+   34              | IDENTIFIER dims_decl
+
+   35 variable_list_char: decl_item_char
+   36                   | variable_list_char ',' decl_item_char
+
+   37 decl_item_char: IDENTIFIER
+   38               | '*' IDENTIFIER
+   39               | IDENTIFIER dims_decl
+
+   40 function: function_head '(' parameter_list ')' block
+   41         | error
+
+   42 function_head: IDENTIFIER
+   43              | INT IDENTIFIER
+   44              | CHAR IDENTIFIER
+
+   45 parameter_list: IDENTIFIER
+   46               | parameter_list ',' IDENTIFIER
+   47               | INT IDENTIFIER
+   48               | CHAR IDENTIFIER
+   49               | parameter_list ',' INT IDENTIFIER
+   50               | parameter_list ',' CHAR IDENTIFIER
+   51               | ε
+
+   52 statement: assignment_statement ';'
+   53          | input_statement ';'
+   54          | output_statement ';'
+   55          | call_statement ';'
+   56          | return_statement ';'
+   57          | if_statement
+   58          | switch_statement
+   59          | while_statement
+   60          | for_statement
+   61          | break_statement ';'
+   62          | continue_statement ';'
+   63          | block
+   64          | error
+
+   65 block: '{' declaration_list statement_list '}'
+
+   66 declaration_list: ε
+   67                 | declaration_list declaration
+
+   68 statement_list: statement
+   69               | statement_list statement
+
+   70 assignment_statement: lvalue '=' expression
+   71                     | IDENTIFIER dims_idx '=' expression
+   72                     | '*' IDENTIFIER '=' expression
+   73                     | IDENTIFIER '=' '&' IDENTIFIER
+   74                     | IDENTIFIER '=' '*' IDENTIFIER
+
+   75 expression: expression '+' expression
+   76           | expression '-' expression
+   77           | expression '*' expression
+   78           | expression '/' expression
+   79           | '-' expression
+   80           | expression EQ expression
+   81           | expression NE expression
+   82           | expression LT expression
+   83           | expression LE expression
+   84           | expression GT expression
+   85           | expression GE expression
+   86           | '(' expression ')'
+   87           | INTEGER
+   88           | CHAR_CONST
+   89           | IDENTIFIER dims_idx
+   90           | call_expression
+   91           | lvalue
+   92           | error
+
+   93 argument_list: ε
+   94              | expression_list
+
+   95 expression_list: expression
+   96                | expression_list ',' expression
+
+   97 input_statement: INPUT IDENTIFIER
+
+   98 output_statement: OUTPUT IDENTIFIER
+   99                 | OUTPUT TEXT
+  100                 | OUTPUT expression
+
+  101 return_statement: RETURN expression
+
+  102 if_statement: IF '(' expression ')' block
+  103             | IF '(' expression ')' block ELSE block
+
+  104 $@3: ε
+
+  105 switch_statement: SWITCH '(' expression ')' $@3 '{' case_list default_list '}'
+
+  106 case_list: case_item
+  107          | case_list case_item
+
+  108 case_item: CASE INTEGER ':' statement_list
+
+  109 default_list: ε
+  110             | DEFAULT ':' statement_list
+
+  111 $@4: ε
+
+  112 while_statement: WHILE '(' expression ')' $@4 block
+
+  113 $@5: ε
+
+  114 for_statement: FOR '(' opt_statement ';' opt_expression ';' opt_statement ')' $@5 block
+
+  115 opt_statement: assignment_statement
+  116              | ε
+
+  117 opt_expression: expression
+  118               | ε
+
+  119 break_statement: BREAK
+
+  120 continue_statement: CONTINUE
+
+  121 call_statement: IDENTIFIER '(' argument_list ')'
+
+  122 call_expression: IDENTIFIER '(' argument_list ')'
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    '&' (38) 73
+    '(' (40) 40 86 102 103 105 112 114 121 122
+    ')' (41) 40 86 102 103 105 112 114 121 122
+    '*' (42) 33 38 72 74 77
+    '+' (43) 75
+    ',' (44) 16 31 36 46 49 50 96
+    '-' (45) 76 79
+    '.' (46) 28
+    '/' (47) 78
+    ':' (58) 108 110
+    ';' (59) 11 12 14 18 21 22 23 24 25 26 52 53 54 55 56 61 62 114
+    '=' (61) 70 71 72 73 74
+    '{' (123) 18 65 105
+    '}' (125) 18 65 105
+    error (256) 41 64 92
+    INT (258) 11 21 23 43 47 49
+    EQ (259) 80
+    NE (260) 81
+    LT (261) 82
+    LE (262) 83
+    GT (263) 84
+    GE (264) 85
+    UMINUS (265)
+    STRUCT_TOK (266) 14 18 25 26
+    PTR_OP (267)
+    IF (268) 102 103
+    ELSE (269) 103
+    SWITCH (270) 105
+    CASE (271) 108
+    DEFAULT (272) 110
+    WHILE (273) 112
+    FOR (274) 114
+    BREAK (275) 119
+    CONTINUE (276) 120
+    FUNC (277)
+    INPUT (278) 97
+    OUTPUT (279) 98 99 100
+    RETURN (280) 101
+    INTEGER <string> (281) 7 8 23 24 26 87 108
+    IDENTIFIER <string> (282) 14 15 16 18 21 22 23 24 25 26 27 28 32 33 34 37 38 39 42 43 44 45 46 47 48 49 50 71 72 73 74 89 97 98 121 122
+    TEXT <string> (283) 99
+    CHAR <string> (284) 12 22 24 44 48 50
+    CHAR_CONST <string> (285) 88
+    LBRACK <string> (286) 7 8 9 10 23 24 26 29
+    RBRACK <string> (287) 7 8 9 10 23 24 26 29
+
+
+Nonterminals, with rules where they appear
+
+    $accept (47)
+        on left: 0
+    program <tac> (48)
+        on left: 1
+        on right: 0
+    function_declaration_list <tac> (49)
+        on left: 2 3
+        on right: 1 3
+    function_declaration <tac> (50)
+        on left: 4 5 6
+        on right: 2 3
+    dims_decl <exp> (51)
+        on left: 7 8
+        on right: 8 34 39
+    dims_idx <exp> (52)
+        on left: 9 10
+        on right: 10 71 89
+    declaration <tac> (53)
+        on left: 11 12 14
+        on right: 5 67
+    $@1 (54)
+        on left: 13
+        on right: 14
+    struct_var_list <tac> (55)
+        on left: 15 16
+        on right: 14 16
+    struct_definition <tac> (56)
+        on left: 18
+        on right: 6
+    $@2 (57)
+        on left: 17
+        on right: 18
+    struct_member_list <tac> (58)
+        on left: 19 20
+        on right: 18 20
+    struct_member_line <tac> (59)
+        on left: 21 22 23 24 25 26
+        on right: 20
+    lvalue <exp> (60)
+        on left: 27 28 29
+        on right: 28 29 70 91
+    variable_list <tac> (61)
+        on left: 30 31
+        on right: 11 31
+    decl_item_int <tac> (62)
+        on left: 32 33 34
+        on right: 30 31
+    variable_list_char <tac> (63)
+        on left: 35 36
+        on right: 12 36
+    decl_item_char <tac> (64)
+        on left: 37 38 39
+        on right: 35 36
+    function <tac> (65)
+        on left: 40 41
+        on right: 4
+    function_head <sym> (66)
+        on left: 42 43 44
+        on right: 40
+    parameter_list <tac> (67)
+        on left: 45 46 47 48 49 50 51
+        on right: 40 46 49 50
+    statement <tac> (68)
+        on left: 52 53 54 55 56 57 58 59 60 61 62 63 64
+        on right: 68 69
+    block <tac> (69)
+        on left: 65
+        on right: 40 63 102 103 112 114
+    declaration_list <tac> (70)
+        on left: 66 67
+        on right: 65 67
+    statement_list <tac> (71)
+        on left: 68 69
+        on right: 65 69 108 110
+    assignment_statement <tac> (72)
+        on left: 70 71 72 73 74
+        on right: 52 115
+    expression <exp> (73)
+        on left: 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92
+        on right: 9 10 29 70 71 72 75 76 77 78 79 80 81 82 83 84 85 86 95 96 100 101 102 103 105 112 117
+    argument_list <exp> (74)
+        on left: 93 94
+        on right: 121 122
+    expression_list <exp> (75)
+        on left: 95 96
+        on right: 94 96
+    input_statement <tac> (76)
+        on left: 97
+        on right: 53
+    output_statement <tac> (77)
+        on left: 98 99 100
+        on right: 54
+    return_statement <tac> (78)
+        on left: 101
+        on right: 56
+    if_statement <tac> (79)
+        on left: 102 103
+        on right: 57
+    switch_statement <tac> (80)
+        on left: 105
+        on right: 58
+    $@3 (81)
+        on left: 104
+        on right: 105
+    case_list <tac> (82)
+        on left: 106 107
+        on right: 105 107
+    case_item <tac> (83)
+        on left: 108
+        on right: 106 107
+    default_list <tac> (84)
+        on left: 109 110
+        on right: 105
+    while_statement <tac> (85)
+        on left: 112
+        on right: 59
+    $@4 (86)
+        on left: 111
+        on right: 112
+    for_statement <tac> (87)
+        on left: 114
+        on right: 60
+    $@5 (88)
+        on left: 113
+        on right: 114
+    opt_statement <tac> (89)
+        on left: 115 116
+        on right: 114
+    opt_expression <exp> (90)
+        on left: 117 118
+        on right: 114
+    break_statement <tac> (91)
+        on left: 119
+        on right: 61
+    continue_statement <tac> (92)
+        on left: 120
+        on right: 62
+    call_statement <tac> (93)
+        on left: 121
+        on right: 55
+    call_expression <exp> (94)
+        on left: 122
+        on right: 90
+
+
+State 0
+
+    0 $accept: • program $end
+
+    error       shift, and go to state 1
+    INT         shift, and go to state 2
+    STRUCT_TOK  shift, and go to state 3
+    IDENTIFIER  shift, and go to state 4
+    CHAR        shift, and go to state 5
+
+    program                    go to state 6
+    function_declaration_list  go to state 7
+    function_declaration       go to state 8
+    declaration                go to state 9
+    struct_definition          go to state 10
+    function                   go to state 11
+    function_head              go to state 12
+
+
+State 1
+
+   41 function: error •
+
+    $default  reduce using rule 41 (function)
+
+
+State 2
+
+   11 declaration: INT • variable_list ';'
+   43 function_head: INT • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 13
+    '*'         shift, and go to state 14
+
+    variable_list  go to state 15
+    decl_item_int  go to state 16
+
+
+State 3
+
+   14 declaration: STRUCT_TOK • IDENTIFIER $@1 struct_var_list ';'
+   18 struct_definition: STRUCT_TOK • IDENTIFIER $@2 '{' struct_member_list '}' ';'
+
+    IDENTIFIER  shift, and go to state 17
+
+
+State 4
+
+   42 function_head: IDENTIFIER •
+
+    $default  reduce using rule 42 (function_head)
+
+
+State 5
+
+   12 declaration: CHAR • variable_list_char ';'
+   44 function_head: CHAR • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 18
+    '*'         shift, and go to state 19
+
+    variable_list_char  go to state 20
+    decl_item_char      go to state 21
+
+
+State 6
+
+    0 $accept: program • $end
+
+    $end  shift, and go to state 22
+
+
+State 7
+
+    1 program: function_declaration_list •
+    3 function_declaration_list: function_declaration_list • function_declaration
+
+    error       shift, and go to state 1
+    INT         shift, and go to state 2
+    STRUCT_TOK  shift, and go to state 3
+    IDENTIFIER  shift, and go to state 4
+    CHAR        shift, and go to state 5
+
+    $end  reduce using rule 1 (program)
+
+    function_declaration  go to state 23
+    declaration           go to state 9
+    struct_definition     go to state 10
+    function              go to state 11
+    function_head         go to state 12
+
+
+State 8
+
+    2 function_declaration_list: function_declaration •
+
+    $default  reduce using rule 2 (function_declaration_list)
+
+
+State 9
+
+    5 function_declaration: declaration •
+
+    $default  reduce using rule 5 (function_declaration)
+
+
+State 10
+
+    6 function_declaration: struct_definition •
+
+    $default  reduce using rule 6 (function_declaration)
+
+
+State 11
+
+    4 function_declaration: function •
+
+    $default  reduce using rule 4 (function_declaration)
+
+
+State 12
+
+   40 function: function_head • '(' parameter_list ')' block
+
+    '('  shift, and go to state 24
+
+
+State 13
+
+   32 decl_item_int: IDENTIFIER •
+   34              | IDENTIFIER • dims_decl
+   43 function_head: INT IDENTIFIER •
+
+    LBRACK  shift, and go to state 25
+
+    '('       reduce using rule 43 (function_head)
+    $default  reduce using rule 32 (decl_item_int)
+
+    dims_decl  go to state 26
+
+
+State 14
+
+   33 decl_item_int: '*' • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 27
+
+
+State 15
+
+   11 declaration: INT variable_list • ';'
+   31 variable_list: variable_list • ',' decl_item_int
+
+    ';'  shift, and go to state 28
+    ','  shift, and go to state 29
+
+
+State 16
+
+   30 variable_list: decl_item_int •
+
+    $default  reduce using rule 30 (variable_list)
+
+
+State 17
+
+   14 declaration: STRUCT_TOK IDENTIFIER • $@1 struct_var_list ';'
+   18 struct_definition: STRUCT_TOK IDENTIFIER • $@2 '{' struct_member_list '}' ';'
+
+    '{'       reduce using rule 17 ($@2)
+    $default  reduce using rule 13 ($@1)
+
+    $@1  go to state 30
+    $@2  go to state 31
+
+
+State 18
+
+   37 decl_item_char: IDENTIFIER •
+   39               | IDENTIFIER • dims_decl
+   44 function_head: CHAR IDENTIFIER •
+
+    LBRACK  shift, and go to state 25
+
+    '('       reduce using rule 44 (function_head)
+    $default  reduce using rule 37 (decl_item_char)
+
+    dims_decl  go to state 32
+
+
+State 19
+
+   38 decl_item_char: '*' • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 33
+
+
+State 20
+
+   12 declaration: CHAR variable_list_char • ';'
+   36 variable_list_char: variable_list_char • ',' decl_item_char
+
+    ';'  shift, and go to state 34
+    ','  shift, and go to state 35
+
+
+State 21
+
+   35 variable_list_char: decl_item_char •
+
+    $default  reduce using rule 35 (variable_list_char)
+
+
+State 22
+
+    0 $accept: program $end •
+
+    $default  accept
+
+
+State 23
+
+    3 function_declaration_list: function_declaration_list function_declaration •
+
+    $default  reduce using rule 3 (function_declaration_list)
+
+
+State 24
+
+   40 function: function_head '(' • parameter_list ')' block
+
+    INT         shift, and go to state 36
+    IDENTIFIER  shift, and go to state 37
+    CHAR        shift, and go to state 38
+
+    $default  reduce using rule 51 (parameter_list)
+
+    parameter_list  go to state 39
+
+
+State 25
+
+    7 dims_decl: LBRACK • INTEGER RBRACK
+
+    INTEGER  shift, and go to state 40
+
+
+State 26
+
+    8 dims_decl: dims_decl • LBRACK INTEGER RBRACK
+   34 decl_item_int: IDENTIFIER dims_decl •
+
+    LBRACK  shift, and go to state 41
+
+    $default  reduce using rule 34 (decl_item_int)
+
+
+State 27
+
+   33 decl_item_int: '*' IDENTIFIER •
+
+    $default  reduce using rule 33 (decl_item_int)
+
+
+State 28
+
+   11 declaration: INT variable_list ';' •
+
+    $default  reduce using rule 11 (declaration)
+
+
+State 29
+
+   31 variable_list: variable_list ',' • decl_item_int
+
+    IDENTIFIER  shift, and go to state 42
+    '*'         shift, and go to state 14
+
+    decl_item_int  go to state 43
+
+
+State 30
+
+   14 declaration: STRUCT_TOK IDENTIFIER $@1 • struct_var_list ';'
+
+    IDENTIFIER  shift, and go to state 44
+
+    struct_var_list  go to state 45
+
+
+State 31
+
+   18 struct_definition: STRUCT_TOK IDENTIFIER $@2 • '{' struct_member_list '}' ';'
+
+    '{'  shift, and go to state 46
+
+
+State 32
+
+    8 dims_decl: dims_decl • LBRACK INTEGER RBRACK
+   39 decl_item_char: IDENTIFIER dims_decl •
+
+    LBRACK  shift, and go to state 41
+
+    $default  reduce using rule 39 (decl_item_char)
+
+
+State 33
+
+   38 decl_item_char: '*' IDENTIFIER •
+
+    $default  reduce using rule 38 (decl_item_char)
+
+
+State 34
+
+   12 declaration: CHAR variable_list_char ';' •
+
+    $default  reduce using rule 12 (declaration)
+
+
+State 35
+
+   36 variable_list_char: variable_list_char ',' • decl_item_char
+
+    IDENTIFIER  shift, and go to state 47
+    '*'         shift, and go to state 19
+
+    decl_item_char  go to state 48
+
+
+State 36
+
+   47 parameter_list: INT • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 49
+
+
+State 37
+
+   45 parameter_list: IDENTIFIER •
+
+    $default  reduce using rule 45 (parameter_list)
+
+
+State 38
+
+   48 parameter_list: CHAR • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 50
+
+
+State 39
+
+   40 function: function_head '(' parameter_list • ')' block
+   46 parameter_list: parameter_list • ',' IDENTIFIER
+   49               | parameter_list • ',' INT IDENTIFIER
+   50               | parameter_list • ',' CHAR IDENTIFIER
+
+    ','  shift, and go to state 51
+    ')'  shift, and go to state 52
+
+
+State 40
+
+    7 dims_decl: LBRACK INTEGER • RBRACK
+
+    RBRACK  shift, and go to state 53
+
+
+State 41
+
+    8 dims_decl: dims_decl LBRACK • INTEGER RBRACK
+
+    INTEGER  shift, and go to state 54
+
+
+State 42
+
+   32 decl_item_int: IDENTIFIER •
+   34              | IDENTIFIER • dims_decl
+
+    LBRACK  shift, and go to state 25
+
+    $default  reduce using rule 32 (decl_item_int)
+
+    dims_decl  go to state 26
+
+
+State 43
+
+   31 variable_list: variable_list ',' decl_item_int •
+
+    $default  reduce using rule 31 (variable_list)
+
+
+State 44
+
+   15 struct_var_list: IDENTIFIER •
+
+    $default  reduce using rule 15 (struct_var_list)
+
+
+State 45
+
+   14 declaration: STRUCT_TOK IDENTIFIER $@1 struct_var_list • ';'
+   16 struct_var_list: struct_var_list • ',' IDENTIFIER
+
+    ';'  shift, and go to state 55
+    ','  shift, and go to state 56
+
+
+State 46
+
+   18 struct_definition: STRUCT_TOK IDENTIFIER $@2 '{' • struct_member_list '}' ';'
+
+    $default  reduce using rule 19 (struct_member_list)
+
+    struct_member_list  go to state 57
+
+
+State 47
+
+   37 decl_item_char: IDENTIFIER •
+   39               | IDENTIFIER • dims_decl
+
+    LBRACK  shift, and go to state 25
+
+    $default  reduce using rule 37 (decl_item_char)
+
+    dims_decl  go to state 32
+
+
+State 48
+
+   36 variable_list_char: variable_list_char ',' decl_item_char •
+
+    $default  reduce using rule 36 (variable_list_char)
+
+
+State 49
+
+   47 parameter_list: INT IDENTIFIER •
+
+    $default  reduce using rule 47 (parameter_list)
+
+
+State 50
+
+   48 parameter_list: CHAR IDENTIFIER •
+
+    $default  reduce using rule 48 (parameter_list)
+
+
+State 51
+
+   46 parameter_list: parameter_list ',' • IDENTIFIER
+   49               | parameter_list ',' • INT IDENTIFIER
+   50               | parameter_list ',' • CHAR IDENTIFIER
+
+    INT         shift, and go to state 58
+    IDENTIFIER  shift, and go to state 59
+    CHAR        shift, and go to state 60
+
+
+State 52
+
+   40 function: function_head '(' parameter_list ')' • block
+
+    '{'  shift, and go to state 61
+
+    block  go to state 62
+
+
+State 53
+
+    7 dims_decl: LBRACK INTEGER RBRACK •
+
+    $default  reduce using rule 7 (dims_decl)
+
+
+State 54
+
+    8 dims_decl: dims_decl LBRACK INTEGER • RBRACK
+
+    RBRACK  shift, and go to state 63
+
+
+State 55
+
+   14 declaration: STRUCT_TOK IDENTIFIER $@1 struct_var_list ';' •
+
+    $default  reduce using rule 14 (declaration)
+
+
+State 56
+
+   16 struct_var_list: struct_var_list ',' • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 64
+
+
+State 57
+
+   18 struct_definition: STRUCT_TOK IDENTIFIER $@2 '{' struct_member_list • '}' ';'
+   20 struct_member_list: struct_member_list • struct_member_line
+
+    INT         shift, and go to state 65
+    STRUCT_TOK  shift, and go to state 66
+    CHAR        shift, and go to state 67
+    '}'         shift, and go to state 68
+
+    struct_member_line  go to state 69
+
+
+State 58
+
+   49 parameter_list: parameter_list ',' INT • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 70
+
+
+State 59
+
+   46 parameter_list: parameter_list ',' IDENTIFIER •
+
+    $default  reduce using rule 46 (parameter_list)
+
+
+State 60
+
+   50 parameter_list: parameter_list ',' CHAR • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 71
+
+
+State 61
+
+   65 block: '{' • declaration_list statement_list '}'
+
+    $default  reduce using rule 66 (declaration_list)
+
+    declaration_list  go to state 72
+
+
+State 62
+
+   40 function: function_head '(' parameter_list ')' block •
+
+    $default  reduce using rule 40 (function)
+
+
+State 63
+
+    8 dims_decl: dims_decl LBRACK INTEGER RBRACK •
+
+    $default  reduce using rule 8 (dims_decl)
+
+
+State 64
+
+   16 struct_var_list: struct_var_list ',' IDENTIFIER •
+
+    $default  reduce using rule 16 (struct_var_list)
+
+
+State 65
+
+   21 struct_member_line: INT • IDENTIFIER ';'
+   23                   | INT • IDENTIFIER LBRACK INTEGER RBRACK ';'
+
+    IDENTIFIER  shift, and go to state 73
+
+
+State 66
+
+   25 struct_member_line: STRUCT_TOK • IDENTIFIER IDENTIFIER ';'
+   26                   | STRUCT_TOK • IDENTIFIER IDENTIFIER LBRACK INTEGER RBRACK ';'
+
+    IDENTIFIER  shift, and go to state 74
+
+
+State 67
+
+   22 struct_member_line: CHAR • IDENTIFIER ';'
+   24                   | CHAR • IDENTIFIER LBRACK INTEGER RBRACK ';'
+
+    IDENTIFIER  shift, and go to state 75
+
+
+State 68
+
+   18 struct_definition: STRUCT_TOK IDENTIFIER $@2 '{' struct_member_list '}' • ';'
+
+    ';'  shift, and go to state 76
+
+
+State 69
+
+   20 struct_member_list: struct_member_list struct_member_line •
+
+    $default  reduce using rule 20 (struct_member_list)
+
+
+State 70
+
+   49 parameter_list: parameter_list ',' INT IDENTIFIER •
+
+    $default  reduce using rule 49 (parameter_list)
+
+
+State 71
+
+   50 parameter_list: parameter_list ',' CHAR IDENTIFIER •
+
+    $default  reduce using rule 50 (parameter_list)
+
+
+State 72
+
+   65 block: '{' declaration_list • statement_list '}'
+   67 declaration_list: declaration_list • declaration
+
+    error       shift, and go to state 77
+    INT         shift, and go to state 78
+    STRUCT_TOK  shift, and go to state 79
+    IF          shift, and go to state 80
+    SWITCH      shift, and go to state 81
+    WHILE       shift, and go to state 82
+    FOR         shift, and go to state 83
+    BREAK       shift, and go to state 84
+    CONTINUE    shift, and go to state 85
+    INPUT       shift, and go to state 86
+    OUTPUT      shift, and go to state 87
+    RETURN      shift, and go to state 88
+    IDENTIFIER  shift, and go to state 89
+    CHAR        shift, and go to state 90
+    '*'         shift, and go to state 91
+    '{'         shift, and go to state 61
+
+    declaration           go to state 92
+    lvalue                go to state 93
+    statement             go to state 94
+    block                 go to state 95
+    statement_list        go to state 96
+    assignment_statement  go to state 97
+    input_statement       go to state 98
+    output_statement      go to state 99
+    return_statement      go to state 100
+    if_statement          go to state 101
+    switch_statement      go to state 102
+    while_statement       go to state 103
+    for_statement         go to state 104
+    break_statement       go to state 105
+    continue_statement    go to state 106
+    call_statement        go to state 107
+
+
+State 73
+
+   21 struct_member_line: INT IDENTIFIER • ';'
+   23                   | INT IDENTIFIER • LBRACK INTEGER RBRACK ';'
+
+    LBRACK  shift, and go to state 108
+    ';'     shift, and go to state 109
+
+
+State 74
+
+   25 struct_member_line: STRUCT_TOK IDENTIFIER • IDENTIFIER ';'
+   26                   | STRUCT_TOK IDENTIFIER • IDENTIFIER LBRACK INTEGER RBRACK ';'
+
+    IDENTIFIER  shift, and go to state 110
+
+
+State 75
+
+   22 struct_member_line: CHAR IDENTIFIER • ';'
+   24                   | CHAR IDENTIFIER • LBRACK INTEGER RBRACK ';'
+
+    LBRACK  shift, and go to state 111
+    ';'     shift, and go to state 112
+
+
+State 76
+
+   18 struct_definition: STRUCT_TOK IDENTIFIER $@2 '{' struct_member_list '}' ';' •
+
+    $default  reduce using rule 18 (struct_definition)
+
+
+State 77
+
+   64 statement: error •
+
+    $default  reduce using rule 64 (statement)
+
+
+State 78
+
+   11 declaration: INT • variable_list ';'
+
+    IDENTIFIER  shift, and go to state 42
+    '*'         shift, and go to state 14
+
+    variable_list  go to state 15
+    decl_item_int  go to state 16
+
+
+State 79
+
+   14 declaration: STRUCT_TOK • IDENTIFIER $@1 struct_var_list ';'
+
+    IDENTIFIER  shift, and go to state 113
+
+
+State 80
+
+  102 if_statement: IF • '(' expression ')' block
+  103             | IF • '(' expression ')' block ELSE block
+
+    '('  shift, and go to state 114
+
+
+State 81
+
+  105 switch_statement: SWITCH • '(' expression ')' $@3 '{' case_list default_list '}'
+
+    '('  shift, and go to state 115
+
+
+State 82
+
+  112 while_statement: WHILE • '(' expression ')' $@4 block
+
+    '('  shift, and go to state 116
+
+
+State 83
+
+  114 for_statement: FOR • '(' opt_statement ';' opt_expression ';' opt_statement ')' $@5 block
+
+    '('  shift, and go to state 117
+
+
+State 84
+
+  119 break_statement: BREAK •
+
+    $default  reduce using rule 119 (break_statement)
+
+
+State 85
+
+  120 continue_statement: CONTINUE •
+
+    $default  reduce using rule 120 (continue_statement)
+
+
+State 86
+
+   97 input_statement: INPUT • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 118
+
+
+State 87
+
+   98 output_statement: OUTPUT • IDENTIFIER
+   99                 | OUTPUT • TEXT
+  100                 | OUTPUT • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 121
+    TEXT        shift, and go to state 122
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 127
+    call_expression  go to state 128
+
+
+State 88
+
+  101 return_statement: RETURN • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 130
+    call_expression  go to state 128
+
+
+State 89
+
+   27 lvalue: IDENTIFIER •
+   71 assignment_statement: IDENTIFIER • dims_idx '=' expression
+   73                     | IDENTIFIER • '=' '&' IDENTIFIER
+   74                     | IDENTIFIER • '=' '*' IDENTIFIER
+  121 call_statement: IDENTIFIER • '(' argument_list ')'
+
+    LBRACK  shift, and go to state 131
+    '('     shift, and go to state 132
+    '='     shift, and go to state 133
+
+    LBRACK    [reduce using rule 27 (lvalue)]
+    '='       [reduce using rule 27 (lvalue)]
+    $default  reduce using rule 27 (lvalue)
+
+    dims_idx  go to state 134
+
+
+State 90
+
+   12 declaration: CHAR • variable_list_char ';'
+
+    IDENTIFIER  shift, and go to state 47
+    '*'         shift, and go to state 19
+
+    variable_list_char  go to state 20
+    decl_item_char      go to state 21
+
+
+State 91
+
+   72 assignment_statement: '*' • IDENTIFIER '=' expression
+
+    IDENTIFIER  shift, and go to state 135
+
+
+State 92
+
+   67 declaration_list: declaration_list declaration •
+
+    $default  reduce using rule 67 (declaration_list)
+
+
+State 93
+
+   28 lvalue: lvalue • '.' IDENTIFIER
+   29       | lvalue • LBRACK expression RBRACK
+   70 assignment_statement: lvalue • '=' expression
+
+    LBRACK  shift, and go to state 136
+    '.'     shift, and go to state 137
+    '='     shift, and go to state 138
+
+
+State 94
+
+   68 statement_list: statement •
+
+    $default  reduce using rule 68 (statement_list)
+
+
+State 95
+
+   63 statement: block •
+
+    $default  reduce using rule 63 (statement)
+
+
+State 96
+
+   65 block: '{' declaration_list statement_list • '}'
+   69 statement_list: statement_list • statement
+
+    error       shift, and go to state 77
+    IF          shift, and go to state 80
+    SWITCH      shift, and go to state 81
+    WHILE       shift, and go to state 82
+    FOR         shift, and go to state 83
+    BREAK       shift, and go to state 84
+    CONTINUE    shift, and go to state 85
+    INPUT       shift, and go to state 86
+    OUTPUT      shift, and go to state 87
+    RETURN      shift, and go to state 88
+    IDENTIFIER  shift, and go to state 89
+    '*'         shift, and go to state 91
+    '{'         shift, and go to state 61
+    '}'         shift, and go to state 139
+
+    lvalue                go to state 93
+    statement             go to state 140
+    block                 go to state 95
+    assignment_statement  go to state 97
+    input_statement       go to state 98
+    output_statement      go to state 99
+    return_statement      go to state 100
+    if_statement          go to state 101
+    switch_statement      go to state 102
+    while_statement       go to state 103
+    for_statement         go to state 104
+    break_statement       go to state 105
+    continue_statement    go to state 106
+    call_statement        go to state 107
+
+
+State 97
+
+   52 statement: assignment_statement • ';'
+
+    ';'  shift, and go to state 141
+
+
+State 98
+
+   53 statement: input_statement • ';'
+
+    ';'  shift, and go to state 142
+
+
+State 99
+
+   54 statement: output_statement • ';'
+
+    ';'  shift, and go to state 143
+
+
+State 100
+
+   56 statement: return_statement • ';'
+
+    ';'  shift, and go to state 144
+
+
+State 101
+
+   57 statement: if_statement •
+
+    $default  reduce using rule 57 (statement)
+
+
+State 102
+
+   58 statement: switch_statement •
+
+    $default  reduce using rule 58 (statement)
+
+
+State 103
+
+   59 statement: while_statement •
+
+    $default  reduce using rule 59 (statement)
+
+
+State 104
+
+   60 statement: for_statement •
+
+    $default  reduce using rule 60 (statement)
+
+
+State 105
+
+   61 statement: break_statement • ';'
+
+    ';'  shift, and go to state 145
+
+
+State 106
+
+   62 statement: continue_statement • ';'
+
+    ';'  shift, and go to state 146
+
+
+State 107
+
+   55 statement: call_statement • ';'
+
+    ';'  shift, and go to state 147
+
+
+State 108
+
+   23 struct_member_line: INT IDENTIFIER LBRACK • INTEGER RBRACK ';'
+
+    INTEGER  shift, and go to state 148
+
+
+State 109
+
+   21 struct_member_line: INT IDENTIFIER ';' •
+
+    $default  reduce using rule 21 (struct_member_line)
+
+
+State 110
+
+   25 struct_member_line: STRUCT_TOK IDENTIFIER IDENTIFIER • ';'
+   26                   | STRUCT_TOK IDENTIFIER IDENTIFIER • LBRACK INTEGER RBRACK ';'
+
+    LBRACK  shift, and go to state 149
+    ';'     shift, and go to state 150
+
+
+State 111
+
+   24 struct_member_line: CHAR IDENTIFIER LBRACK • INTEGER RBRACK ';'
+
+    INTEGER  shift, and go to state 151
+
+
+State 112
+
+   22 struct_member_line: CHAR IDENTIFIER ';' •
+
+    $default  reduce using rule 22 (struct_member_line)
+
+
+State 113
+
+   14 declaration: STRUCT_TOK IDENTIFIER • $@1 struct_var_list ';'
+
+    $default  reduce using rule 13 ($@1)
+
+    $@1  go to state 30
+
+
+State 114
+
+  102 if_statement: IF '(' • expression ')' block
+  103             | IF '(' • expression ')' block ELSE block
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 152
+    call_expression  go to state 128
+
+
+State 115
+
+  105 switch_statement: SWITCH '(' • expression ')' $@3 '{' case_list default_list '}'
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 153
+    call_expression  go to state 128
+
+
+State 116
+
+  112 while_statement: WHILE '(' • expression ')' $@4 block
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 154
+    call_expression  go to state 128
+
+
+State 117
+
+  114 for_statement: FOR '(' • opt_statement ';' opt_expression ';' opt_statement ')' $@5 block
+
+    IDENTIFIER  shift, and go to state 155
+    '*'         shift, and go to state 91
+
+    $default  reduce using rule 116 (opt_statement)
+
+    lvalue                go to state 93
+    assignment_statement  go to state 156
+    opt_statement         go to state 157
+
+
+State 118
+
+   97 input_statement: INPUT IDENTIFIER •
+
+    $default  reduce using rule 97 (input_statement)
+
+
+State 119
+
+   92 expression: error •
+
+    $default  reduce using rule 92 (expression)
+
+
+State 120
+
+   87 expression: INTEGER •
+
+    $default  reduce using rule 87 (expression)
+
+
+State 121
+
+   27 lvalue: IDENTIFIER •
+   89 expression: IDENTIFIER • dims_idx
+   98 output_statement: OUTPUT IDENTIFIER •
+  122 call_expression: IDENTIFIER • '(' argument_list ')'
+
+    LBRACK  shift, and go to state 131
+    '('     shift, and go to state 158
+
+    LBRACK    [reduce using rule 27 (lvalue)]
+    ';'       reduce using rule 27 (lvalue)
+    ';'       [reduce using rule 98 (output_statement)]
+    $default  reduce using rule 27 (lvalue)
+
+    dims_idx  go to state 159
+
+
+State 122
+
+   99 output_statement: OUTPUT TEXT •
+
+    $default  reduce using rule 99 (output_statement)
+
+
+State 123
+
+   88 expression: CHAR_CONST •
+
+    $default  reduce using rule 88 (expression)
+
+
+State 124
+
+   79 expression: '-' • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 160
+    call_expression  go to state 128
+
+
+State 125
+
+   86 expression: '(' • expression ')'
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 161
+    call_expression  go to state 128
+
+
+State 126
+
+   28 lvalue: lvalue • '.' IDENTIFIER
+   29       | lvalue • LBRACK expression RBRACK
+   91 expression: lvalue •
+
+    LBRACK  shift, and go to state 136
+    '.'     shift, and go to state 137
+
+    $default  reduce using rule 91 (expression)
+
+
+State 127
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+  100 output_statement: OUTPUT expression •
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 100 (output_statement)
+
+
+State 128
+
+   90 expression: call_expression •
+
+    $default  reduce using rule 90 (expression)
+
+
+State 129
+
+   27 lvalue: IDENTIFIER •
+   89 expression: IDENTIFIER • dims_idx
+  122 call_expression: IDENTIFIER • '(' argument_list ')'
+
+    LBRACK  shift, and go to state 131
+    '('     shift, and go to state 158
+
+    LBRACK    [reduce using rule 27 (lvalue)]
+    $default  reduce using rule 27 (lvalue)
+
+    dims_idx  go to state 159
+
+
+State 130
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+  101 return_statement: RETURN expression •
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 101 (return_statement)
+
+
+State 131
+
+    9 dims_idx: LBRACK • expression RBRACK
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 172
+    call_expression  go to state 128
+
+
+State 132
+
+  121 call_statement: IDENTIFIER '(' • argument_list ')'
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    ')'  reduce using rule 93 (argument_list)
+
+    lvalue           go to state 126
+    expression       go to state 173
+    argument_list    go to state 174
+    expression_list  go to state 175
+    call_expression  go to state 128
+
+
+State 133
+
+   73 assignment_statement: IDENTIFIER '=' • '&' IDENTIFIER
+   74                     | IDENTIFIER '=' • '*' IDENTIFIER
+
+    '*'  shift, and go to state 176
+    '&'  shift, and go to state 177
+
+
+State 134
+
+   10 dims_idx: dims_idx • LBRACK expression RBRACK
+   71 assignment_statement: IDENTIFIER dims_idx • '=' expression
+
+    LBRACK  shift, and go to state 178
+    '='     shift, and go to state 179
+
+
+State 135
+
+   72 assignment_statement: '*' IDENTIFIER • '=' expression
+
+    '='  shift, and go to state 180
+
+
+State 136
+
+   29 lvalue: lvalue LBRACK • expression RBRACK
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 181
+    call_expression  go to state 128
+
+
+State 137
+
+   28 lvalue: lvalue '.' • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 182
+
+
+State 138
+
+   70 assignment_statement: lvalue '=' • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 183
+    call_expression  go to state 128
+
+
+State 139
+
+   65 block: '{' declaration_list statement_list '}' •
+
+    $default  reduce using rule 65 (block)
+
+
+State 140
+
+   69 statement_list: statement_list statement •
+
+    $default  reduce using rule 69 (statement_list)
+
+
+State 141
+
+   52 statement: assignment_statement ';' •
+
+    $default  reduce using rule 52 (statement)
+
+
+State 142
+
+   53 statement: input_statement ';' •
+
+    $default  reduce using rule 53 (statement)
+
+
+State 143
+
+   54 statement: output_statement ';' •
+
+    $default  reduce using rule 54 (statement)
+
+
+State 144
+
+   56 statement: return_statement ';' •
+
+    $default  reduce using rule 56 (statement)
+
+
+State 145
+
+   61 statement: break_statement ';' •
+
+    $default  reduce using rule 61 (statement)
+
+
+State 146
+
+   62 statement: continue_statement ';' •
+
+    $default  reduce using rule 62 (statement)
+
+
+State 147
+
+   55 statement: call_statement ';' •
+
+    $default  reduce using rule 55 (statement)
+
+
+State 148
+
+   23 struct_member_line: INT IDENTIFIER LBRACK INTEGER • RBRACK ';'
+
+    RBRACK  shift, and go to state 184
+
+
+State 149
+
+   26 struct_member_line: STRUCT_TOK IDENTIFIER IDENTIFIER LBRACK • INTEGER RBRACK ';'
+
+    INTEGER  shift, and go to state 185
+
+
+State 150
+
+   25 struct_member_line: STRUCT_TOK IDENTIFIER IDENTIFIER ';' •
+
+    $default  reduce using rule 25 (struct_member_line)
+
+
+State 151
+
+   24 struct_member_line: CHAR IDENTIFIER LBRACK INTEGER • RBRACK ';'
+
+    RBRACK  shift, and go to state 186
+
+
+State 152
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+  102 if_statement: IF '(' expression • ')' block
+  103             | IF '(' expression • ')' block ELSE block
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+    ')'  shift, and go to state 187
+
+
+State 153
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+  105 switch_statement: SWITCH '(' expression • ')' $@3 '{' case_list default_list '}'
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+    ')'  shift, and go to state 188
+
+
+State 154
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+  112 while_statement: WHILE '(' expression • ')' $@4 block
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+    ')'  shift, and go to state 189
+
+
+State 155
+
+   27 lvalue: IDENTIFIER •
+   71 assignment_statement: IDENTIFIER • dims_idx '=' expression
+   73                     | IDENTIFIER • '=' '&' IDENTIFIER
+   74                     | IDENTIFIER • '=' '*' IDENTIFIER
+
+    LBRACK  shift, and go to state 131
+    '='     shift, and go to state 133
+
+    LBRACK    [reduce using rule 27 (lvalue)]
+    '='       [reduce using rule 27 (lvalue)]
+    $default  reduce using rule 27 (lvalue)
+
+    dims_idx  go to state 134
+
+
+State 156
+
+  115 opt_statement: assignment_statement •
+
+    $default  reduce using rule 115 (opt_statement)
+
+
+State 157
+
+  114 for_statement: FOR '(' opt_statement • ';' opt_expression ';' opt_statement ')' $@5 block
+
+    ';'  shift, and go to state 190
+
+
+State 158
+
+  122 call_expression: IDENTIFIER '(' • argument_list ')'
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    ')'  reduce using rule 93 (argument_list)
+
+    lvalue           go to state 126
+    expression       go to state 173
+    argument_list    go to state 191
+    expression_list  go to state 175
+    call_expression  go to state 128
+
+
+State 159
+
+   10 dims_idx: dims_idx • LBRACK expression RBRACK
+   89 expression: IDENTIFIER dims_idx •
+
+    LBRACK  shift, and go to state 178
+
+    $default  reduce using rule 89 (expression)
+
+
+State 160
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   79           | '-' expression •
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    $default  reduce using rule 79 (expression)
+
+
+State 161
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+   86           | '(' expression • ')'
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+    ')'  shift, and go to state 192
+
+
+State 162
+
+   80 expression: expression EQ • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 193
+    call_expression  go to state 128
+
+
+State 163
+
+   81 expression: expression NE • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 194
+    call_expression  go to state 128
+
+
+State 164
+
+   82 expression: expression LT • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 195
+    call_expression  go to state 128
+
+
+State 165
+
+   83 expression: expression LE • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 196
+    call_expression  go to state 128
+
+
+State 166
+
+   84 expression: expression GT • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 197
+    call_expression  go to state 128
+
+
+State 167
+
+   85 expression: expression GE • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 198
+    call_expression  go to state 128
+
+
+State 168
+
+   75 expression: expression '+' • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 199
+    call_expression  go to state 128
+
+
+State 169
+
+   76 expression: expression '-' • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 200
+    call_expression  go to state 128
+
+
+State 170
+
+   77 expression: expression '*' • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 201
+    call_expression  go to state 128
+
+
+State 171
+
+   78 expression: expression '/' • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 202
+    call_expression  go to state 128
+
+
+State 172
+
+    9 dims_idx: LBRACK expression • RBRACK
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    EQ      shift, and go to state 162
+    NE      shift, and go to state 163
+    LT      shift, and go to state 164
+    LE      shift, and go to state 165
+    GT      shift, and go to state 166
+    GE      shift, and go to state 167
+    RBRACK  shift, and go to state 203
+    '+'     shift, and go to state 168
+    '-'     shift, and go to state 169
+    '*'     shift, and go to state 170
+    '/'     shift, and go to state 171
+
+
+State 173
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+   95 expression_list: expression •
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 95 (expression_list)
+
+
+State 174
+
+  121 call_statement: IDENTIFIER '(' argument_list • ')'
+
+    ')'  shift, and go to state 204
+
+
+State 175
+
+   94 argument_list: expression_list •
+   96 expression_list: expression_list • ',' expression
+
+    ','  shift, and go to state 205
+
+    $default  reduce using rule 94 (argument_list)
+
+
+State 176
+
+   74 assignment_statement: IDENTIFIER '=' '*' • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 206
+
+
+State 177
+
+   73 assignment_statement: IDENTIFIER '=' '&' • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 207
+
+
+State 178
+
+   10 dims_idx: dims_idx LBRACK • expression RBRACK
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 208
+    call_expression  go to state 128
+
+
+State 179
+
+   71 assignment_statement: IDENTIFIER dims_idx '=' • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 209
+    call_expression  go to state 128
+
+
+State 180
+
+   72 assignment_statement: '*' IDENTIFIER '=' • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 210
+    call_expression  go to state 128
+
+
+State 181
+
+   29 lvalue: lvalue LBRACK expression • RBRACK
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    EQ      shift, and go to state 162
+    NE      shift, and go to state 163
+    LT      shift, and go to state 164
+    LE      shift, and go to state 165
+    GT      shift, and go to state 166
+    GE      shift, and go to state 167
+    RBRACK  shift, and go to state 211
+    '+'     shift, and go to state 168
+    '-'     shift, and go to state 169
+    '*'     shift, and go to state 170
+    '/'     shift, and go to state 171
+
+
+State 182
+
+   28 lvalue: lvalue '.' IDENTIFIER •
+
+    $default  reduce using rule 28 (lvalue)
+
+
+State 183
+
+   70 assignment_statement: lvalue '=' expression •
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 70 (assignment_statement)
+
+
+State 184
+
+   23 struct_member_line: INT IDENTIFIER LBRACK INTEGER RBRACK • ';'
+
+    ';'  shift, and go to state 212
+
+
+State 185
+
+   26 struct_member_line: STRUCT_TOK IDENTIFIER IDENTIFIER LBRACK INTEGER • RBRACK ';'
+
+    RBRACK  shift, and go to state 213
+
+
+State 186
+
+   24 struct_member_line: CHAR IDENTIFIER LBRACK INTEGER RBRACK • ';'
+
+    ';'  shift, and go to state 214
+
+
+State 187
+
+  102 if_statement: IF '(' expression ')' • block
+  103             | IF '(' expression ')' • block ELSE block
+
+    '{'  shift, and go to state 61
+
+    block  go to state 215
+
+
+State 188
+
+  105 switch_statement: SWITCH '(' expression ')' • $@3 '{' case_list default_list '}'
+
+    $default  reduce using rule 104 ($@3)
+
+    $@3  go to state 216
+
+
+State 189
+
+  112 while_statement: WHILE '(' expression ')' • $@4 block
+
+    $default  reduce using rule 111 ($@4)
+
+    $@4  go to state 217
+
+
+State 190
+
+  114 for_statement: FOR '(' opt_statement ';' • opt_expression ';' opt_statement ')' $@5 block
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    ';'  reduce using rule 118 (opt_expression)
+
+    lvalue           go to state 126
+    expression       go to state 218
+    opt_expression   go to state 219
+    call_expression  go to state 128
+
+
+State 191
+
+  122 call_expression: IDENTIFIER '(' argument_list • ')'
+
+    ')'  shift, and go to state 220
+
+
+State 192
+
+   86 expression: '(' expression ')' •
+
+    $default  reduce using rule 86 (expression)
+
+
+State 193
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   80           | expression EQ expression •
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 80 (expression)
+
+
+State 194
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   81           | expression NE expression •
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 81 (expression)
+
+
+State 195
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   82           | expression LT expression •
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 82 (expression)
+
+
+State 196
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   83           | expression LE expression •
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 83 (expression)
+
+
+State 197
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   84           | expression GT expression •
+   85           | expression • GE expression
+
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 84 (expression)
+
+
+State 198
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+   85           | expression GE expression •
+
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 85 (expression)
+
+
+State 199
+
+   75 expression: expression • '+' expression
+   75           | expression '+' expression •
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 75 (expression)
+
+
+State 200
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   76           | expression '-' expression •
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 76 (expression)
+
+
+State 201
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   77           | expression '*' expression •
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    $default  reduce using rule 77 (expression)
+
+
+State 202
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   78           | expression '/' expression •
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    $default  reduce using rule 78 (expression)
+
+
+State 203
+
+    9 dims_idx: LBRACK expression RBRACK •
+
+    $default  reduce using rule 9 (dims_idx)
+
+
+State 204
+
+  121 call_statement: IDENTIFIER '(' argument_list ')' •
+
+    $default  reduce using rule 121 (call_statement)
+
+
+State 205
+
+   96 expression_list: expression_list ',' • expression
+
+    error       shift, and go to state 119
+    INTEGER     shift, and go to state 120
+    IDENTIFIER  shift, and go to state 129
+    CHAR_CONST  shift, and go to state 123
+    '-'         shift, and go to state 124
+    '('         shift, and go to state 125
+
+    lvalue           go to state 126
+    expression       go to state 221
+    call_expression  go to state 128
+
+
+State 206
+
+   74 assignment_statement: IDENTIFIER '=' '*' IDENTIFIER •
+
+    $default  reduce using rule 74 (assignment_statement)
+
+
+State 207
+
+   73 assignment_statement: IDENTIFIER '=' '&' IDENTIFIER •
+
+    $default  reduce using rule 73 (assignment_statement)
+
+
+State 208
+
+   10 dims_idx: dims_idx LBRACK expression • RBRACK
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    EQ      shift, and go to state 162
+    NE      shift, and go to state 163
+    LT      shift, and go to state 164
+    LE      shift, and go to state 165
+    GT      shift, and go to state 166
+    GE      shift, and go to state 167
+    RBRACK  shift, and go to state 222
+    '+'     shift, and go to state 168
+    '-'     shift, and go to state 169
+    '*'     shift, and go to state 170
+    '/'     shift, and go to state 171
+
+
+State 209
+
+   71 assignment_statement: IDENTIFIER dims_idx '=' expression •
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 71 (assignment_statement)
+
+
+State 210
+
+   72 assignment_statement: '*' IDENTIFIER '=' expression •
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 72 (assignment_statement)
+
+
+State 211
+
+   29 lvalue: lvalue LBRACK expression RBRACK •
+
+    $default  reduce using rule 29 (lvalue)
+
+
+State 212
+
+   23 struct_member_line: INT IDENTIFIER LBRACK INTEGER RBRACK ';' •
+
+    $default  reduce using rule 23 (struct_member_line)
+
+
+State 213
+
+   26 struct_member_line: STRUCT_TOK IDENTIFIER IDENTIFIER LBRACK INTEGER RBRACK • ';'
+
+    ';'  shift, and go to state 223
+
+
+State 214
+
+   24 struct_member_line: CHAR IDENTIFIER LBRACK INTEGER RBRACK ';' •
+
+    $default  reduce using rule 24 (struct_member_line)
+
+
+State 215
+
+  102 if_statement: IF '(' expression ')' block •
+  103             | IF '(' expression ')' block • ELSE block
+
+    ELSE  shift, and go to state 224
+
+    $default  reduce using rule 102 (if_statement)
+
+
+State 216
+
+  105 switch_statement: SWITCH '(' expression ')' $@3 • '{' case_list default_list '}'
+
+    '{'  shift, and go to state 225
+
+
+State 217
+
+  112 while_statement: WHILE '(' expression ')' $@4 • block
+
+    '{'  shift, and go to state 61
+
+    block  go to state 226
+
+
+State 218
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+  117 opt_expression: expression •
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 117 (opt_expression)
+
+
+State 219
+
+  114 for_statement: FOR '(' opt_statement ';' opt_expression • ';' opt_statement ')' $@5 block
+
+    ';'  shift, and go to state 227
+
+
+State 220
+
+  122 call_expression: IDENTIFIER '(' argument_list ')' •
+
+    $default  reduce using rule 122 (call_expression)
+
+
+State 221
+
+   75 expression: expression • '+' expression
+   76           | expression • '-' expression
+   77           | expression • '*' expression
+   78           | expression • '/' expression
+   80           | expression • EQ expression
+   81           | expression • NE expression
+   82           | expression • LT expression
+   83           | expression • LE expression
+   84           | expression • GT expression
+   85           | expression • GE expression
+   96 expression_list: expression_list ',' expression •
+
+    EQ   shift, and go to state 162
+    NE   shift, and go to state 163
+    LT   shift, and go to state 164
+    LE   shift, and go to state 165
+    GT   shift, and go to state 166
+    GE   shift, and go to state 167
+    '+'  shift, and go to state 168
+    '-'  shift, and go to state 169
+    '*'  shift, and go to state 170
+    '/'  shift, and go to state 171
+
+    $default  reduce using rule 96 (expression_list)
+
+
+State 222
+
+   10 dims_idx: dims_idx LBRACK expression RBRACK •
+
+    $default  reduce using rule 10 (dims_idx)
+
+
+State 223
+
+   26 struct_member_line: STRUCT_TOK IDENTIFIER IDENTIFIER LBRACK INTEGER RBRACK ';' •
+
+    $default  reduce using rule 26 (struct_member_line)
+
+
+State 224
+
+  103 if_statement: IF '(' expression ')' block ELSE • block
+
+    '{'  shift, and go to state 61
+
+    block  go to state 228
+
+
+State 225
+
+  105 switch_statement: SWITCH '(' expression ')' $@3 '{' • case_list default_list '}'
+
+    CASE  shift, and go to state 229
+
+    case_list  go to state 230
+    case_item  go to state 231
+
+
+State 226
+
+  112 while_statement: WHILE '(' expression ')' $@4 block •
+
+    $default  reduce using rule 112 (while_statement)
+
+
+State 227
+
+  114 for_statement: FOR '(' opt_statement ';' opt_expression ';' • opt_statement ')' $@5 block
+
+    IDENTIFIER  shift, and go to state 155
+    '*'         shift, and go to state 91
+
+    $default  reduce using rule 116 (opt_statement)
+
+    lvalue                go to state 93
+    assignment_statement  go to state 156
+    opt_statement         go to state 232
+
+
+State 228
+
+  103 if_statement: IF '(' expression ')' block ELSE block •
+
+    $default  reduce using rule 103 (if_statement)
+
+
+State 229
+
+  108 case_item: CASE • INTEGER ':' statement_list
+
+    INTEGER  shift, and go to state 233
+
+
+State 230
+
+  105 switch_statement: SWITCH '(' expression ')' $@3 '{' case_list • default_list '}'
+  107 case_list: case_list • case_item
+
+    CASE     shift, and go to state 229
+    DEFAULT  shift, and go to state 234
+
+    $default  reduce using rule 109 (default_list)
+
+    case_item     go to state 235
+    default_list  go to state 236
+
+
+State 231
+
+  106 case_list: case_item •
+
+    $default  reduce using rule 106 (case_list)
+
+
+State 232
+
+  114 for_statement: FOR '(' opt_statement ';' opt_expression ';' opt_statement • ')' $@5 block
+
+    ')'  shift, and go to state 237
+
+
+State 233
+
+  108 case_item: CASE INTEGER • ':' statement_list
+
+    ':'  shift, and go to state 238
+
+
+State 234
+
+  110 default_list: DEFAULT • ':' statement_list
+
+    ':'  shift, and go to state 239
+
+
+State 235
+
+  107 case_list: case_list case_item •
+
+    $default  reduce using rule 107 (case_list)
+
+
+State 236
+
+  105 switch_statement: SWITCH '(' expression ')' $@3 '{' case_list default_list • '}'
+
+    '}'  shift, and go to state 240
+
+
+State 237
+
+  114 for_statement: FOR '(' opt_statement ';' opt_expression ';' opt_statement ')' • $@5 block
+
+    $default  reduce using rule 113 ($@5)
+
+    $@5  go to state 241
+
+
+State 238
+
+  108 case_item: CASE INTEGER ':' • statement_list
+
+    error       shift, and go to state 77
+    IF          shift, and go to state 80
+    SWITCH      shift, and go to state 81
+    WHILE       shift, and go to state 82
+    FOR         shift, and go to state 83
+    BREAK       shift, and go to state 84
+    CONTINUE    shift, and go to state 85
+    INPUT       shift, and go to state 86
+    OUTPUT      shift, and go to state 87
+    RETURN      shift, and go to state 88
+    IDENTIFIER  shift, and go to state 89
+    '*'         shift, and go to state 91
+    '{'         shift, and go to state 61
+
+    lvalue                go to state 93
+    statement             go to state 94
+    block                 go to state 95
+    statement_list        go to state 242
+    assignment_statement  go to state 97
+    input_statement       go to state 98
+    output_statement      go to state 99
+    return_statement      go to state 100
+    if_statement          go to state 101
+    switch_statement      go to state 102
+    while_statement       go to state 103
+    for_statement         go to state 104
+    break_statement       go to state 105
+    continue_statement    go to state 106
+    call_statement        go to state 107
+
+
+State 239
+
+  110 default_list: DEFAULT ':' • statement_list
+
+    error       shift, and go to state 77
+    IF          shift, and go to state 80
+    SWITCH      shift, and go to state 81
+    WHILE       shift, and go to state 82
+    FOR         shift, and go to state 83
+    BREAK       shift, and go to state 84
+    CONTINUE    shift, and go to state 85
+    INPUT       shift, and go to state 86
+    OUTPUT      shift, and go to state 87
+    RETURN      shift, and go to state 88
+    IDENTIFIER  shift, and go to state 89
+    '*'         shift, and go to state 91
+    '{'         shift, and go to state 61
+
+    lvalue                go to state 93
+    statement             go to state 94
+    block                 go to state 95
+    statement_list        go to state 243
+    assignment_statement  go to state 97
+    input_statement       go to state 98
+    output_statement      go to state 99
+    return_statement      go to state 100
+    if_statement          go to state 101
+    switch_statement      go to state 102
+    while_statement       go to state 103
+    for_statement         go to state 104
+    break_statement       go to state 105
+    continue_statement    go to state 106
+    call_statement        go to state 107
+
+
+State 240
+
+  105 switch_statement: SWITCH '(' expression ')' $@3 '{' case_list default_list '}' •
+
+    $default  reduce using rule 105 (switch_statement)
+
+
+State 241
+
+  114 for_statement: FOR '(' opt_statement ';' opt_expression ';' opt_statement ')' $@5 • block
+
+    '{'  shift, and go to state 61
+
+    block  go to state 244
+
+
+State 242
+
+   69 statement_list: statement_list • statement
+  108 case_item: CASE INTEGER ':' statement_list •
+
+    error       shift, and go to state 77
+    IF          shift, and go to state 80
+    SWITCH      shift, and go to state 81
+    WHILE       shift, and go to state 82
+    FOR         shift, and go to state 83
+    BREAK       shift, and go to state 84
+    CONTINUE    shift, and go to state 85
+    INPUT       shift, and go to state 86
+    OUTPUT      shift, and go to state 87
+    RETURN      shift, and go to state 88
+    IDENTIFIER  shift, and go to state 89
+    '*'         shift, and go to state 91
+    '{'         shift, and go to state 61
+
+    CASE     reduce using rule 108 (case_item)
+    DEFAULT  reduce using rule 108 (case_item)
+    '}'      reduce using rule 108 (case_item)
+
+    lvalue                go to state 93
+    statement             go to state 140
+    block                 go to state 95
+    assignment_statement  go to state 97
+    input_statement       go to state 98
+    output_statement      go to state 99
+    return_statement      go to state 100
+    if_statement          go to state 101
+    switch_statement      go to state 102
+    while_statement       go to state 103
+    for_statement         go to state 104
+    break_statement       go to state 105
+    continue_statement    go to state 106
+    call_statement        go to state 107
+
+
+State 243
+
+   69 statement_list: statement_list • statement
+  110 default_list: DEFAULT ':' statement_list •
+
+    error       shift, and go to state 77
+    IF          shift, and go to state 80
+    SWITCH      shift, and go to state 81
+    WHILE       shift, and go to state 82
+    FOR         shift, and go to state 83
+    BREAK       shift, and go to state 84
+    CONTINUE    shift, and go to state 85
+    INPUT       shift, and go to state 86
+    OUTPUT      shift, and go to state 87
+    RETURN      shift, and go to state 88
+    IDENTIFIER  shift, and go to state 89
+    '*'         shift, and go to state 91
+    '{'         shift, and go to state 61
+
+    '}'  reduce using rule 110 (default_list)
+
+    lvalue                go to state 93
+    statement             go to state 140
+    block                 go to state 95
+    assignment_statement  go to state 97
+    input_statement       go to state 98
+    output_statement      go to state 99
+    return_statement      go to state 100
+    if_statement          go to state 101
+    switch_statement      go to state 102
+    while_statement       go to state 103
+    for_statement         go to state 104
+    break_statement       go to state 105
+    continue_statement    go to state 106
+    call_statement        go to state 107
+
+
+State 244
+
+  114 for_statement: FOR '(' opt_statement ';' opt_expression ';' opt_statement ')' $@5 block •
+
+    $default  reduce using rule 114 (for_statement)
