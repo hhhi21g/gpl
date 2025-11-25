@@ -147,7 +147,7 @@ int reg_alloc_temp()
 		if (rdesc[r].var == NULL)
 			return r;
 
-	// 如果无空位，就随机选一个但不要写入 rdesc
+	// 如果无空位，就随机选一个但不写入 rdesc
 	return R_GEN;
 }
 
@@ -155,7 +155,6 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 {
 	int reg_b, reg_c;
 
-	/* --- load operand b --- */
 	if (b->type == SYM_INT)
 	{
 		reg_b = reg_alloc_temp();
@@ -166,7 +165,6 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 		reg_b = reg_alloc(b);
 	}
 
-	/* --- load operand c --- */
 	if (c->type == SYM_INT)
 	{
 		reg_c = reg_alloc_temp();
@@ -177,10 +175,8 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 		reg_c = reg_alloc(c);
 	}
 
-	/* --- ensure reg_b != reg_c --- */
 	if (reg_b == reg_c)
 	{
-		/* 分配一个新的临时寄存器来装载 c */
 		int new_reg_c = reg_alloc_temp();
 
 		if (c->type == SYM_INT)
@@ -191,48 +187,10 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 		reg_c = new_reg_c;
 	}
 
-	/* --- emit operation --- */
 	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
 
-	/* --- result lives in reg_b --- */
 	rdesc_fill(reg_b, a, MODIFIED);
 }
-
-// void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
-// {
-// 	int reg_a = reg_alloc(a);
-// 	int reg_b, reg_c;
-
-// 	// load b
-// 	if (b->type == SYM_INT)
-// 	{
-// 		reg_b = reg_alloc_temp();
-// 		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
-// 	}
-// 	else
-// 	{
-// 		reg_b = reg_alloc(b);
-// 	}
-
-// 	// load c
-// 	if (c->type == SYM_INT)
-// 	{
-// 		reg_c = reg_alloc_temp();
-// 		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
-// 	}
-// 	else
-// 	{
-// 		reg_c = reg_alloc(c);
-// 	}
-
-// 	// r_a = r_b
-// 	out_str(file_s, "    LOD R%u,R%u\n", reg_a, reg_b);
-
-// 	// r_a = r_a op r_c
-// 	out_str(file_s, "    %s R%u,R%u\n", op, reg_a, reg_c);
-
-// 	rdesc_fill(reg_a, a, MODIFIED);
-// }
 
 void asm_cmp(int op, SYM *a, SYM *b, SYM *c)
 {
@@ -346,14 +304,13 @@ void asm_call(SYM *a, SYM *b) // a:返回值变量；b：函数名
 	char ret_label[32];
 	sprintf(ret_label, "L%d", ret_label_id++); // 跳转回的LABEL
 
-	out_str(file_s, "	STO (R2+%d),R2\n", tof + oon); /* store old bp */
+	out_str(file_s, "	STO (R2+%d),R2\n", tof + oon);
 	oon += 4;
-	out_str(file_s, "	LOD R4,%s\n", ret_label);	   /* return addr: 4*8=32 */
-	out_str(file_s, "	STO (R2+%d),R4\n", tof + oon); /* store return addr */
+	out_str(file_s, "	LOD R4,%s\n", ret_label);
+	out_str(file_s, "	STO (R2+%d),R4\n", tof + oon);
 	oon += 4;
-	out_str(file_s, "	LOD R2,R2+%d\n", tof + oon - 8); /* load new bp */
-	out_str(file_s, "	JMP %s\n", b->name);			 /* jump to new func */
-
+	out_str(file_s, "	LOD R2,R2+%d\n", tof + oon - 8);
+	out_str(file_s, "	JMP %s\n", b->name);
 	// 返回点
 	out_str(file_s, "%s:\n", ret_label);
 
@@ -453,31 +410,6 @@ void asm_static(void)
 	out_str(file_s, "	DBN 0,%u\n", tos);
 	out_str(file_s, "STACK:\n");
 }
-
-// static void asm_load_addr(int r, SYM *s) // offset+BP
-// {
-// 	switch (s->type)
-// 	{
-// 	case SYM_VAR:
-// 	case SYM_ARRAY:
-// 		if (s->scope == 1)
-// 		{
-// 			// out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_BP, s->offset);
-// 			if (s->offset >= 0)
-// 				out_str(file_s, "    LOD R15,(R%u+%d)\n", R_BP, s->offset);
-// 			else
-// 				out_str(file_s, "    LOD R15,(R%u-%d)\n", R_BP, -s->offset);
-// 		}
-// 		else
-// 		{
-// 			out_str(file_s, "	LOD R%u,STATIC\n", R_TP);
-// 			out_str(file_s, "	LOD R%u,R%u+%d\n", r, R_TP, s->offset);
-// 		}
-// 		break;
-// 	default:
-// 		break;
-// 	}
-// }
 
 static void asm_load_addr(int r, SYM *s) // 把 &s 放到寄存器 r
 {

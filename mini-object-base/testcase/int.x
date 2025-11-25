@@ -1,28 +1,28 @@
 
 # tac list
 
-0x5d5cd225c690	label main
-0x5d5cd225c6d0	begin
-0x5d5cd225b830	var a
-0x5d5cd225b910	var b
-0x5d5cd225b9f0	var c
-0x5d5cd225bad0	var d
-0x5d5cd225bb30	input a
-0x5d5cd225bd30	var t0
-0x5d5cd225bd70	t0 = a + 10
-0x5d5cd225bdb0	b = t0
-0x5d5cd225bfb0	var t1
-0x5d5cd225bff0	t1 = b - 20
-0x5d5cd225c030	c = t1
-0x5d5cd225c230	var t2
-0x5d5cd225c270	t2 = c * 30
-0x5d5cd225c2b0	d = t2
-0x5d5cd225c340	output a
-0x5d5cd225c3d0	output b
-0x5d5cd225c460	output c
-0x5d5cd225c4f0	output d
-0x5d5cd225c5d0	output L1
-0x5d5cd225c710	end
+0x630ebdca2690	label main
+0x630ebdca26d0	begin
+0x630ebdca1830	var a
+0x630ebdca1910	var b
+0x630ebdca19f0	var c
+0x630ebdca1ad0	var d
+0x630ebdca1b30	input a
+0x630ebdca1d30	var t0
+0x630ebdca1d70	t0 = a + 10
+0x630ebdca1db0	b = t0
+0x630ebdca1fb0	var t1
+0x630ebdca1ff0	t1 = b - 20
+0x630ebdca2030	c = t1
+0x630ebdca2230	var t2
+0x630ebdca2270	t2 = c * 30
+0x630ebdca22b0	d = t2
+0x630ebdca2340	output a
+0x630ebdca23d0	output b
+0x630ebdca2460	output c
+0x630ebdca24f0	output d
+0x630ebdca25d0	output L1
+0x630ebdca2710	end
 
 [B0]
 label main

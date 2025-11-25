@@ -28,9 +28,11 @@ main:
 
 	# c = 'c'
 	LOD R6,99
+   STO (R2+20),R6
 
 	# b = 'b'
 	LOD R7,98
+   STO (R2+16),R7
 
 	# input a
 	LOD R8,(R2+8)
@@ -38,10 +40,8 @@ main:
 	LOD R8,R15
 
 	# ifz 0 goto L2
-	STO (R2+24),R5
-	STO (R2+20),R6
-	STO (R2+16),R7
-	STO (R2+8),R8
+    STO (R2+24),R5
+    STO (R2+8),R8
 	LOD R9,0
 	TST R9
 	JEZ L2
@@ -56,22 +56,22 @@ L2:
 
 	# output a
 	LOD R5,(R2+8)
-	LOD R15,(R2+8)
+    LOD R15,(R2+8)
 	OTC
 
 	# output b
 	LOD R6,(R2+16)
-	LOD R15,(R2+16)
+    LOD R15,(R2+16)
 	OTC
 
 	# output c
 	LOD R7,(R2+20)
-	LOD R15,(R2+20)
+    LOD R15,(R2+20)
 	OTC
 
 	# output d
 	LOD R8,(R2+24)
-	LOD R15,(R2+24)
+    LOD R15,(R2+24)
 	OTC
 
 	# output L1
@@ -84,25 +84,25 @@ L2:
     LOD R10,R2+8
 
 	# *pa = 'A'
-	STO (R2+12),R10
+    STO (R2+12),R10
 	LOD R11,65
     LOD R10,(R2+12)
     STO (R10),R11
 
 	# output a
-	LOD R15,(R2+8)
+    LOD R15,(R2+8)
 	OTC
 
 	# ptr = pa
+   STO (R2+28),R10
 
 	# *ptr = 'B'
-	STO (R2+28),R10
 	LOD R12,66
     LOD R10,(R2+28)
     STO (R10),R12
 
 	# output a
-	LOD R15,(R2+8)
+    LOD R15,(R2+8)
 	OTC
 
 	# output L1

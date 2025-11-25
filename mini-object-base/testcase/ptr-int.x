@@ -1,37 +1,37 @@
 
 # tac list
 
-0x626ce720e060	label main
-0x626ce720e0a0	begin
-0x626ce720c810	var a
-0x626ce720c8e0	var pa
-0x626ce720c9b0	var b
-0x626ce720ca80	var c
-0x626ce720cb50	var d
-0x626ce720cc20	var ptr
-0x626ce720cc80	input a
-0x626ce720d270	var t0
-0x626ce720d2b0	t0 = a + 10
-0x626ce720d2f0	b = t0
-0x626ce720d4d0	var t1
-0x626ce720d510	t1 = b - 20
-0x626ce720d550	c = t1
-0x626ce720d730	var t2
-0x626ce720d770	t2 = c * 30
-0x626ce720d7b0	d = t2
-0x626ce720d840	output a
-0x626ce720d8d0	output b
-0x626ce720d960	output c
-0x626ce720d9f0	output d
-0x626ce720dac0	output L1
-0x626ce720db40	pa = &a
-0x626ce720dc60	*pa = 111
-0x626ce720dcf0	output a
-0x626ce720dda0	ptr = pa
-0x626ce720dec0	*ptr = 222
-0x626ce720df50	output a
-0x626ce720dfb0	output L1
-0x626ce720e0e0	end
+0x57ce62475d60	label main
+0x57ce62475da0	begin
+0x57ce62474830	var a
+0x57ce62474910	var pa
+0x57ce624749f0	var b
+0x57ce62474ad0	var c
+0x57ce62474bb0	var d
+0x57ce62474c90	var ptr
+0x57ce62474cf0	input a
+0x57ce62474ef0	var t0
+0x57ce62474f30	t0 = a + 10
+0x57ce62474f70	b = t0
+0x57ce62475170	var t1
+0x57ce624751b0	t1 = b - 20
+0x57ce624751f0	c = t1
+0x57ce624753f0	var t2
+0x57ce62475430	t2 = c * 30
+0x57ce62475470	d = t2
+0x57ce62475500	output a
+0x57ce62475590	output b
+0x57ce62475620	output c
+0x57ce624756b0	output d
+0x57ce62475790	output L1
+0x57ce62475810	pa = &a
+0x57ce62475940	*pa = 111
+0x57ce624759d0	output a
+0x57ce62475a80	ptr = pa
+0x57ce62475bb0	*ptr = 222
+0x57ce62475c40	output a
+0x57ce62475ca0	output L1
+0x57ce62475de0	end
 
 [B0]
 label main
