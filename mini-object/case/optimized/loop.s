@@ -7,22 +7,6 @@
 
 	# var t2
 
-	# var t3
-
-	# var t4
-
-	# var t5
-
-	# var t6
-
-	# var t9
-
-	# var t10
-
-	# var t11
-
-	# var t12
-
 	# label main
 main:
 
@@ -43,6 +27,22 @@ main:
 	# var j
 
 	# var k
+
+	# var t3
+
+	# var t4
+
+	# var t5
+
+	# var t6
+
+	# var t9
+
+	# var t10
+
+	# var t11
+
+	# var t12
 
 	# input a
 	LOD R5,(R2+8)
@@ -78,13 +78,13 @@ main:
     ADD R9,R7
 
 	# t5 = t4 / b
-	STO (R4+8),R9
+    STO (R2+44),R9
 	LOD R10,(R2+12)
     DIV R9,R10
 
 	# t6 = t3 - t5
-	STO (R4+4),R5
-	STO (R4+12),R9
+    STO (R2+40),R5
+    STO (R2+48),R9
     SUB R5,R9
 
 	# t10 = c - a
@@ -92,16 +92,16 @@ main:
     SUB R7,R11
 
 	# t11 = t10 / b
-	STO (R4+24),R7
+    STO (R2+60),R7
     DIV R7,R10
 
 	# t12 = t3 - t11
-	LOD R12,(R4+4)
-	STO (R4+28),R7
+	LOD R12,(R2+40)
+    STO (R2+64),R7
     SUB R12,R7
 
 	# t7 = t6 + 9
-	STO (R4+16),R5
+    STO (R2+52),R5
     LOD R13,9
     ADD R5,R13
 
@@ -109,7 +109,7 @@ main:
 	STO (R2+20),R5
 
 	# t13 = t12 + 9
-	STO (R4+32),R12
+    STO (R2+68),R12
     LOD R13,9
     ADD R12,R13
 
@@ -241,5 +241,5 @@ L8:
 L7:
 	DBS 32,0
 STATIC:
-	DBN 0,36
+	DBN 0,4
 STACK:

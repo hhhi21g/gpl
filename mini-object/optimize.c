@@ -944,33 +944,56 @@ static int can_hoist_tac(TAC *p,
     return 1;
 }
 
-// 将p插入到pos之后
+int tac_in_bb(TAC *pos, BASIC_BLOCK *bb)
+{
+    if (!pos || !bb || !bb->first || !bb->last)
+        return 0;
+
+    for (TAC *q = bb->first; q; q = q->next)
+    {
+        if (q == pos)
+            return 1;
+        if (q == bb->last)
+            break;
+    }
+    return 0;
+}
+
 static void insert_tac_after(TAC *p, TAC *pos, BASIC_BLOCK *bb)
 {
+    // 如果 pos 不属于这个 bb，则强制让pos = bb->last
+    if (pos && !tac_in_bb(pos, bb))
+        pos = bb->last;
+
+    // 链表插入
     if (!pos)
     {
+        // 插入链表头
         p->next = tac_first;
         if (tac_first)
             tac_first->prev = p;
         tac_first = p;
+
+        if (!bb->first)
+            bb->first = p;
     }
     else
     {
+        // 插到 pos 后
         p->next = pos->next;
         if (pos->next)
             pos->next->prev = p;
         pos->next = p;
         p->prev = pos;
-    }
 
-    if (bb)
-    {
-        if (!bb->first)
-            bb->first = p;
-
+        // 如果 pos 是 bb 的 last，则更新 last
         if (pos == bb->last)
             bb->last = p;
     }
+
+    // 如果 bb 是空块，那么 p 既是 first 也是 last
+    if (!bb->first)
+        bb->first = bb->last = p;
 }
 
 // 循环内部找临时变量a的变量声明，获得所在基本块
@@ -1074,20 +1097,21 @@ int loop_invariant_code_motion()
                 collect_loop_defs(loop_blocks, loop_cnt, loop_defs, &loop_def_cnt);
 
                 // 迭代寻找所有 loop-invariant 指令
-                SYM *invariant_defs[1024];
+                SYM *invariant_defs[1024]; // 确认是循环不变量的变量集合
                 int inv_def_cnt = 0;
 
-                TAC *hoist_tac[1024];
+                TAC *hoist_tac[1024]; // 需要搬到preheader的表达式TAC
                 BASIC_BLOCK *hoist_bb[1024];
                 int hoist_cnt = 0;
 
-                TAC *hoist_var_tac[1024];
-                BASIC_BLOCK *hoist_var_bb[1024];
-                SYM *hoisted_temps[1024];
+                TAC *hoist_var_tac[1024];        // 定义循环内不变量的变量声明
+                BASIC_BLOCK *hoist_var_bb[1024]; // 变量声明的BB
+                SYM *hoisted_temps[1024];        // 已经处理过的临时变量
                 int hoist_var_cnt = 0;
 
                 for (int li = 0; li < loop_cnt; li++)
                 {
+                    // 扫描循环内所有BB
                     BASIC_BLOCK *bb = loop_blocks[li];
                     for (TAC *p = bb->first; p && p != bb->last->next; p = p->next)
                     {
@@ -1131,12 +1155,12 @@ int loop_invariant_code_motion()
                 for (TAC *q = preheader->first; q && q != preheader->last->next; q = q->next)
                 {
                     if (q->op == TAC_VAR)
-                        var_insert_pos = q;
+                        var_insert_pos = q; // 不变量定义插入到preheader中所有VAR的后面
                 }
 
-                // 把这些指令从各自 BB 中移动到 preheader 的末尾
-                TAC *insert_pos = preheader->last;
-                for (int i = 0; i < hoist_var_cnt; i++)
+                TAC *insert_pos = preheader->last; // 不变量的赋值TAC插入到preheader的最后
+
+                for (int i = 0; i < hoist_var_cnt; i++) // 插入不变量定义
                 {
                     TAC *v = hoist_var_tac[i];
                     BASIC_BLOCK *from_bb = hoist_var_bb[i];
@@ -1149,7 +1173,7 @@ int loop_invariant_code_motion()
                     changed = 1;
                 }
 
-                for (int i = 0; i < hoist_cnt; i++)
+                for (int i = 0; i < hoist_cnt; i++) // 插入赋值TAC
                 {
                     TAC *p = hoist_tac[i];
                     BASIC_BLOCK *from_bb = hoist_bb[i];
