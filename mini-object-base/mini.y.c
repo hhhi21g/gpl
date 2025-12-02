@@ -2280,10 +2280,10 @@ yyreduce:
     SYM *cont  = g_for_cont_stack[g_for_depth - 1];
     SYM *end   = g_for_end_stack[g_for_depth - 1];
 
-    if (start != NULL)
-        printf("g_for_start\n");
-    else
-        printf("start null\n");
+    // if (start != NULL)
+    //     printf("g_for_start\n");
+    // elses
+    //     printf("start null\n");
 
     (yyval.tac) = do_while((yyvsp[-3].exp), (yyvsp[0].tac), start, cont, end);
 

@@ -9,6 +9,15 @@
 expMap *exp_list = NULL;
 int exp_cnt = 0;
 
+typedef struct ConstEntry
+{
+    SYM *var;   // 变量 / 临时
+    SYM *value; // 对应的常量符号
+    int state;  // 0 = 未知, 1 = 确认常量, -1 = 非常量
+} ConstEntry;
+
+#define MAX_CONST_ENTRY 2048
+
 // 是否是临时变量或普通变量
 int is_var(SYM *s)
 {
@@ -1475,6 +1484,129 @@ int loop_sinking()
     return changed;
 }
 
+// 判断是否是常量类型
+static int is_const_sym(SYM *s)
+{
+    if (!s)
+        return 0;
+    return (s->type == SYM_INT || s->type == SYM_CHAR);
+}
+
+static int find_const_entry(ConstEntry *tab, int cnt, SYM *v)
+{
+    for (int i = 0; i < cnt; i++)
+    {
+        if (tab[i].var == v)
+            return i;
+    }
+    return -1;
+}
+
+int global_constant_propagation()
+{
+    ConstEntry tab[MAX_CONST_ENTRY];
+    int tab_cnt = 0;
+    int changed = 0;
+
+    // 初始化
+    for (int i = 0; i < MAX_CONST_ENTRY; i++)
+    {
+        tab[i].var = NULL;
+        tab[i].value = NULL;
+        tab[i].state = 0;
+    }
+
+    /*********************
+     * 第一次扫描：收集“全局常量变量”
+     * 条件：某个变量在全程序中
+     *  - 只出现一次赋值
+     *  - 该赋值是  var = const;
+     *********************/
+    for (TAC *p = tac_first; p; p = p->next)
+    {
+        // ✅ 只看真正的“定义语句”（var=..., tmp=...）
+        if (!is_def_tac(p))
+            continue;
+
+        SYM *a = p->a;
+        SYM *b = p->b;
+
+        if (!a || !is_var(a))
+            continue;
+
+        int idx = find_const_entry(tab, tab_cnt, a);
+
+        int is_const_assign = 0;
+        SYM *const_val = NULL;
+
+        // 这里只认 var = const 这种形式
+        if (p->op == TAC_COPY && is_const_sym(b) && p->c == NULL)
+        {
+            is_const_assign = 1;
+            const_val = b;
+        }
+
+        if (idx < 0)
+        {
+            // 第一次看到这个变量的定义
+            if (tab_cnt >= MAX_CONST_ENTRY)
+                continue; // 防止溢出，直接放弃后面的
+
+            idx = tab_cnt++;
+            tab[idx].var = a;
+            if (is_const_assign)
+            {
+                tab[idx].state = 1; // 确认常量
+                tab[idx].value = const_val;
+            }
+            else
+            {
+                tab[idx].state = -1; // 不是常量（或不处理）
+                tab[idx].value = NULL;
+            }
+        }
+        else
+        {
+            // 已经见过一次，再遇到任何形式的赋值，都标记为非常量
+            tab[idx].state = -1;
+            tab[idx].value = NULL;
+        }
+    }
+
+    /*********************
+     * 第二次扫描：用常量替换 RHS 上的变量引用
+     *********************/
+    for (TAC *p = tac_first; p; p = p->next)
+    {
+        SYM *b = p->b;
+        SYM *c = p->c;
+
+        // 替换 b
+        if (b && is_var_or_tmp(b))
+        {
+            int idx = find_const_entry(tab, tab_cnt, b);
+            if (idx >= 0 && tab[idx].state == 1 && tab[idx].value && b != tab[idx].value)
+            {
+                p->b = tab[idx].value;
+                changed = 1;
+            }
+        }
+
+        // 替换 c
+        if (c && is_var_or_tmp(c))
+        {
+            int idx = find_const_entry(tab, tab_cnt, c);
+            if (idx >= 0 && tab[idx].state == 1 && tab[idx].value && c != tab[idx].value)
+            {
+                p->c = tab[idx].value;
+                changed = 1;
+            }
+        }
+    }
+
+    return changed;
+}
+
 void global_optimize()
 {
     int changed;
@@ -1482,6 +1614,9 @@ void global_optimize()
     do
     {
         changed = 0;
+
+        if (global_constant_propagation())
+            changed = 1;
 
         if (local_copy_propagation())
             changed = 1;
