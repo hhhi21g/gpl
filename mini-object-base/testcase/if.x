@@ -1,27 +1,27 @@
 
 # tac list
 
-0x5c3e03413480	label main
-0x5c3e034134c0	begin
-0x5c3e03412830	var i
-0x5c3e03412910	var j
-0x5c3e034129f0	var k
-0x5c3e03412a50	input i
-0x5c3e03412ab0	input j
-0x5c3e03412c10	var t0
-0x5c3e03412c50	t0 = (i == j)
-0x5c3e03413010	ifz t0 goto L3
-0x5c3e03412d30	output L1
-0x5c3e03413050	goto L4
-0x5c3e03412ef0	label L3
-0x5c3e03412e10	output L2
-0x5c3e03412fd0	label L4
-0x5c3e034131d0	var t1
-0x5c3e03413210	t1 = i + j
-0x5c3e03413250	k = t1
-0x5c3e034132e0	output k
-0x5c3e034133c0	output L5
-0x5c3e03413500	end
+0x5a226b368480	label main
+0x5a226b3684c0	begin
+0x5a226b367830	var i
+0x5a226b367910	var j
+0x5a226b3679f0	var k
+0x5a226b367a50	input i
+0x5a226b367ab0	input j
+0x5a226b367c10	var t0
+0x5a226b367c50	t0 = (i == j)
+0x5a226b368010	ifz t0 goto L3
+0x5a226b367d30	output L1
+0x5a226b368050	goto L4
+0x5a226b367ef0	label L3
+0x5a226b367e10	output L2
+0x5a226b367fd0	label L4
+0x5a226b3681d0	var t1
+0x5a226b368210	t1 = i + j
+0x5a226b368250	k = t1
+0x5a226b3682e0	output k
+0x5a226b3683c0	output L5
+0x5a226b368500	end
 
 [B0]
 label main

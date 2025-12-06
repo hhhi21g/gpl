@@ -363,8 +363,9 @@ lvalue_path:IDENTIFIER '.' IDENTIFIER lvalue_tail_opt
 ;
 
 lvalue_tail_opt:
-    { $$ = NULL; }
-    | lvalue_tail     { $$ = $1;   }
+{ $$ = NULL; }
+| lvalue_tail     
+{ $$ = $1;   }
 ;
 
 

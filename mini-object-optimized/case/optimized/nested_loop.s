@@ -47,24 +47,24 @@ L4:
 
 	# t1 = (i < 10)
 	LOD R5,(R2+8)
-    LOD R6,R5
+    LOD R7,R5
 	LOD R3,10
-    SUB R6,R3
-    TST R6
+    SUB R7,R3
+    TST R7
     JEZ L6
     JGZ L6
 
 	# var t2
 
 	# t2 = 2 * i
-    LOD R6,2
+	LOD R6,2
     MUL R6,R5
 
 	# var t3
 
 	# t3 = t2 + 9
     STO (R2+28),R6
-    LOD R7,9
+	LOD R7,9
     ADD R6,R7
 
 	# j = t3
@@ -76,15 +76,15 @@ L4:
     OTI
 
 	# output L7
-	LOD R7,L7
-    LOD R15,R7
+	LOD R8,L7
+    LOD R15,R8
     OTS
 
 	# var t4
 
 	# t4 = i + 1
-    LOD R8,1
-    ADD R5,R8
+	LOD R9,1
+    ADD R5,R9
 
 	# i = t4
 	STO (R2+8),R5
@@ -103,7 +103,7 @@ L6:
 
 	# t5 = k + 1
 	LOD R5,(R2+16)
-    LOD R6,1
+	LOD R6,1
     ADD R5,R6
 
 	# k = t5

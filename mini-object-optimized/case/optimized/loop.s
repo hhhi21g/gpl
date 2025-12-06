@@ -102,7 +102,7 @@ main:
 
 	# t7 = t6 + 9
     STO (R2+52),R5
-    LOD R13,9
+	LOD R13,9
     ADD R5,R13
 
 	# d = t7
@@ -110,7 +110,6 @@ main:
 
 	# t13 = t12 + 9
     STO (R2+68),R12
-    LOD R13,9
     ADD R12,R13
 
 	# e = t13
@@ -163,7 +162,7 @@ L4:
 	# var t14
 
 	# t14 = i - 1
-    LOD R6,1
+	LOD R6,1
     SUB R5,R6
 
 	# i = t14
@@ -183,15 +182,15 @@ L6:
 
 	# t15 = j - 1
 	LOD R5,(R2+32)
-    LOD R6,1
+	LOD R6,1
     SUB R5,R6
 
 	# j = t15
 	STO (R2+32),R5
 
 	# output L7
-	LOD R6,L7
-    LOD R15,R6
+	LOD R7,L7
+    LOD R15,R7
     OTS
 
 	# label L2

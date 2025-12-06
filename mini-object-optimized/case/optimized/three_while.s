@@ -116,7 +116,7 @@ L7:
 
 	# t15 = sumd + 14
 	LOD R6,(R2+28)
-    LOD R7,14
+	LOD R7,14
     ADD R6,R7
 
 	# sumd = t15
@@ -125,25 +125,24 @@ L7:
 	# var t16
 
 	# t16 = sume + 19
-	LOD R7,(R2+32)
-    LOD R8,19
-    ADD R7,R8
+	LOD R8,(R2+32)
+	LOD R9,19
+    ADD R8,R9
 
 	# var t17
 
 	# t17 = t16 + 14
-    STO (R2+104),R7
-    LOD R8,14
-    ADD R7,R8
+    STO (R2+104),R8
+    ADD R8,R7
 
 	# sume = t17
-	STO (R2+32),R7
+	STO (R2+32),R8
 
 	# var t18
 
 	# t18 = i - 1
-    LOD R8,1
-    SUB R5,R8
+	LOD R10,1
+    SUB R5,R10
 
 	# i = t18
 	STO (R2+36),R5
@@ -151,7 +150,7 @@ L7:
 	# label L8
     STO (R2+36),R5
     STO (R2+28),R6
-    STO (R2+32),R7
+    STO (R2+32),R8
 L8:
 
 	# goto L7
@@ -164,7 +163,7 @@ L9:
 
 	# t19 = j - 1
 	LOD R5,(R2+40)
-    LOD R6,1
+	LOD R6,1
     SUB R5,R6
 
 	# j = t19
@@ -184,7 +183,7 @@ L6:
 
 	# t20 = k - 1
 	LOD R5,(R2+44)
-    LOD R6,1
+	LOD R6,1
     SUB R5,R6
 
 	# k = t20

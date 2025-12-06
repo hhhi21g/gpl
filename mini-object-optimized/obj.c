@@ -193,74 +193,106 @@ int reg_alloc_temp()
 	return R_GEN;
 }
 
-static int alloc_clean_temp_reg()
+static int next_temp = R_GEN;
+
+static int alloc_clean_temp_reg(int forbid1, int forbid2)
 {
-	// 优先找未绑定变量的寄存器
-	for (int r = R_GEN; r < R_NUM; r++)
+	for (int i = 0; i < (R_NUM - R_GEN); i++)
 	{
+		int r = R_GEN + (next_temp - R_GEN + i) % (R_NUM - R_GEN);
+
+		if (r == forbid1 || r == forbid2)
+			continue;
+
 		if (rdesc[r].var == NULL)
 		{
-			return r; // 干净寄存器
+			next_temp = r + 1;
+
+			rdesc_clear(r); // 保证干净
+			return r;
 		}
 	}
 
-	// 没有空寄存器
-	int r = R_GEN;
+	// 若没有空寄存器 → spill 掉 next_temp
+	int r = R_GEN + (next_temp - R_GEN) % (R_NUM - R_GEN);
+	next_temp++;
 
-	// 如果这个寄存器绑定了某个变量，write-back
-	if (rdesc[r].var != NULL && rdesc[r].mod)
-	{
+	if (rdesc[r].var && rdesc[r].mod)
 		asm_write_back(r);
-	}
 
-	// 不管是否 write-back，都解除绑定
 	rdesc_clear(r);
-
 	return r;
 }
 
 void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 {
-	int reg_b, reg_c;
+	int reg_b = reg_alloc(b);
+	int reg_c = reg_alloc(c);
 
-	if (b->type == SYM_INT || b->type == SYM_CHAR)
+	// 确保两个操作数不在同一个寄存器里
+	if (reg_b == reg_c)
 	{
-		reg_b = alloc_clean_temp_reg();
-		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
-	}
-	else
-	{
-		reg_b = reg_alloc(b);
-	}
-
-	if (c->type == SYM_INT || c->type == SYM_CHAR)
-	{
-		reg_c = alloc_clean_temp_reg();
-
-		// 保证reg_c != reg_b
-		if (reg_c == reg_b)
-		{
-			reg_c = alloc_clean_temp_reg();
-		}
-
-		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
-	}
-	else
-	{
-		reg_c = reg_alloc(c);
-
-		if (reg_c == reg_b)
-		{
-			int new_reg_c = alloc_clean_temp_reg();
-			out_str(file_s, "    LOD R%u,R%u\n", new_reg_c, reg_c);
-			reg_c = new_reg_c;
-		}
+		int tmp = alloc_clean_temp_reg(reg_b, -1);
+		out_str(file_s, "    LOD R%u,R%u\n", tmp, reg_b);
+		reg_c = tmp;
 	}
 
 	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
 
+	// 结果放在 reg_b，对应 a
 	rdesc_fill(reg_b, a, MODIFIED);
 }
+
+// void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
+// {
+// 	int reg_b, reg_c;
+
+// 	if (b->type == SYM_INT || b->type == SYM_CHAR)
+// 	{
+// 		reg_b = alloc_clean_temp_reg(-1, -1);
+// 		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
+// 	}
+// 	else
+// 	{
+// 		reg_b = reg_alloc(b);
+// 	}
+
+// 	if (c->type == SYM_INT || c->type == SYM_CHAR)
+// 	{
+// 		reg_c = alloc_clean_temp_reg(reg_b, -1);
+
+// 		// 保证reg_c != reg_b
+// 		// if (reg_c == reg_b)
+// 		// {
+// 		// 	reg_c = alloc_clean_temp_reg();
+// 		// }
+
+// 		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
+// 	}
+// 	else
+// 	{
+// 		reg_c = reg_alloc(c);
+
+// 		if (reg_c == reg_b)
+// 		{
+// 			int old = reg_c;
+// 			int new_reg_c = alloc_clean_temp_reg(reg_b, -1);
+// 			out_str(file_s, "    LOD R%u,R%u\n", new_reg_c, reg_c);
+
+// 			if (rdesc[old].var == c)
+// 			{
+// 				int mod = rdesc[old].mod;
+// 				rdesc_clear(old);			   // 旧寄存器不再绑定 c
+// 				rdesc_fill(new_reg_c, c, mod); // 新寄存器绑定 c
+// 			}
+// 			reg_c = new_reg_c;
+// 		}
+// 	}
+
+// 	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
+
+// 	rdesc_fill(reg_b, a, MODIFIED);
+// }
 
 void asm_cmp(int op, SYM *a, SYM *b, SYM *c)
 {
@@ -497,7 +529,9 @@ void asm_static(void)
 
 	out_str(file_s, "STATIC:\n");
 	out_str(file_s, "	DBN 0,%u\n", tos);
+	// out_str(file_s, "    DBN 0,4096\n");
 	out_str(file_s, "STACK:\n");
+	// out_str(file_s, "    DBN 0,8192\n");
 }
 
 static void asm_load_addr(int r, SYM *s) // 把 &s 放到寄存器 r
@@ -952,7 +986,7 @@ static void asm_cmp_ifz_general(TAC *cmp, TAC *br)
 	int r_lhs = reg_alloc(lhs);
 
 	// 寄存器rt
-	int rt = alloc_clean_temp_reg();
+	int rt = alloc_clean_temp_reg(-1, -1);
 
 	out_str(file_s, "    LOD R%u,R%u\n", rt, r_lhs);
 	out_str(file_s, "	LOD R3,%d\n", rhs->value);
@@ -1036,7 +1070,6 @@ void tac_obj()
 			cur = cur->next->next;
 			continue;
 		}
-
 		asm_code(cur);
 		cur = cur->next;
 	}
