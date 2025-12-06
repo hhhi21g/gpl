@@ -199,8 +199,10 @@ static int alloc_clean_temp_reg(int forbid1, int forbid2)
 {
 	for (int i = 0; i < (R_NUM - R_GEN); i++)
 	{
+		// 环形扫描，避免每次都从R_GEN开始，而是平均利用各个寄存器
 		int r = R_GEN + (next_temp - R_GEN + i) % (R_NUM - R_GEN);
 
+		// 不向传入的需要避免的寄存器内分配
 		if (r == forbid1 || r == forbid2)
 			continue;
 
@@ -213,10 +215,11 @@ static int alloc_clean_temp_reg(int forbid1, int forbid2)
 		}
 	}
 
-	// 若没有空寄存器 → spill 掉 next_temp
+	// 若没有空寄存器，使用next_temp
 	int r = R_GEN + (next_temp - R_GEN) % (R_NUM - R_GEN);
 	next_temp++;
 
+	// 若当前寄存器绑定某变量且被修改过
 	if (rdesc[r].var && rdesc[r].mod)
 		asm_write_back(r);
 
@@ -229,9 +232,9 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 	int reg_b = reg_alloc(b);
 	int reg_c = reg_alloc(c);
 
-	// 确保两个操作数不在同一个寄存器里
 	if (reg_b == reg_c)
 	{
+		// 避免给c分配b所在的寄存器
 		int tmp = alloc_clean_temp_reg(reg_b, -1);
 		out_str(file_s, "    LOD R%u,R%u\n", tmp, reg_b);
 		reg_c = tmp;
@@ -239,60 +242,9 @@ void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
 
 	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
 
-	// 结果放在 reg_b，对应 a
+	// 结果放在reg_b，对应a
 	rdesc_fill(reg_b, a, MODIFIED);
 }
-
-// void asm_bin(char *op, SYM *a, SYM *b, SYM *c)
-// {
-// 	int reg_b, reg_c;
-
-// 	if (b->type == SYM_INT || b->type == SYM_CHAR)
-// 	{
-// 		reg_b = alloc_clean_temp_reg(-1, -1);
-// 		out_str(file_s, "    LOD R%u,%d\n", reg_b, b->value);
-// 	}
-// 	else
-// 	{
-// 		reg_b = reg_alloc(b);
-// 	}
-
-// 	if (c->type == SYM_INT || c->type == SYM_CHAR)
-// 	{
-// 		reg_c = alloc_clean_temp_reg(reg_b, -1);
-
-// 		// 保证reg_c != reg_b
-// 		// if (reg_c == reg_b)
-// 		// {
-// 		// 	reg_c = alloc_clean_temp_reg();
-// 		// }
-
-// 		out_str(file_s, "    LOD R%u,%d\n", reg_c, c->value);
-// 	}
-// 	else
-// 	{
-// 		reg_c = reg_alloc(c);
-
-// 		if (reg_c == reg_b)
-// 		{
-// 			int old = reg_c;
-// 			int new_reg_c = alloc_clean_temp_reg(reg_b, -1);
-// 			out_str(file_s, "    LOD R%u,R%u\n", new_reg_c, reg_c);
-
-// 			if (rdesc[old].var == c)
-// 			{
-// 				int mod = rdesc[old].mod;
-// 				rdesc_clear(old);			   // 旧寄存器不再绑定 c
-// 				rdesc_fill(new_reg_c, c, mod); // 新寄存器绑定 c
-// 			}
-// 			reg_c = new_reg_c;
-// 		}
-// 	}
-
-// 	out_str(file_s, "    %s R%u,R%u\n", op, reg_b, reg_c);
-
-// 	rdesc_fill(reg_b, a, MODIFIED);
-// }
 
 void asm_cmp(int op, SYM *a, SYM *b, SYM *c)
 {
