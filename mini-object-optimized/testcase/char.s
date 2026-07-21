@@ -3,6 +3,7 @@
 	STO (R2),0
 	LOD R4,EXIT
 	STO (R2+4),R4
+	LOD R4,STATIC
 
 	# label main
 main:
@@ -24,11 +25,11 @@ main:
 
 	# c = 'c'
 	LOD R6,99
-   STO (R2+16),R6
+	STO (R2+16),R6
 
 	# b = 'b'
 	LOD R7,98
-   STO (R2+12),R7
+	STO (R2+12),R7
 
 	# input a
 	LOD R8,(R2+8)
@@ -37,6 +38,8 @@ main:
 
 	# ifz 0 goto L2
     STO (R2+20),R5
+    STO (R2+16),R6
+    STO (R2+12),R7
     STO (R2+8),R8
 	LOD R9,0
 	TST R9
@@ -44,54 +47,54 @@ main:
 
 	# output L1
 	LOD R10,L1
-	LOD R15,R10
-	OTS
+    LOD R15,R10
+    OTS
 
 	# label L2
 L2:
 
 	# output a
 	LOD R5,(R2+8)
-    LOD R15,(R2+8)
-	OTC
+    LOD R15,R5
+    OTC
 
 	# output b
 	LOD R6,(R2+12)
-    LOD R15,(R2+12)
-	OTC
+    LOD R15,R6
+    OTC
 
 	# output c
 	LOD R7,(R2+16)
-    LOD R15,(R2+16)
-	OTC
+    LOD R15,R7
+    OTC
 
 	# output d
 	LOD R8,(R2+20)
-    LOD R15,(R2+20)
-	OTC
+    LOD R15,R8
+    OTC
 
 	# output L1
 	LOD R9,L1
-	LOD R15,R9
-	OTS
+    LOD R15,R9
+    OTS
 
 	# var t0
 
 	# t0 = a + 1
-    LOD R10,1
+	LOD R10,1
     ADD R5,R10
 
 	# a = t0
-    STO (R2+24),R5
-   STO (R2+8),R5
+	STO (R2+8),R5
 
 	# output a
-    LOD R15,(R2+8)
-	OTC
+    STO (R2+8),R5
+    LOD R15,R5
+    OTC
 
 	# output L1
-	LOD R15,R9
-	OTS
+    LOD R15,R9
+    OTS
 
 	# end
 	LOD R3,(R2+4)

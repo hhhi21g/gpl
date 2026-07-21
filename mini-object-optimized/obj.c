@@ -1018,9 +1018,13 @@ void tac_obj()
 			cur->next->op == TAC_IFZ &&
 			cur->next->b == cur->a)
 		{
-			asm_cmp_ifz_general(cur, cur->next);
-			cur = cur->next->next;
-			continue;
+			SYM *rhs = cur->c;
+			if (rhs && (rhs->type == SYM_INT || rhs->type == SYM_CHAR))
+			{
+				asm_cmp_ifz_general(cur, cur->next);
+				cur = cur->next->next;
+				continue;
+			}
 		}
 		asm_code(cur);
 		cur = cur->next;

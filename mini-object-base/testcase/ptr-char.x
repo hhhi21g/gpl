@@ -1,34 +1,34 @@
 
 # tac list
 
-0x61f6d97e5af0	label main
-0x61f6d97e5b30	begin
-0x61f6d97e4830	var a
-0x61f6d97e4910	var pa
-0x61f6d97e49f0	var b
-0x61f6d97e4ad0	var c
-0x61f6d97e4bb0	var d
-0x61f6d97e4c90	var ptr
-0x61f6d97e4cf0	input d
-0x61f6d97e4e20	c = 'c'
-0x61f6d97e4f50	b = 'b'
-0x61f6d97e4fb0	input a
-0x61f6d97e5280	ifz 0 goto L2
-0x61f6d97e5160	output L1
-0x61f6d97e5240	label L2
-0x61f6d97e5310	output a
-0x61f6d97e53a0	output b
-0x61f6d97e5430	output c
-0x61f6d97e54c0	output d
-0x61f6d97e5520	output L1
-0x61f6d97e55a0	pa = &a
-0x61f6d97e56d0	*pa = 'A'
-0x61f6d97e5760	output a
-0x61f6d97e5810	ptr = pa
-0x61f6d97e5940	*ptr = 'B'
-0x61f6d97e59d0	output a
-0x61f6d97e5a30	output L1
-0x61f6d97e5b70	end
+0x604593adeaf0	label main
+0x604593adeb30	begin
+0x604593add830	var a
+0x604593add910	var pa
+0x604593add9f0	var b
+0x604593addad0	var c
+0x604593addbb0	var d
+0x604593addc90	var ptr
+0x604593addcf0	input d
+0x604593adde20	c = 'c'
+0x604593addf50	b = 'b'
+0x604593addfb0	input a
+0x604593ade280	ifz 0 goto L2
+0x604593ade160	output L1
+0x604593ade240	label L2
+0x604593ade310	output a
+0x604593ade3a0	output b
+0x604593ade430	output c
+0x604593ade4c0	output d
+0x604593ade520	output L1
+0x604593ade5a0	pa = &a
+0x604593ade6d0	*pa = 'A'
+0x604593ade760	output a
+0x604593ade810	ptr = pa
+0x604593ade940	*ptr = 'B'
+0x604593ade9d0	output a
+0x604593adea30	output L1
+0x604593adeb70	end
 
 [B0]
 label main

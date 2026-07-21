@@ -1,78 +1,78 @@
 
 # tac list
 
-0x5ba098bbe670	var t4
-0x5ba098bbe570	var t3
-0x5ba098bc0870	label main
-0x5ba098bc08b0	begin
-0x5ba098bbc840	var a
-0x5ba098bbc920	var b
-0x5ba098bbca00	var c
-0x5ba098bbcae0	var d
-0x5ba098bbcbc0	var e
-0x5ba098bbcca0	var sumd
-0x5ba098bbcd80	var sume
-0x5ba098bbce60	var i
-0x5ba098bbcf40	var j
-0x5ba098bbd020	var k
-0x5ba098bbe810	var t5
-0x5ba098bbe960	var t6
-0x5ba098bbea60	var t7
-0x5ba098bbef80	var t10
-0x5ba098bbf120	var t11
-0x5ba098bbf270	var t12
-0x5ba098bbf370	var t13
-0x5ba098bbd4e0	sumd = 0
-0x5ba098bbd590	sume = 0
-0x5ba098bbd6c0	k = 12
-0x5ba098bc03d0	label L1
-0x5ba098bbd820	var t0
-0x5ba098bbd860	t0 = (k > 0)
-0x5ba098bc0490	ifz t0 goto L3
-0x5ba098bbdb70	j = 15
-0x5ba098bc0090	label L4
-0x5ba098bbdcd0	var t1
-0x5ba098bbdd10	t1 = (j > 0)
-0x5ba098bc0150	ifz t1 goto L6
-0x5ba098bbe020	i = 18
-0x5ba098bbfd50	label L7
-0x5ba098bbe180	var t2
-0x5ba098bbe1c0	t2 = (i > 0)
-0x5ba098bbfe10	ifz t2 goto L9
-0x5ba098bbec30	var t8
-0x5ba098bbee80	var t9
-0x5ba098bbf540	var t14
-0x5ba098bbf740	var t15
-0x5ba098bbf780	t15 = sumd + 14
-0x5ba098bbf7c0	sumd = t15
-0x5ba098bbf940	var t16
-0x5ba098bbf980	t16 = sume + 19
-0x5ba098bbfa90	var t17
-0x5ba098bbfad0	t17 = t16 + 14
-0x5ba098bbfb10	sume = t17
-0x5ba098bbfc90	var t18
-0x5ba098bbfcd0	t18 = i - 1
-0x5ba098bbfd10	i = t18
-0x5ba098bbfd90	label L8
-0x5ba098bbfe50	goto L7
-0x5ba098bbfdd0	label L9
-0x5ba098bbffd0	var t19
-0x5ba098bc0010	t19 = j - 1
-0x5ba098bc0050	j = t19
-0x5ba098bc00d0	label L5
-0x5ba098bc0190	goto L4
-0x5ba098bc0110	label L6
-0x5ba098bc0310	var t20
-0x5ba098bc0350	t20 = k - 1
-0x5ba098bc0390	k = t20
-0x5ba098bc0410	label L2
-0x5ba098bc04d0	goto L1
-0x5ba098bc0450	label L3
-0x5ba098bc0560	output sumd
-0x5ba098bc0640	output L10
-0x5ba098bc06d0	output sume
-0x5ba098bc07b0	output L11
-0x5ba098bc08f0	end
+0x608b7dcd5670	var t4
+0x608b7dcd5570	var t3
+0x608b7dcd7870	label main
+0x608b7dcd78b0	begin
+0x608b7dcd3840	var a
+0x608b7dcd3920	var b
+0x608b7dcd3a00	var c
+0x608b7dcd3ae0	var d
+0x608b7dcd3bc0	var e
+0x608b7dcd3ca0	var sumd
+0x608b7dcd3d80	var sume
+0x608b7dcd3e60	var i
+0x608b7dcd3f40	var j
+0x608b7dcd4020	var k
+0x608b7dcd5810	var t5
+0x608b7dcd5960	var t6
+0x608b7dcd5a60	var t7
+0x608b7dcd5f80	var t10
+0x608b7dcd6120	var t11
+0x608b7dcd6270	var t12
+0x608b7dcd6370	var t13
+0x608b7dcd44e0	sumd = 0
+0x608b7dcd4590	sume = 0
+0x608b7dcd46c0	k = 12
+0x608b7dcd73d0	label L1
+0x608b7dcd4820	var t0
+0x608b7dcd4860	t0 = (k > 0)
+0x608b7dcd7490	ifz t0 goto L3
+0x608b7dcd4b70	j = 15
+0x608b7dcd7090	label L4
+0x608b7dcd4cd0	var t1
+0x608b7dcd4d10	t1 = (j > 0)
+0x608b7dcd7150	ifz t1 goto L6
+0x608b7dcd5020	i = 18
+0x608b7dcd6d50	label L7
+0x608b7dcd5180	var t2
+0x608b7dcd51c0	t2 = (i > 0)
+0x608b7dcd6e10	ifz t2 goto L9
+0x608b7dcd5c30	var t8
+0x608b7dcd5e80	var t9
+0x608b7dcd6540	var t14
+0x608b7dcd6740	var t15
+0x608b7dcd6780	t15 = sumd + 14
+0x608b7dcd67c0	sumd = t15
+0x608b7dcd6940	var t16
+0x608b7dcd6980	t16 = sume + 19
+0x608b7dcd6a90	var t17
+0x608b7dcd6ad0	t17 = t16 + 14
+0x608b7dcd6b10	sume = t17
+0x608b7dcd6c90	var t18
+0x608b7dcd6cd0	t18 = i - 1
+0x608b7dcd6d10	i = t18
+0x608b7dcd6d90	label L8
+0x608b7dcd6e50	goto L7
+0x608b7dcd6dd0	label L9
+0x608b7dcd6fd0	var t19
+0x608b7dcd7010	t19 = j - 1
+0x608b7dcd7050	j = t19
+0x608b7dcd70d0	label L5
+0x608b7dcd7190	goto L4
+0x608b7dcd7110	label L6
+0x608b7dcd7310	var t20
+0x608b7dcd7350	t20 = k - 1
+0x608b7dcd7390	k = t20
+0x608b7dcd7410	label L2
+0x608b7dcd74d0	goto L1
+0x608b7dcd7450	label L3
+0x608b7dcd7560	output sumd
+0x608b7dcd7640	output L10
+0x608b7dcd76d0	output sume
+0x608b7dcd77b0	output L11
+0x608b7dcd78f0	end
 
 [B0]
 var t4

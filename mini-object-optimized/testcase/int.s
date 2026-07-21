@@ -3,6 +3,7 @@
 	STO (R2),0
 	LOD R4,EXIT
 	STO (R2+4),R4
+	LOD R4,STATIC
 
 	# label main
 main:
@@ -26,7 +27,7 @@ main:
 
 	# t0 = a + 10
     STO (R2+8),R5
-    LOD R6,10
+	LOD R6,10
     ADD R5,R6
 
 	# b = t0
@@ -35,41 +36,41 @@ main:
 	# var t1
 
 	# t1 = b - 20
-	LOD R6,(R2+12)
-    LOD R5,20
-    SUB R6,R5
+    STO (R2+12),R5
+	LOD R7,20
+    SUB R5,R7
 
 	# c = t1
-	STO (R2+16),R6
+	STO (R2+16),R5
 
 	# var t2
 
 	# t2 = c * 30
-	LOD R7,(R2+16)
-    LOD R5,30
-    MUL R7,R5
+    STO (R2+16),R5
+	LOD R8,30
+    MUL R5,R8
 
 	# d = t2
-	STO (R2+20),R7
+	STO (R2+20),R5
 
 	# output a
-	LOD R8,(R2+8)
-    LOD R15,R8
-    OTI
-
-	# output b
-	LOD R9,(R2+12)
+	LOD R9,(R2+8)
     LOD R15,R9
     OTI
 
-	# output c
-	LOD R10,(R2+16)
+	# output b
+	LOD R10,(R2+12)
     LOD R15,R10
     OTI
 
-	# output d
-	LOD R11,(R2+20)
+	# output c
+	LOD R11,(R2+16)
     LOD R15,R11
+    OTI
+
+	# output d
+    STO (R2+20),R5
+    LOD R15,R5
     OTI
 
 	# output L1
@@ -78,9 +79,6 @@ main:
     OTS
 
 	# end
-    STO (R2+24),R5
-    STO (R2+28),R6
-    STO (R2+32),R7
 	LOD R3,(R2+4)
 	LOD R2,(R2)
 	JMP R3

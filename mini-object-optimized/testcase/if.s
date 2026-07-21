@@ -29,6 +29,21 @@ main:
 	# var t0
 
 	# t0 = (i == j)
+    STO (R2+8),R5
+    STO (R2+12),R6
+	SUB R5,R6
+	TST R5
+	LOD R3,R1+40
+	JEZ R3
+	LOD R5,0
+	LOD R3,R1+24
+	JMP R3
+	LOD R5,1
+
+	# ifz t0 goto L3
+    STO (R2+20),R5
+	TST R5
+	JEZ L3
 
 	# output L1
 	LOD R7,L1
@@ -36,8 +51,6 @@ main:
     OTS
 
 	# goto L4
-    STO (R2+8),R5
-    STO (R2+12),R6
 	JMP L4
 
 	# label L3
